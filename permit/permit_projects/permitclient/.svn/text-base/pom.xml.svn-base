@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>edu.mit.isda</groupId>
+  <artifactId>permitclient</artifactId>
+  <packaging>war</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>permitclient Maven Webapp</name>
+  <url>http://maven.apache.org</url>
+
+   <properties>
+     <service.wsdl>https://ws-dev.mit.edu/permitws/services/permit?wsdl</service.wsdl>
+     <netbeans.hint.deploy.server>Tomcat55</netbeans.hint.deploy.server>
+
+      <client.keystore>C:\apache-tomcat-5.5.25\certs\permitapp-test.mit.edu.jks</client.keystore>
+     <server.truststore>C:\apache-tomcat-5.5.25\certs\serverTrustStore.jks</server.truststore>
+  </properties>
+
+
+    <build>
+        <finalName>${artifactId}</finalName>
+
+        <resources>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>src/main/webapp/</directory>
+                <includes>
+                    <include>*.jsp</include>
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate java code from wsdl</id>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <tasks>
+                                <!--
+                                    <property name="service.wsdl"
+                                    value="https://authz.mapws.mit.edu/uaws/services/ua?wsdl" />
+
+                                    <property name="server.truststore"
+                                    value="/home/www/etc/keystore/serverTrustStore.jks" />
+
+                                    <property name="client.keystore"
+                                    value="/home/www/etc/keystore/mapping.app.mit.edu.jks" />
+
+                                -->
+
+                                <property name="compile_classpath" refid="maven.compile.classpath" />
+                                <echo message="service.wsdl ${service.wsdl}" />
+                                <echo message="compile classpath: ${compile_classpath}" />
+                                <java classname="org.apache.axis.wsdl.WSDL2Java" fork="true" classpathref="maven.compile.classpath" dir="src/main/java">
+                                    <sysproperty key="javax.net.ssl.keyStore" value="${client.keystore}" />
+                                    <sysproperty key="javax.net.ssl.keyStorePassword" value="changeit" />
+                                    <sysproperty key="javax.net.ssl.keyStoreType" value="jks" />
+                                    <sysproperty key="javax.net.ssl.trustStore" value="${server.truststore}" />
+                                    <sysproperty key="javax.net.ssl.trustStorePassword" value="changeit" />
+                                    <sysproperty key="javax.net.ssl.trustStoreType" value="jks" />
+
+                                    <arg value="-v" />
+                                    <arg value="-o${basedir}/src/main/java" />
+                                    <arg value="${service.wsdl}" />
+                                </java>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <source>1.5</source>
+                    <target>1.5</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.5</source>
+                    <target>1.5</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+
+    <repository>
+
+            <id>PublicRepositoriesGroup</id>
+            <name>PublicRepositoriesGroup</name>
+            <url>http://maven.mit.edu/nexus/content/groups/public</url>
+        </repository>
+        <repository>
+            <id>PublicMitRepositoriesGroup</id>
+            <name>PublicMitRepositoriesGroup</name>
+            <url>http://maven.mit.edu/nexus/content/groups/PublicMitRepositoriesGroup</url>
+        </repository>
+
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.4</version>
+            <scope>provided</scope>
+        </dependency>
+
+         <dependency>
+            <groupId>avalon-framework</groupId>
+            <artifactId>avalon-framework</artifactId>
+            <version>4.1.3</version>
+            <scope>provided</scope>
+        </dependency>
+
+
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>activation</artifactId>
+            <version>1.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.xml</groupId>
+            <artifactId>saaj</artifactId>
+            <version>1.2-2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+            <version>1.4</version>
+        </dependency>
+
+         <dependency>
+            <groupId>org.apache.axis</groupId>
+            <artifactId>axis</artifactId>
+            <version>1.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.axis</groupId>
+            <artifactId>axis-ant</artifactId>
+            <version>1.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-discovery</artifactId>
+            <version>0.3-2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.0.4-2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.xml</groupId>
+            <artifactId>jaxrpc</artifactId>
+            <version>1.1-2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.ibm.wsdl</groupId>
+            <artifactId>wsdl4j</artifactId>
+            <version>1.5.2-1</version>
+        </dependency>
+
+    </dependencies>
+
+
+</project>
+

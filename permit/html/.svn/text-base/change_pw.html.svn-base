@@ -1,0 +1,66 @@
+<HTML>
+<HEAD>
+<TITLE>Change my perMIT system password</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td>
+      <H2>Change Your perMIT system password</H2>
+    </td></tr>
+</table>
+<h3>
+  Before You Proceed: Get A Secure Web Certificate </h3>
+<SMALL><p>To change your Roles password, you must first <a href="http://web.mit.edu/is/help/cert/">get 
+  secure web certificates</a> from the MIT Certificate Server.  </p>
+<p>If you already have a username and password for the perMIT system, you can 
+  change your password via this secure web interface. </p>
+<p>
+You can use this interface even if you've <i>forgotten</i> your perMIT system password, since the web script uses your 
+<a href="http://web.mit.edu/is/help/cert">Secure 
+  Web Certificate</a> to verify who you are.</p>
+<p>Remember, your username in the perMIT system must be the same as your Kerberos 
+  username, but your password on Roles should be <b>different</b> than your Kerberos 
+  password. </p></SMALL>
+<P>
+<HR>
+<h3>Change Your Password...</h3>
+<FORM METHOD="POST" ACTION="/cgi-bin/change_pw.cgi">
+  <table width="100%">
+    <tr>
+      <td rowspan=2 width="10%">Choose a database.</td>
+      <td> 
+        <INPUT TYPE="radio" name="database" value="roles" checked>
+        Roles (production database)</td>
+    </tr>
+    <tr>
+      <td> 
+        <INPUT TYPE="radio" name="database" value="troles">
+        TRoles (test database)</td>
+    </tr>
+    <tr>
+      <td><br></td>
+      <td> 
+      <INPUT TYPE="SUBMIT" VALUE="Go change my password">
+        
+      </td>
+    </tr>
+  </table>
+</FORM>
+<HR>

@@ -1,0 +1,27 @@
+We want RolesDB.pm to automatically update the Spending Group hierarchy
+when changes have been made to the Custom Fund Center groups.
+
+Each of the subroutines qualifier_add, qualifier_delete, qualifier_addchild
+ qualifier_delchild, and qualifier_update will need to be modified.  In each
+ case, there is an array @stmt that contains the call to the stored
+ procedure to do the add, delete, etc..
+
+Write a new subroutine callable as
+ &modify_sql_stmt($action, $qual_type, $qual_code, \@stmt, \@_);
+where 
+ $action is ADD, DELETE, ADDCHILD, DELCHILD, UPDATE_PARENT, or UPDATE_NAME
+ 
+The subroutine should do the following:
+ - If !($qual_type eq 'FUND' && substr($qual_code, 0, 3) eq 'FC_')   
+   then make no changes to @stmt and return.
+ - Set $sg_code (and $sg_parent, $sg_oldparent, $sg_newparent where applicable)
+   by doing:
+     $sg_thing = $fc_thing;
+     $sg_thing =~ s/^FC_CUSTOM$/SG_ALL/;
+     $sg_thing =~ s/^FC_/SG_/;
+ - Where applicable, set $sg_name by doing:
+     $sg_name = $fc_name;
+     $sg_name =~ s/custom fund center/spending/i;
+     $sg_name =~ s/fund center/spending/i;
+ - Add another line to @stmt with a stored procedure call for
+   the spending group stuff.

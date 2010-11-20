@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.PickableCategory" table="pickable_auth_category">
+    <id name="category" type="string">
+      <column name="FUNCTION_CATEGORY" sql-type="char(4)"/>
+      <generator class="assigned"/>
+    </id>
+    <property column="FUNCTION_CATEGORY_DESC" length="15" name="description"/>
+    <property column="KERBEROS_NAME" length="1" name="kname"/>
+    <set inverse="true" lazy="true" name="pfunctions">
+      <key column="FUNCTION_CATEGORY"/>
+      <one-to-many class="edu.mit.isda.permitservice.dataobjects.PickableFunction"/>
+    </set>
+  </class>
+  <sql-query name="FUNCTION_CATEGORY_LIST">	
+            <return alias="cat" class="edu.mit.isda.permitservice.dataobjects.PickableCategory"/>	
+            SELECT * FROM pickable_auth_category WHERE KERBEROS_NAME=? AND EXISTS (SELECT FUNCTION_NAME FROM function WHERE function.FUNCTION_CATEGORY = pickable_auth_category.FUNCTION_CATEGORY) ORDER BY FUNCTION_CATEGORY
+        </sql-query>
+</hibernate-mapping>

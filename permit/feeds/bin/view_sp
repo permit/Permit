@@ -1,0 +1,136 @@
+#!/usr/bin/perl
+###########################################################################
+#
+#  Perl script to display stored procedures for a given user.
+#
+#
+#  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+###########################################################################
+#
+#  Get username and password.
+#
+print "Enter database name for sqlplus connection: ";
+chop($db = <STDIN>);
+print "Enter username for sqlplus connection: ";
+chop($user = <STDIN>);
+print "Enter password for user '$user' at $db: ";
+system ("stty -echo\n");
+chop($pw = <STDIN>);
+print "\n";
+system ("stty echo\n");
+$userpw = $user . '/' . $pw;
+#print "userpw = '$userpw'\n";
+
+#
+#  Make sure we are set up to use Oraperl.
+#
+use Oraperl;
+if (!(defined(&ora_login))) {die "Use oraperl, not perl\n";}
+
+#
+#  Open connection to oracle
+#
+#print "Ready to do &ora_login...  db='$db'\n";
+
+ $lda = DBI->connect("dbi:Oracle:$db", $user, $pw)  || die "$DBI::errstr \n";
+
+
+#$lda = &ora_login($db, $userpw, '')
+#	|| die $ora_errstr;
+@stmt = ("select distinct name,type from USER_SOURCE"
+         . " where type in ('PROCEDURE','FUNCTION')"
+         . " order by type, name");
+$csr = &ora_open($lda, "@stmt")
+	|| die $ora_errstr;
+
+
+$nfields = &ora_fetch($csr);
+print "Query will return $nfields fields\n\n";
+
+#
+#  Get a list of stored procedure names
+#
+@sp = ();
+@sptype = ();
+$i = 0;
+while ((($procname,$proctype) = &ora_fetch($csr))) {
+	# mark any NULL fields found
+	grep(defined || 
+          ($_ = '<NULL>'), $procname,$proctype);
+        push(@sp, $procname);
+        push(@sptype, $proctype);
+}
+do ora_close($csr) || die "can't close cursor";
+
+#
+#  Print list of stored procedure names.
+#
+#$n = @sp;  # How many stored procedures?
+#for ($i = 0; $i < $n; $i++) {
+#  printf "%5d %-10s %s\n", $i+1, $sptype[$i], $sp[$i];
+#}
+ list_procedures();
+
+#
+#  Let user display the source for a stored procedure.
+#
+$nn = 1;
+while ($nn > 0) {
+  $nn = -1;
+  until ($nn >=0 && $nn <= $n && $nn =~ /^\d+$/) {
+    print "To display a procedure, enter 1 to $n,\n"
+          . " enter 999 to redisplay procedure list, or 0 to stop\n";
+    chop($nn = <STDIN>);   # Make the user pick a number from 0 to 28.
+    if ($nn == 999) {
+      list_procedures();
+      $nn = -1;
+    }
+  }
+  if ($nn == 0) {last;}
+  $picked_sp = $sp[$nn-1];
+  $picked_type = $sptype[$nn-1];
+  @stmt = ("select text from USER_SOURCE"
+           . "  where type in ('PROCEDURE','FUNCTION')"
+           . " and name = '$picked_sp' order by line");
+  $csr = &ora_open($lda, "@stmt")
+	|| die $ora_errstr;
+  $i = 0;
+  print "*** Source for $picked_type $user.$picked_sp ***\n";
+  while ((($ptext) = &ora_fetch($csr))) {
+     # mark any NULL fields found
+     grep(defined || 
+           ($_ = '<NULL>'), $ptext);
+     print $ptext;
+  }
+  do ora_close($csr) || die "can't close cursor";
+}
+
+#
+#  Logoff and exit.
+#
+do ora_logoff($lda) || die "can't log off Oracle";
+exit();
+
+#############################################################################
+#
+#  Print list of stored procedure names.
+#
+#############################################################################
+sub list_procedures {
+  $n = @sp;  # How many stored procedures?
+  for ($i = 0; $i < $n; $i++) {
+    printf "%5d %-10s %s\n", $i+1, $sptype[$i], $sp[$i];
+  }
+}

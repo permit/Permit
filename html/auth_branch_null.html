@@ -1,0 +1,79 @@
+<HTML>
+<HEAD>
+<TITLE>Show authorizations by category - NULL qualifiers</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H3>Show authorizations by category - NULL qualifiers</H3></td>
+</tr></table><BR>
+<P>
+<small>
+This web page allows you to view authorizations with NULL qualifiers within 
+a given category.  Authorizations with NULL qualifiers are all-or-nothing 
+authorizations, not limited to an organizational, financial or 
+other "qualifying" unit.
+To use this facility, you need 
+<a href=
+"/metaauth_help.html#viewing+authorizations">
+viewing authorizations</a> to see authorizations within the Category you
+select.
+</small>
+<HR>
+<P>
+Select a Category/Qualifier type combination.
+Choose a format option. 
+Then click the SUBMIT button.
+<P>
+<FORM METHOD="GET" ACTION="/cgi-bin/qualauth.pl">
+<table>
+<tr><td>
+<strong>Category/Qualifier-type:</strong>
+</td>
+<td><select name = "cat_qt">
+<option>BUDG/NULL SAP budget authorizations with a NULL qualifier
+<option>EHS /NULL EHS-related authorizations with a NULL qualifier
+<option>GRAD/NULL Graduate Admissions authorizations with a NULL qualifier
+<option>HR/NULL HR-related authorizations with a NULL qualifier
+<option>HR_C/NULL Central HR authorizations with a NULL ualifier
+<option>IDDB/NULL MIT ID Database authorizations
+<option>META/NULL Category META authorizations with a NULL qualifier
+<option>NIMB/NULL NIMBUS budget system auths. with a NULL qualifier
+<option>SAP/NULL  SAP authorizations with a NULL qualifier
+<option>UADM/NULL Undergraduate admissions auths. with a NULL qualifier
+<option>WRHS/NULL Warehouse-related auths. with a NULL qualifier
+</select>
+</td></tr>
+<tr><td valign=top>
+<strong>Format options:</strong>
+<br><small>for authorization<br>information</small></td>
+<td><INPUT TYPE="radio" NAME="detail" VALUE="0">
+Show Kerberos name and Function only
+<br><INPUT TYPE="radio" NAME="detail" VALUE="2" CHECKED>
+Add first and last name
+<br><INPUT TYPE="radio" NAME="detail" VALUE="1">
+Add grant-flag and modified-date
+</td></tr>
+</table>
+<INPUT TYPE="hidden" NAME="group_option" VALUE="2">
+<center>
+<INPUT TYPE="SUBMIT" VALUE="Submit">
+</center>
+<INPUT TYPE=HIDDEN NAME=rootcode value='NULL'>&nbsp;&nbsp;
+</FORM>
+<hr>

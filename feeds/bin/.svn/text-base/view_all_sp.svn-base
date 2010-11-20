@@ -1,0 +1,123 @@
+#!/usr/bin/perl
+###########################################################################
+#
+#  Perl script to produce a formatted file displaying all stored 
+#  procedures for a given user.
+#
+#
+#  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+###########################################################################
+#
+#  Get username and password.
+#
+print "Enter database name for sqlplus connection: ";
+chop($db = <STDIN>);
+print "Enter your username for sqlplus connection: ";
+chop($user = <STDIN>);
+print "Enter password for user '$user' at $db: ";
+system("stty -echo\n");
+chop($pw = <STDIN>);
+print "\n";
+system("stty echo\n");
+print "Enter owner of stored procedures (e.g., rolesbb): ";
+chop($owner = <STDIN>);
+unless ($owner) {$owner = $user;}
+$owner =~ tr/a-z/A-Z/;  # Raise to uppercase
+$userpw = $user . '/' . $pw;
+#print "userpw = '$userpw'\n";
+$outfile = $owner . '.sp.listing';
+$outfile =~ tr/A-Z/a-z/;  # Lowercase
+
+#
+#  Make sure we are set up to use Oraperl.
+#
+use Oraperl;
+if (!(defined(&ora_login))) {die "Use oraperl, not perl\n";}
+
+#
+#  Open connection to oracle
+#
+#print "Ready to do &ora_login...  db='$db' USER='$userpw'\n";
+$lda = &ora_login($db, $userpw, '')
+	|| die $ora_errstr;
+@stmt = ("select distinct name,type from ALL_SOURCE"
+         . " where type in ('PROCEDURE','FUNCTION')"
+         . " and owner = '$owner'"
+         . " order by type, name");
+$csr = &ora_open($lda, "@stmt")
+	|| die $ora_errstr;
+
+#
+#  Get a list of stored procedure names
+#
+@sp = ();
+@sptype = ();
+$i = 0;
+while ((($procname,$proctype) = &ora_fetch($csr))) {
+	# mark any NULL fields found
+	grep(defined || 
+          ($_ = '<NULL>'), $procname, $proctype);
+        push(@sp, $procname);
+        push(@sptype, $proctype);
+}
+&ora_close($csr) || die "can't close cursor";
+
+#
+#  Open output file.
+#
+unless (open(F1,">$outfile")) {
+  &ora_logoff($lda);
+  die "$0 can't open '$outfile' for output - $!\n";
+}
+print "Stored procedures will be written to the file $outfile\n";
+chop($thedate = `date`);
+print F1 "Listing of stored procedures $thedate\n";
+print F1 "Database = $db\n";
+print F1 "User = $owner\n\n";
+$n = @sp;  #  How many stored procedures?
+for ($i = 0; $i < $n; $i++) {
+  printf F1 "%3d.  %-10s %s\n", $i+1, $sptype[$i], $sp[$i];
+}
+
+#
+#  Write source for all stored procedures to $outfile.
+#
+for ($i = 0; $i < $n; $i++) {
+  $picked_sp = $sp[$i];
+  $picked_type = $sptype[$i];
+  @stmt = ("select text from ALL_SOURCE where type = '$picked_type'"
+           . " and owner = '$owner'"
+           . " and name = '$picked_sp' order by line");
+  $csr = &ora_open($lda, "@stmt")
+	|| die $ora_errstr;
+  $count = $i+1;
+  print F1 "\n\n" . '*' x 80 . "\n*\n* $count.  $picked_sp"
+           . " \n*\n" . '*' x 80 . "\n";
+  while ((($ptext) = &ora_fetch($csr))) {
+     # mark any NULL fields found
+     grep(defined || 
+           ($_ = '<NULL>'), $ptext);
+     print F1 $ptext;
+  }
+  &ora_close($csr) || die "can't close cursor";
+}
+
+#
+#  Logoff and exit.
+#
+close(F1);
+&ora_logoff($lda) || die "can't log off Oracle";
+exit();

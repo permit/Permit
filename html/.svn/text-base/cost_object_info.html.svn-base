@@ -1,0 +1,37 @@
+<HTML>
+<HEAD>
+<TITLE>Show information about a Cost Object</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td> <H3>Show information about a Cost Object</H3></td></tr>
+</table>
+<BR>
+To see detailed information about a cost object, type the 7-digit cost
+object number in the <strong>Cost object number</strong> field. (Letter prefix
+of C, I, or P is optional.)  Then click on the <strong>Submit</strong> button.
+<FORM METHOD="GET" ACTION="/cgi-bin/rolecc_info.pl">
+<PRE>
+Cost object number:  <INPUT TYPE="TEXT" NAME="cost_object">
+<BR>
+</PRE>
+<INPUT TYPE="SUBMIT" Value="Submit">
+<HR>
+</FORM>

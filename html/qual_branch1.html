@@ -1,0 +1,96 @@
+<HTML>
+<HEAD>
+<TITLE>perMIT system: Qualifier Hierarchies</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H3>perMIT system: Qualifier Hierarchies</H3></td>
+</tr></table><BR>
+<P>
+<small>
+This web page allows you to view a hierarchy of qualifiers, such as Funds and Fund Centers, Cost Objects and Profit
+Centers, etc.. 
+</small>
+<HR>
+<P>
+Select a Qualifier type from the drop-down menu. If you know the qualifier 
+code for the branch of the tree you want 
+to view, enter it; otherwise leave it blank and the display will start at the 
+root of the tree. (Qualifier codes must start 
+with the appropriate prefix
+ - <a href="qualcode_prefix.html">see explanation</a>.) 
+Then click the <strong>Submit</strong> button. 
+
+<P>
+<!-- Was qualauth1.pl>
+<FORM METHOD="GET" ACTION="/cgi-bin/qualauth.pl">
+<table>
+<tr><td>
+<strong>Qualifier type:</strong> 
+</td>
+<td><select name = "qualtype">
+<option>COST (Cost Object)
+<option selected>FUND (Fund Centers and Funds)
+<option>PMIT (PCMIT-0 hierarchy and Profit Centers)
+<option>AORG (Org. Unit - Admissions)
+<option>BUDG (Budget Departmental Plan)
+<option>CATE (Roles CATEGORY)
+<option>EHSG (EHS internal org sub-units)
+<option>BAGS (NIMBUS Budget Area Groups)
+
+<option>LORG (LDS Org. Units)
+<option>ORGU (Old 6-digit Org. Units)
+<option>ORG2 (New 8-digit HR Org. Units)
+<option>PBM1 (Program Budget Management)
+<option>PBUD (Budget Groups and Profit Centers)
+<option>PCCS (Profit Centers, CO Supervisors, and Cost Objects)
+<option>PDED (Payroll Deduction Types)
+<option>PHON (MIT Phone Numbers)
+<option>PRIN (Units for department head reporting)
+<option>PRTA (Portal Areas)
+<option>PYTG (Payroll Time Groups)
+<option>QTYP (Roles Qualifier Types)
+<option>SISO (SIS Organizations)
+<option>SPGP (Spending Group)
+<option>TGEO (Test geographical units)
+<option>TSLV (Touchstone level)
+<option>DEPT (MIT departments (unofficial))
+</select>
+
+</td></tr>
+<tr><td>
+<strong>Qualifier code</strong> (optional):
+</td><td>
+<INPUT TYPE=TEXT NAME=rootcode>&nbsp;&nbsp;
+<small>(Leave this blank to start at the root of the qualifier tree)</small>
+</td></tr>
+<tr><td><strong>Sort by:</strong></td>
+<td><INPUT TYPE="radio" NAME="sort" VALUE="" CHECKED> Qualifier code (number)
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="sort" VALUE="name"> Qualifier name
+
+</td></tr>
+</table>
+<P>
+<center>
+<INPUT TYPE="SUBMIT" VALUE="Submit">
+</center>
+<a href="qual_branch1a.html">More options for advanced users</a>
+</FORM>
+<hr>

@@ -1,0 +1,42 @@
+<HTML>
+<HEAD>
+<TITLE>List Funds On Which A User Can Spend Or Commit</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td><H3>Show Funds on Which a User Can Spend or Commit</H3></td></tr></table>
+<p>
+To see a list of Funds/Fund Centers on which a user can spend or commit, 
+enter the person's username in the 
+<strong>Kerberos&nbsp;username</strong> field 
+and click on the <strong>Submit</strong> button.
+<p>
+(To see authorizations for users other than yourself, you need a special 
+<a href="/metaauth_help.html#viewing+authorizations">viewing authorization</a>.)
+<p>
+<FORM METHOD="GET" ACTION="/cgi-bin/rolequal3.pl">
+<PRE>
+Kerberos username:  <INPUT TYPE="TEXT" VALUE="username?" NAME="kerbname">
+<BR>
+</PRE>
+<INPUT TYPE="HIDDEN" name="functionid" value="735">
+<INPUT TYPE="SUBMIT" value="Submit">
+<HR>
+</FORM>

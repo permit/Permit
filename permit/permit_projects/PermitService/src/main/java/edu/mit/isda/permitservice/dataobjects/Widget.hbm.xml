@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.Widget" table="rdb_t_special_sel_set2">
+    <id name="selection" type="string">
+      <column name="SELECTION_ID" sql-type="number(38)"/>
+      <generator class="assigned"/>
+    </id>
+    <property column="PROGRAM_WIDGET_ID" length="38" name="widgetId"/>
+    <property column="PROGRAM_WIDGET_NAME" length="255" name="widgetName"/>
+  </class>
+  <sql-query name="WIDGET_CHECK">	
+            <return alias="widg" class="edu.mit.isda.permitservice.dataobjects.Widget"/>	
+            SELECT SELECTION_ID, PROGRAM_WIDGET_ID, PROGRAM_WIDGET_NAME FROM RDB_T_SPECIAL_SEL_SET2 WHERE SELECTION_ID=? 
+        </sql-query>
+</hibernate-mapping>

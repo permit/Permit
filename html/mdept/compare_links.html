@@ -1,0 +1,76 @@
+<HTML>
+<HEAD>
+<TITLE>Compare object-to-DLC links for two object types</TITLE>
+<!--
+ *  Copyright (C) 2005-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<body BGCOLOR="#fafafa">
+
+<TABLE WIDTH="85%">
+<TR><TD><a href="index.html">
+ <IMG width=105 height=88 SRC="../images/mdept_logo.jpeg" no border></a></TD>
+<TD align=center>
+<TD>&nbsp;
+<H2>Compare object-to-DLC links for two object types</H2></TD>
+</TR>
+</TABLE>
+<hr>
+
+<form method="get" name="view_hierarchy" 
+ action="../cgi-bin/mdept/mdept_exception.cgi">
+<input type="hidden" name="report_num" value="9">
+<table>
+<tr>
+    <th align=right>Pick the first object type:
+    </th>
+    <td>
+        <select name="obj_type1">
+          <option>ORGU
+          <option>ORG2
+          <option>LORG
+          <option selected>SIS
+          <option>PMIT
+          <option>PC
+          <option>FC
+          <option>SPGP
+        </select>
+    </td>
+</tr>
+<tr><td colspan=2>&nbsp;</td></tr>
+<tr>
+    <th align=right valign=center>Pick the second object type:
+    </th>
+    <td valign=top>
+        <select name="obj_type2">
+          <option>ORGU
+          <option selected>ORG2
+          <option>LORG
+          <option>SIS
+          <option>PMIT
+          <option>PC
+          <option>FC
+          <option>SPGP
+        </select>
+    </td>
+</tr>
+<tr><td colspan=2>&nbsp;</td></tr>
+</table>
+<p>
+<input type="submit" value="Run report">
+</form>
+<P><hr>
+</BODY>
+</HTML>

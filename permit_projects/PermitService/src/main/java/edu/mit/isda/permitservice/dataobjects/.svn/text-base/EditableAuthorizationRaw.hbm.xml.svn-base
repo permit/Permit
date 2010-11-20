@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <!-- 
+    Created by the Middlegen Hibernate plugin 2.1
+
+    http://boss.bekk.no/boss/middlegen/
+    http://www.hibernate.org/
+-->
+  <class name="edu.mit.isda.permitservice.dataobjects.EditableAuthorizationRaw" table="auth_detail_for_proxy">
+    <composite-id class="edu.mit.isda.permitservice.dataobjects.AuthorizationPK" name="authorizationPK">
+      <key-property column="authorization_id" name="authorizationId"/>
+      <key-property column="function_id" name="functionId"/>
+      <key-property column="qualifier_id" name="qualifierId"/>
+    </composite-id>
+    <property column="is_active_now" name="isActiveNow" type="yes_no"/>
+    <property column="grant_authorization" name="grantAuthorization"/>
+    <property column="do_function" name="doFunction"/>
+    <property column="modified_by" name="modifiedBy"/>
+    <property column="modified_date" name="modifiedDate" type="date"/>
+    <property column="effective_date" name="effectiveDate" type="date"/>
+    <property column="expiration_date" name="expirationDate" type="date"/>
+    <property column="function_category" name="category"/>
+    <property column="function_name" name="function"/>
+    <property column="kerberos_name" name="person"/>
+    <property column="qualifier_name" name="qualifierName"/>
+    <property column="qualifier_code" name="qualifierCode"/>
+    <property column="qualifier_type" name="qualifierType"/>
+    <property column="first_name" name="firstName"/>
+    <property column="last_name" name="lastName"/>
+    <property column="function_description" name="functionDesc"/>
+    <property column="can_create" name="editable" type="yes_no"/>
+    <property column="PROXY_USER" name="requestingUser"/>
+  </class>
+  <sql-query name="AUTH_DETAIL_FOR_PROXY">	
+	<return alias="auth" class="edu.mit.isda.permitservice.dataobjects.EditableAuthorizationRaw">	
+	</return>		
+            select * from auth_detail_for_proxy
+            where authorization_id = ?
+            and proxy_user = ?
+</sql-query>
+</hibernate-mapping>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <!-- 
+    Created by the Middlegen Hibernate plugin 2.1
+
+    http://boss.bekk.no/boss/middlegen/
+    http://www.hibernate.org/
+-->
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.SelectionList">
+    <id column="sid" name="id">
+      <generator class="hilo"/>
+    </id>
+    <property column="sname" name="selectionName" not-null="true"/>
+    <property column="screenid" name="screenId"/>
+    <property column="screenname" name="screenName"/>
+    <property column="seq" name="sequence"/>
+    <property column="flag" name="flag"/>
+  </class>
+  <sql-query name="SELECTION_LIST">	
+            <return alias="selection_list" class="edu.mit.isda.permitservice.dataobjects.SelectionList"/>	
+            select distinct ss.selection_id sid, ss.selection_name sname, ss.screen_id screenid, 
+                sn.screen_name screenname, ss.sequence seq, IFNULL(uss.default_flag, 'N') flag
+            from  screen2 sn, selection_set2 ss left outer join  user_selection_set2 uss  on  (uss.selection_id = ss.selection_id and uss.apply_username = ?)
+            where sn.screen_id = ss.screen_id and ss.screen_id = '1'
+            and not exists (select u2.selection_id from user_selection_set2 u2
+            where u2.selection_id = ss.selection_id and u2.apply_username = ? and u2.hide_flag = 'Y')
+            order by ss.sequence, ss.selection_id
+        </sql-query>
+
+        <!--
+       
+
+           select distinct ss.selection_id sid, ss.selection_name sname, ss.screen_id screenid,
+                sn.screen_name screenname, ss.sequence seq, nvl(uss.default_flag, 'N') flag
+            from selection_set2 ss, screen2 sn, user_selection_set2 uss
+            where sn.screen_id = ss.screen_id and ss.screen_id = '1'
+                and uss.selection_id(+) = ss.selection_id and uss.apply_username(+) = ?
+                and not exists (select u2.selection_id from user_selection_set2 u2
+                    where u2.selection_id = ss.selection_id and u2.apply_username = ? and u2.hide_flag = 'Y')
+            order by ss.sequence, ss.selection_id -->
+</hibernate-mapping>

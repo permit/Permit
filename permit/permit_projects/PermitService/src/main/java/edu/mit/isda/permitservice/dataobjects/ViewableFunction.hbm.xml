@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.ViewableFunction" table="function">
+    <id column="FUNCTION_ID" length="6" name="id">
+      <generator class="hilo"/>
+    </id>
+    <property column="FUNCTION_NAME" length="30" name="name" unique="true"/>
+    <property column="FUNCTION_DESCRIPTION" length="50" name="description"/>
+    <property column="FUNCTION_CATEGORY" name="category"/>
+    <property column="QUALIFIER_TYPE" name="fqt"/>
+  </class>
+  <sql-query name="ALL_FUNCTIONS_FOR_CAT">	
+            <return alias="func" class="edu.mit.isda.permitservice.dataobjects.ViewableFunction"/>	
+            SELECT function_id, function_name, function_description, function_category, qualifier_type FROM function WHERE FUNCTION_CATEGORY=RPAD(?, 4, ' ') ORDER BY FUNCTION_NAME
+        </sql-query>
+</hibernate-mapping>

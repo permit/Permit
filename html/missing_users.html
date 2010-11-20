@@ -1,0 +1,47 @@
+<HTML>
+<HEAD>
+<TITLE>Missing Roles Usernames</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td>
+<H2>Find Missing Roles Usernames</H2>
+</td></tr>
+</table width=100%>
+<p>
+Find a list of missing Roles usernames, i.e., users who can create 
+authorizations, but do not have a perMIT system username/password. Choose a 
+sorting option, and click "Continue".
+<P>
+<HR>
+<FORM METHOD="GET" ACTION="/cgi-bin/rolexcep.cgi">
+<table>
+<tr>
+<td rowspan=2><b>Sort by:</b></td>
+<td><INPUT TYPE="radio" name="sort_option" value="1">Username</td>
+</tr>
+<tr><td><INPUT TYPE="radio" name="sort_option" value="2" checked>
+Date of authorization for granting</td>
+</tr>
+</table>
+<center>
+<INPUT TYPE="submit" value="Continue">
+</FORM>
+<HR>

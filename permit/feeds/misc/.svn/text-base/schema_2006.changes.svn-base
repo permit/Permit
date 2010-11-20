@@ -1,0 +1,41 @@
+In the fall of 2006, we will make changes to the schema of the Roles DB 
+to accommodate new features:
+  -- "sensitive" qualifier types (i.e., those whose qualifier_names can
+     only be viewed by specially-authorized users)
+  -- external authorizations (i.e., those implied by external sources of
+     data)
+  -- a status field in the qualifier table, set to 'I' if the qualifier
+     is due to be deleted but cannot be deleted because it has 
+     child qualifiers or authorizations
+
+To install the changes, do the following:
+
+x 1. Alter the qualifier_type table
+   
+   alter_qualtype.sql
+
+x 2. Create tables external_auth and external_function;
+   also create authorization2 view.  
+
+   new_schema29.sql.
+
+x 3. Create the table suppressed_qualifier
+
+   new_schema30.sql
+
+x 4. Alter the qualifier table
+
+   alter_qualifier.sql
+
+x 5. Add an index to the authorization table(?)
+   Not needed on production machine. (add_index5.sql)
+
+x 6. Install new roles_qual.pm
+
+x 7. Install roles_rset.pm
+
+x 8. Install roles_extauth.pm
+
+x 9. Add functions and authorizations related to RSET qualifier type
+
+10. New version of qualauth.pl

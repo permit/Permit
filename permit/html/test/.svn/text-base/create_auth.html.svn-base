@@ -1,0 +1,61 @@
+<html>
+<head>
+  <title>Test: Create Authorization Form</title> </head>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+  <!--
+  	This form is for testing only. It is not intended to be deployed in a production environment. 
+  	It is expected that production environments would use the perMIT / Roles web UI via the web service,
+  	not a CGI program to populate and maintain ASPECs. 
+  	However, when first boot-strapping perMIT, the simple forms entry may be useful to some developers or system
+  	administrators.  
+  -->	
+<body>
+
+<form method="get" action="https://auth-dev-permit1.mit.edu/cgi-bin/create_auth.
+cgi">
+  <table cellpadding=4>
+    <tr>
+      <td>Kerberos Name:</td><td><input type="text" name="kerbname"></td>
+      <td><small>Required</small></td>
+    </tr>
+    <tr>
+      <td>Function Name:</td><td><input type="text" name="funcname"></td>
+      <td><small>Required</small></td>
+    </tr>
+    <tr>
+      <td>Qualifier Code:</td><td><input type="text" name="qualcode"></td>
+      <td><small>Required</small></td>
+    </tr>
+    <tr>
+      <td>Effective Date (mm/dd/yyyy):</td>
+      <td><input type="text" name="effdate"></td>
+      <td><small>Required (Enter today's date)</small></td>
+    </tr>
+    <tr>
+      <td>Expiration Date (mm/dd/yyyy):</td>
+      <td><input type="text" name="expdate"></td>
+      <td><small>Not required</small></td>
+    </tr>
+    <tr>
+      <td cellspan=2 align=center><input type=submit value="Add"></td>
+    </tr>
+  </table>
+</form>
+
+</body>
+</html>
+

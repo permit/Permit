@@ -1,0 +1,88 @@
+
+I'd like to ask about SAP-upgrade-related testing of EHS-related data in the
+Warehouse as part of the overall plan for testing the Roles DB to SAP 
+interfaces related to EHS.  There are specific tables from the Warehouse
+that are the source of EHS-related data in the Roles DB:
+     wareuser.whehsta_pi_work_area
+     wareuser.whehsta_reconciler_detail
+     wareuser.whehss_work_area
+     wareuser.whehss_function_detail
+     wareuser.whehss_function
+     (wareuser.krb_person - used by this process, but unrelated to EHS on SAP)
+Is it the case that there has been a test, or will be a test, to verify
+that the Warehouse programs will still be able to extract these tables from
+SAP following the upgrade?
+
+Background:
+
+I recently spoke to Rob Damian about doing SAP-upgrade related testing for
+the procedures that send EHS-related data from the Roles DB to SAP. The 
+Roles DB sends to SAP (a) profiles and authorizations, as part of the
+process that also sends HR and Financial profiles and authorizations to
+SAP and (b) a special file containing DLC-level EHS relationship data 
+derived from category-EHS authorizations in the Roles DB.
+
+To test the processes, Rob and I agreed that
+  (i) The profiles and authorizations being sent are a subset of the
+      financial/HR/EHS data sent in a single process each morning.  This
+      process is being tested by George Petrowsky and others 
+      as part of HR/financial authorizations testing, and does not need 
+      to be tested separately for EHS.
+  (ii) The special file of DLC-level relationships invokes an EHS-specific 
+       program on SAP and this must be tested separately.  I will work with 
+       Rob to produce appropriate data for testing the program on SAP.
+  (iii) The Roles DB -> EHS processes depend on getting data about 
+        PIs, work areas, relationships, etc. from Warehouse tables 
+        that contain the data.  If there has been a test to confirm that
+        the Warehouse programs that load the applicable tables in the 
+        Warehouse will continue to work after the upgrade, then that 
+        testing should be sufficient to ascertain that the Roles DB 
+        tables of EHS-related data will continue to function after the
+        SAP upgrade.
+        
+More details about the Roles DB -> EHS (SAP) processes:
+
+There are three programs within the Roles DB that are involved in reading
+or sending out EHS-related data from/to SAP.
+
+1. Roles DB perl module name: roles_rset.pm
+
+   Purpose: Update Roles DB "qualifier" hierarchy of DLCs, PIs, Room Sets and
+            Rooms.
+
+   Tables from the Warehouse:
+     wareuser.whehsta_pi_work_area wa
+     wareuser.whehss_work_area
+     (wareuser.krb_person - used by this process, but unrelated to EHS on SAP)
+
+
+2. Roles DB perl module name: roles_extauth.pm
+
+   Purpose: Update "external" authorizations derived from SAP-defined EHS
+            relationships.  Authorizations are implied for PIs, and people
+            with relationships to Room Sets and Rooms.
+
+   Tables from the Warehouse:
+     wareuser.whehss_work_area
+     wareuser.whehss_function_detail
+     wareuser.whehss_function
+     wareuser.whehsta_pi_work_area
+     wareuser.whehsta_reconciler_detail
+     (wareuser.krb_person - used by this process, but unrelated to EHS on SAP)
+
+
+3. Roles DB perl module name: proc_ehs_role2.pl
+
+   Purpose: Part of a set of perl scripts to compare DLC-level relationship
+            data with Roles DB EHS authorizations (at DLC-level) and send 
+            a file of differences to the SAP dropbox, where an SAP program
+            applies the differences in SAP.
+
+   Tables from the Warehouse:
+     wareuser.whehss_work_area
+     wareuser.whehss_function_detail
+     wareuser.whehss_function
+
+- - - 
+
+Jim

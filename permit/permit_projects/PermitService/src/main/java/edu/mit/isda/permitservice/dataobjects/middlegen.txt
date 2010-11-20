@@ -1,0 +1,67 @@
+ If you already have a database, you can use Middlegen to generate Hibernate config files:
+1. get middlegen http://sourceforge.net/projects/middlegen
+2. get velocity (http://jakarta.apache.org/velocity/) and log4j (http://logging.apache.org/log4j/docs/index.html)
+and common collections (http://jakarta.apache.org/commons/collections/) put the jar files in the same directory 
+as the middlegen jar file
+3. get ant
+4. set ant home (set ANT_HOME=c:\ant\apache-ant-1.6.5)
+5. set path (set path=%path%;%ANT_HOME\bin%)
+6. set classpath to jdbc oracle
+7. create the build.xml file:
+<?xml version="1.0"?>
+<project name="build.xml" default="middlegen">
+
+<path id="middlegen.classpath">
+    <fileset dir="C:\middlegen\middlegen-2.1\">
+<include name="*.jar" />
+				
+    </fileset>
+
+   
+</path>
+
+<target
+   name="middlegen"
+   description="Run Middlegen"
+>
+
+  <taskdef
+    name="middlegen"
+    classname="middlegen.MiddlegenTask"
+    classpathref="middlegen.classpath"
+  />
+
+  <middlegen
+    appname="roles"
+    prefsdir="${base.dir}"
+    gui="true"
+    databaseurl="jdbc:oracle:thin:@roles.mit.edu:1521:ROLES"
+    driver="oracle.jdbc.driver.OracleDriver"
+    username="dongq"
+    password="testroles"
+    schema="ROLESBB"
+  >
+
+     <!-- Hibernate Plugin -->
+     <hibernate
+        destination="gen\src"
+        package="edu.mit.isda.permitservice.dataobjects"
+        javaTypeMapper="middlegen.plugins.hibernate.HibernateJavaTypeMapper">
+         
+     </hibernate>
+<table name="RDB_T_PERSON"/>
+<table name="RDB_T_PERSON_TYPE"/>
+<table name="RDB_T_AUTHORIZATION"/>
+<table name="RDB_T_FUNCTION"/>
+<table name="RDB_T_FUNCTION_CHILD"/>
+<table name="RDB_T_CATEGORY"/>
+<table name="RDB_T_QUALIFIER"/>
+<table name="RDB_T_QUALIFIER_CHILD"/>
+<table name="RDB_T_QUALIFIER_DESCENDENT"/>
+<table name="RDB_T_QUALIFIER_TYPE"/>
+   </middlegen>
+   </target>
+   </project>
+
+8. run ant
+9. press generate and look for the xml files in the directory

@@ -1,0 +1,182 @@
+<HTML>
+<HEAD>
+<TITLE>Show history of changes to Authorizations</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H3>Show the history of changes to Authorizations</H3></td>
+<td align=right valign=top>
+<A HREF="/authaudit_help.html"><h1><i>?</i></h1></A>
+</td>
+</tr></table><BR>
+<P>
+This web page allows you to display a record of inserts, updates, and 
+deletes to Authorizations in the perMIT system if you have the appropriate
+<a href="/metaauth_help.html#viewing+authorizations">
+viewing authorization</a> for authorizations in the desired category (or 
+in all categories, if you are appropriately authorized).
+You can choose from any of the 4 reports below.
+The audit record goes back to April, 1998.
+<p>
+Most of the time, you will want to leave "Show server user" box unchecked.  
+Check the box if you'd like to add a column to the report, useful to determine
+whether the Authorization change was made via the old PowerBuilder application
+(server_user = 'n/a') or the new web-based application 
+(server_user = 'rolewww9').
+<P>
+<HR>
+<strong>Report 1: Show changes to authorizations for a person
+</strong>
+<FORM METHOD="GET" ACTION="/cgi-bin/audit_trail_new.pl">
+Enter the Kerberos username to whom the authorizations apply (not the person
+who made the changes).  Then
+pick a category, and click the "Run Report 1" button.
+<P>
+<strong>Username:</strong> <INPUT TYPE=TEXT NAME=kerbname>&nbsp;&nbsp;
+<strong>Category:</strong> <SELECT NAME="category">
+<OPTION> ADMN  Admin (misc)
+<OPTION> EHS   Env Hlth Safety
+<OPTION> GAID  Graduate Aid
+<OPTION> GRAD  GRAD ADMISSIONS
+<OPTION> HELP  Help Desk
+<OPTION> HR    New HR System
+<OPTION> HR_C  Central HR functions
+<OPTION> IDDB  MIT ID Database
+<OPTION> LABD  LABOR DIST
+<OPTION> META  Roles META-auth
+<OPTION> NIMB  NIMBUS (Budget)
+<OPTION> PAYR  Payroll system
+<OPTION SELECTED> SAP   SAP
+<OPTION> TEST  Test perMIT system
+<OPTION> TNET  Telephone/network data access
+<OPTION> WRHS  Data Warehouse
+<OPTION> XSIS  Student info
+<OPTION> ALL   All Categories
+</SELECT>
+ &nbsp;&nbsp;
+ <strong>Show server user:</strong> 
+ <input type="checkbox" name=show_server_user value="Y">
+<br><INPUT TYPE="SUBMIT" VALUE="Run Report 1">
+</FORM>
+<hr>
+<strong>Report 2: Show recent changes
+</strong>
+<FORM METHOD="GET" ACTION="/cgi-bin/audit_trail_new.pl">
+Pick a time period, pick a category, and click the "Run Report 2" button.
+<P><strong>Time period:</strong> <SELECT NAME="time_period">
+<OPTION SELECTED> Since yesterday
+<OPTION> Last 3 days
+<OPTION> Last 7 days
+<OPTION> Last 30 days
+<OPTION> All
+</SELECT>
+<strong>Category:</strong> <SELECT NAME="category">
+<OPTION> ADMN  Admin (misc)
+<OPTION> EHS   Env Hlth Safety
+<OPTION> GAID  Graduate Aid
+<OPTION> GRAD  GRAD ADMISSIONS
+<OPTION> HELP  Help Desk
+<OPTION> HR    New HR System
+<OPTION> HR_C  Central HR functions
+<OPTION> IDDB  MIT ID Database
+<OPTION> LABD  LABOR DIST
+<OPTION> META  Roles META-auth
+<OPTION> NIMB  NIMBUS (Budget)
+<OPTION> PAYR  Payroll system
+<OPTION SELECTED> SAP   SAP
+<OPTION> TEST  Test perMIT system
+<OPTION> TNET  Telephone/network data access
+<OPTION> WRHS  Data Warehouse
+<OPTION> XSIS  Student info
+<OPTION> ALL   All Categories
+</SELECT>
+ &nbsp;&nbsp;
+ <strong>Show server user:</strong> 
+ <input type="checkbox" name=show_server_user value="Y">
+<br><INPUT TYPE="SUBMIT" VALUE="Run Report 2">
+</FORM>
+<hr>
+<strong>Report 3: Show changes made by a person
+</strong>
+<FORM METHOD="GET" ACTION="/cgi-bin/audit_trail_new.pl">
+Enter the person who modified the authorizations.  Choose
+a category, and optionally, pick a time period.
+Then, click the "Run Report 3" button.
+<P>
+<table>
+<tr><td>
+<strong>Modifier username:</strong></td><td><INPUT TYPE=TEXT NAME=modname>
+</td><td>
+<strong>Category:</strong> <SELECT NAME="category">
+<OPTION> ADMN  Admin (misc)
+<OPTION> EHS   Env Hlth Safety
+<OPTION> GAID  Graduate Aid
+<OPTION> GRAD  GRAD ADMISSIONS
+<OPTION> HELP  Help Desk
+<OPTION> HR    New HR System
+<OPTION> HR_C  Central HR functions
+<OPTION> IDDB  MIT ID Database
+<OPTION> LABD  LABOR DIST
+<OPTION> META  Roles META-auth
+<OPTION> NIMB  NIMBUS (Budget)
+<OPTION> PAYR  Payroll system
+<OPTION SELECTED> SAP   SAP
+<OPTION> TEST  Test perMIT system
+<OPTION> TNET  Telephone/network data access
+<OPTION> WRHS  Data Warehouse
+<OPTION> XSIS  Student info
+<OPTION> ALL   All Categories
+</SELECT>
+</td></tr>
+<tr><td>
+<strong>Time period:</strong></td>
+<td><SELECT NAME="time_period">
+<OPTION> Since yesterday
+<OPTION> Last 3 days
+<OPTION> Last 7 days
+<OPTION> Last 30 days
+<OPTION SELECTED> All
+</SELECT>
+</td><td>&nbsp;</td></tr></table>
+ <strong>Show server user:</strong> 
+ <input type="checkbox" name=show_server_user value="Y">
+<br><INPUT TYPE="SUBMIT" VALUE="Run Report 3">
+</FORM>
+<hr>
+<strong>Report 4: Show Authorization changes related to a cost collector
+</strong>
+<FORM METHOD="GET" ACTION="/cgi-bin/audit_trail_new.pl">
+Enter a 7-digit cost collector ID and click 
+the "Run&nbsp;Report&nbsp;4" button.
+<P>
+<strong>Cost Collector ID:</strong> <INPUT TYPE=TEXT NAME="cost_collector">
+<INPUT TYPE=HIDDEN NAME="category" VALUE="SAP   SAP">
+ &nbsp;&nbsp;
+ <strong>Show server user:</strong> 
+ <input type="checkbox" name=show_server_user value="Y">
+<br>
+<INPUT TYPE="SUBMIT" VALUE="Run Report 4">
+</FORM>
+<HR>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>
+
+
+
+

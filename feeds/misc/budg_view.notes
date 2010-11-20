@@ -1,0 +1,243 @@
+Comparison of some different approaches when populating a qualifier hierarchy.
+
+I've come up with a couple of options for SELECT statements you can use to
+extract expanded authorization information for the function "TRAVEL DOCUMENTS
+APPROVAL".  Option 2 is probably a slightly better better long-term option,
+though it is more complicated.
+
+1. Option 1.
+
+   In this option, you use a single SELECT statement to extract 
+   records in the format
+     (Kerberos_name, Function_name, Qualifier_code)
+   Each record represents a person, a function (in this case, "TRAVEL
+   DOCUMENTS APPROVAL") and a Fund or Funds Center for which the person
+   has the authorization.  
+
+   This option will give you the data you want in one step.  It will return
+   about 700,000 rows, and in my test it took about 4 minutes.  The 
+   disadvantage is this: If you add another Function at a later date, 
+   then the time and space for the extract will increase significantly.
+
+   If you build your own table ROLES_EXTRACT_AUTH with these columns
+      KERBEROS_NAME  VARCHAR2(8) NOT NULL,
+      FUNCTION_NAME  VARCHAR2(30) NOT NULL,
+      QUALIFIER_CODE VARCHAR2(15) NOT NULL
+   
+   and if you have a database link "roles" to the Roles Database,
+
+   then you can run this extract statement
+
+   insert into ROLES_EXTRACT_AUTH
+   select Kerberos_name, function_name, qualifier_code
+    from expanded_auth_func_qual@roles
+    where function_category = 'SAP'
+    and function_name = 'TRAVEL DOCUMENTS APPROVAL'
+    and do_function = 'Y'
+    and sysdate between effective_date and nvl(expiration_date, sysdate)
+    order by 1, 2, 3;
+
+   Using your table ROLES_EXTRACT_AUTH, you can easily find out
+   (a) the funds (or funds centers) for which any given user has 
+       TRAVEL DOCUMENTS APPROVAL access
+   (b) which users have TRAVEL DOCUMENTS APPROVAL access for any given
+       fund 
+
+2. Option 2
+
+   In this option, you use two different SELECT statement to extract 
+   records in the format.  You would store the results in two 
+   tables
+
+   - This table will contain the simple authorizations for people
+     for the function TRAVEL DOCUMENTS APPROVAL, without expanding out
+     Funds Centers.
+
+    ROLES_EXTRACT_AUTH
+      KERBEROS_NAME  VARCHAR2(8) NOT NULL,
+      FUNCTION_NAME  VARCHAR2(30) NOT NULL,
+      QUALIFIER_TYPE VARCHAR2(4) NOT NULL,
+      QUALIFIER_CODE VARCHAR2(15) NOT NULL
+
+   - This table will contain the parent/child relations for relevant 
+     Funds Centers and Funds, needed to expand out the authorizations
+     for people at a Funds Center level.
+
+    ROLES_EXTRACT_QUAL_DESC
+      QUALIFIER_TYPE VARCHAR2(4) NOT NULL,
+      PARENT_QUAL_CODE VARCHAR2(15) NOT NULL,
+      CHILD_QUAL_CODE VARCHAR2(15) NOT NULL
+
+   With this option, you will save a little time and a little space
+   initially.  If you add more Functions later, you will save a LOT of 
+   time and space.
+
+   insert into ROLES_EXTRACT_AUTH
+   select kerberos_name, function_name, 'FUND' qualifier_type, qualifier_code
+    from authorization@roles
+   where function_category = 'SAP'
+   and function_name = 'TRAVEL DOCUMENTS APPROVAL'
+   and do_function = 'Y'
+   and sysdate between effective_date and nvl(expiration_date, sysdate)
+   order by 1;
+
+      Returns about 6000 rows, runs about 2 seconds 
+
+
+   insert into ROLES_EXTRACT_QUAL_DESC
+   select distinct qualifier_type, parent_qual_code, qualifier_code
+    from expanded_auth_func_qual@roles
+   where function_category = 'SAP'
+   and function_name = 'TRAVEL DOCUMENTS APPROVAL'
+   and do_function = 'Y'
+   and sysdate between effective_date and nvl(expiration_date, sysdate)
+   order by 1;
+
+     Returns about 210,000 rows, runs about 2 minutes
+
+   To find the Funds that a person has TRAVEL DOCUMENTS ACCESS to, do
+      select a.qualifier_code
+        from roles_extract_auth a
+        where a.kerberos_name = ?
+        and a.function_name = 'TRAVEL DOCUMENTS APPROVAL'
+        and a.qualifier_code between 'F0000000' and 'F9999999'
+      union
+      select distinct qd.child_qual_code
+        from roles_extract_auth a, roles_extract_qual_desc qd
+        where a.function_name = 'TRAVEL DOCUMENTS APPROVAL'
+        and a.kerberos_name = ?
+        and qd.qualifier_type = a.qualifier_type
+        and qd.parent_qual_code = a.qualifier_code
+        and qd.child_qual_code between 'F0000000' and 'F9999999'
+      order by 1;
+
+   To find people who have TRAVEL DOCUMENTS ACCESS for a particular Fund, do
+      select a.kerberos_name
+        from roles_extract_auth a
+        where a.qualifier_code = ?  -- format 'Fnnnnnnn'
+        and a.function_name = 'TRAVEL DOCUMENTS APPROVAL'
+      union
+      select a.kerberos_name
+        from roles_extract_auth a, roles_extract_qual_desc qd
+        where a.function_name = 'TRAVEL DOCUMENTS APPROVAL'
+        and qd.child_qual_code = ?
+        and qd.qualifier_type = a.qualifier_type
+        and qd.parent_qual_code = a.qualifier_code
+      order by 1;
+
+    Jim
+
+
+- - - - - - - - - - 
+
+select Kerberos_name, function_name, qualifier_code
+  from expanded_auth_func_qual
+  where function_category = 'SAP'
+  and function_name = 'TRAVEL DOCUMENTS APPROVAL'
+  and do_function = 'Y'
+  and sysdate between effective_date and nvl(expiration_date, sysdate)
+  order by 1;
+700,000 rows,  4 minutes
+
+select kerberos_name, function_name, 'FUND' qualifier_type, qualifier_code
+ from authorization
+  where function_category = 'SAP'
+  and function_name = 'TRAVEL DOCUMENTS APPROVAL'
+  and do_function = 'Y'
+  and sysdate between effective_date and nvl(expiration_date, sysdate)
+  order by 1;
+6000 rows, 2 seconds 
+
+select distinct qualifier_type, parent_qual_code, qualifier_code
+  from expanded_auth_func_qual
+  where function_category = 'SAP'
+  and function_name = 'TRAVEL DOCUMENTS APPROVAL'
+  and do_function = 'Y'
+  and sysdate between effective_date and nvl(expiration_date, sysdate)
+  --and kerberos_name like 'A%'
+  order by 1;
+207652 rows, 2 minutes
+
+
+SELECT P.QUALIFIER_CODE AS PARENT_CODE, 
+            C.QUALIFIER_CODE AS CHILD_CODE
+            FROM QUALIFIER P, QUALIFIER_DESCENDENT D, QUALIFIER C
+            where P.QUALIFIER_ID = D.PARENT_ID and
+            C.QUALIFIER_ID = D.CHILD_ID
+            and D.PARENT_ID IN (SELECT DISTINCT QUALIFIER_ID 
+            FROM AUTHORIZATION WHERE FUNCTION_CATEGORY 
+            IN (SELECT function_category from rdb_t_extract_category 
+            where user = username));
+
+SELECT F.FUNCTION_CATEGORY, F.FUNCTION_NAME, 
+            P.QUALIFIER_CODE AS PARENT_CODE, 
+            C.QUALIFIER_CODE AS CHILD_CODE
+            FROM FUNCTION F, QUALIFIER P, QUALIFIER_DESCENDENT D, QUALIFIER C
+            where P.QUALIFIER_TYPE = F.QUALIFIER_TYPE
+            and F.function_name = 'TRAVEL DOCUMENTS APPROVAL'
+            and P.QUALIFIER_ID = D.PARENT_ID
+            and C.QUALIFIER_ID = D.CHILD_ID
+            and D.PARENT_ID IN 
+            (SELECT DISTINCT QUALIFIER_ID 
+              FROM AUTHORIZATION A
+              WHERE FUNCTION_CATEGORY IN
+              (SELECT function_category from extract_category 
+                where user = username)
+              AND A.FUNCTION_CATEGORY = F.FUNCTION_CATEGORY
+              AND A.FUNCTION_NAME = F.FUNCTION_NAME
+            );
+
+SELECT distinct F.FUNCTION_CATEGORY, F.FUNCTION_NAME, 
+            P.QUALIFIER_CODE AS PARENT_CODE, 
+            C.QUALIFIER_CODE AS CHILD_CODE
+            FROM FUNCTION F, QUALIFIER P, QUALIFIER_DESCENDENT D, QUALIFIER C,
+             AUTHORIZATION A
+            where P.QUALIFIER_TYPE = F.QUALIFIER_TYPE
+            and F.function_name = 'TRAVEL DOCUMENTS APPROVAL'
+            and P.QUALIFIER_ID = D.PARENT_ID
+            and C.QUALIFIER_ID = D.CHILD_ID
+            and D.PARENT_ID = A.QUALIFIER_ID
+            and A.FUNCTION_CATEGORY IN
+              (SELECT function_category from extract_category 
+                where user = username)
+            and A.FUNCTION_CATEGORY = F.FUNCTION_CATEGORY
+            and A.FUNCTION_NAME = F.FUNCTION_NAME;
+
+select P.QUALIFIER_TYPE, P.QUALIFIER_CODE AS PARENT_CODE, 
+       C.QUALIFIER_CODE AS CHILD_CODE
+       FROM QUALIFIER P, QUALIFIER_DESCENDENT D, QUALIFIER C
+       where D.PARENT_ID in (
+        select distinct qualifier_id from authorization 
+        where function_name = 'TRAVEL DOCUMENTS APPROVAL'
+       )
+       and P.QUALIFIER_ID = D.PARENT_ID
+       and C.QUALIFIER_ID = D.CHILD_ID;
+
+
+- - - - -
+
+select function_category
+             from category 
+             where ROLESAPI_IS_USER_AUTHORIZED('REPA',
+                   'CREATE IMPLIED AUTH RULES','CAT' 
+                   || rtrim(function_category,' ')) = 'Y';
+
+select substr(a.qualifier_code, 4) from authorization a
+  where kerberos_name = 'REPA'
+  and function_name = 'CREATE IMPLIED AUTH RULES'
+  and a.do_function = 'Y'
+  and sysdate between a.effective_date and nvl(a.expiration_date, sysdate)
+union select substr(q.qualifier_code, 4)
+  from authorization a, qualifier_descendent qd, qualifier q
+  where a.kerberos_name = 'REPA'
+  and a.function_name = 'CREATE IMPLIED AUTH RULES'
+  and a.do_function = 'Y'
+  and sysdate between a.effective_date and nvl(a.expiration_date, sysdate)
+  and a.descend = 'Y'
+  and qd.parent_id = a.qualifier_id
+  and q.qualifier_id = qd.child_id
+order by 1;
+
+  
+
+

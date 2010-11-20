@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <!-- 
+    Created by the Middlegen Hibernate plugin 2.1
+
+    http://boss.bekk.no/boss/middlegen/
+    http://www.hibernate.org/
+-->
+  <class name="edu.mit.isda.permitservice.dataobjects.AuthorizationExt" table="authorization">
+    <composite-id class="edu.mit.isda.permitservice.dataobjects.AuthorizationPK" name="authorizationPK">
+      <key-property column="authorization_id" name="authorizationId"/>
+      <key-property column="function_id" name="functionId"/>
+      <key-property column="qualifier_id" name="qualifierId"/>
+    </composite-id>
+    <property column="is_active_now" name="isActiveNow" type="yes_no"/>
+    <property column="grant_authorization" name="grantAuthorization"/>
+    <property column="do_function" name="doFunction"/>
+    <property column="modified_by" name="modifiedBy"/>
+    <property column="modified_date" name="modifiedDate" type="date"/>
+    <property column="effective_date" name="effectiveDate" type="date"/>
+    <property column="expiration_date" name="expirationDate" type="date"/>
+    <property column="function_category" name="category"/>
+    <property column="function_name" name="function"/>
+    <property column="kerberos_name" name="person"/>
+    <property column="qualifier_name" name="qualifierName"/>
+    <property column="qualifier_code" name="qualifierCode"/>
+    <property column="qualifier_type" name="qualifierType"/>
+    <property column="base_qualifier_code" name="baseQualifierCode"/>
+    <property column="real_or_implied" name="realOrImp"/>
+  </class>
+  <sql-query callable="true" name="LISTAUTHBYPERSON_EXT">	
+	<return alias="auth" class="edu.mit.isda.permitservice.dataobjects.AuthorizationExt">	
+	</return>		
+        { ? = call rolessrv.get_auth_person_curs_extend1(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) } 
+</sql-query>
+</hibernate-mapping>

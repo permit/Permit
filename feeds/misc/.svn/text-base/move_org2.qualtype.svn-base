@@ -1,0 +1,129 @@
+Fixing one problem that can occur in nightly Roles DB data feeds  
+(where we run out of qualifier_id's for a qualifier_type and get a
+unique constraint rdb_pk_q_qualifier_id error).
+-------------------------------------------------------------------------
+
+The description below applies to getting an error for a cost object, and 
+the fix involved moving qualifier_id numbers for ORG2-type qualifiers.
+However, the technique would apply generically to similar errors for
+other qualifier types.
+
+In the nightly feed program for Profit Centers and Cost Objects, we got
+the following error message:
+ insert into qualifier (QUALIFIER_ID, QUALIFIER_CODE, QUALIFIER_NAME, 
+ QUALIFIER_TYPE, CUSTOM_HIERARCHY, HAS_CHILD, QUALIFIER_LEVEL) 
+ values('520000','I4537317','Please Install A Fire Extinguisher', 'COST',
+ 'N','N','8')
+ ERROR at line 1:
+ ORA-00001: unique constraint (ROLESBB.RDB_PK_Q_QUALIFIER_ID) violated
+
+This meant that the feed program was trying to insert a record into the 
+RDB_T_QUALIFIER table (synonym QUALIFIER) with qualifier_id = 520000, but
+a qualifier already existed in the table with qualifier_id = 520000.
+
+Why would the feed program have this error?  
+
+The answer has to do with the way that the qualifier table is organized.
+Each qualifier type has a range of qualifier_id numbers to use.  This 
+has usually worked fine, because qualifiers of a given type do not change 
+very often, and never need more than 100,000 or so numbers in a range. 
+However, qualifiers of type COST and FUND are numerous, and keep growing.
+If the next sequential qualifier_id number for a given qualifier_type bumps
+up into the lowest qualifier_id number of the next type, then we get this
+error message.
+
+You can see the various qualifier types and ranges of numbers in use by
+entering the SELECT statement
+  select qualifier_type, min(qualifier_id), max(qualifier_id)
+  from qualifier
+  group by qualifier_type
+  order by min(qualifier_id);
+
+QUALIFIER
+TYPE     min(qualifier_id)  max(qualifier_id)
+-------  -----------------  -----------------
+NULL                 0                 0
+CATE            100001            100024
+QTYP            120000            120018
+SPGP            150000            153582
+ORGU            200001            200640
+LORG            220000            221816
+PBUD            260000            261371
+AORG            300000            300111
+IAPS            350000            350040
+COST            400001            519826
+ORG2            520000            520834
+PRIN            580000            580324
+PROF            600001            600960
+DEPT            650000            651888
+FUND            700000            764462
+BUDG            800000            800043
+BAGS            810000            810357
+EHSG            820000            820018
+SISO            850000            850251
+
+From the data above, we see that 
+the range of QUALIFIER_IDs available for qualifiers of type COST was limited 
+to 400001 - 519999.  It cannot go above 519999 because there is a type-ORG2
+qualifier with qualifier_id 520000.  We've run out of numbers for 
+the COST qualifiers.  
+We need to move the qualifiers of the type getting in the way of 
+the COST qualifiers, i.e., qualifiers of type ORG2 (currently 520000, 521000) 
+to make more room for COST qualifiers.
+We'll move them to the range starting at 870000.
+
+Here is what we will do to fix the problem:
+ 0. Print a copy of ORG2 authorizations and save for later verification.
+    (Get this from Rolesweb.)
+ 1. Add two temporary qualifier types to the qualifier_type table.
+      insert into qualifier_type values ('TST1', 'Temp qualtype 1');
+      insert into qualifier_type values ('TST2', 'Temp qualtype 2');
+ 2. Clone the ORG2 qualifiers.
+      insert into qualifier
+        (QUALIFIER_ID, qualifier_code, qualifier_name, qualifier_type, 
+         HAS_CHILD, QUALIFIER_LEVEL, CUSTOM_HIERARCHY)
+        select QUALIFIER_ID+350000, qualifier_code, qualifier_name, 'TST1',
+               has_child, qualifier_level, custom_hierarchy
+        from qualifier where qualifier_type = 'ORG2';
+ 3. Clone the ORG2-related records in qualifier_child and qualifier_descendent
+      insert into qualifier_child
+        (parent_id, child_id)
+        select PARENT_ID+350000, CHILD_ID+350000
+        from qualifier_child where parent_id between 520000 and 521000;
+      insert into qualifier_descendent
+        (parent_id, child_id)
+        select PARENT_ID+350000, CHILD_ID+350000
+        from qualifier_descendent where parent_id between 520000 and 521000;
+ 4. Clone the ORG2-related records in primary_auth_descendent
+      insert into primary_auth_descendent
+       (parent_id, child_id, is_dlc)
+       select parent_id, child_id+350000, is_dlc
+       from primary_auth_descendent
+       where child_id between 520000 and 521000;
+ 5. There is no need to move DEPT links for ORG2-related objects, since 
+    they are "cloned" qualifier records anyway.  Nothing to do here.
+ 6. Move qualifier_id's in AUTHORIZATIONs
+      update authorization set qualifier_id = qualifier_id+350000
+         where qualifier_id between 520000 and 521000;
+ 7. Flip qualifier types for old and new ORG2 records
+      update qualifier set qualifier_type = 'TST2'
+             where qualifier_type = 'ORG2';
+      update qualifier set qualifier_type = 'ORG2'
+             where qualifier_type = 'TST1';
+ 8. Check on web and in Roles application to make sure that people still 
+    have the same authorizations in ORG2 hierarchy
+ 9. delete old records from primary_auth_descendent
+      delete from primary_auth_descendent
+       where child_id between 520000 and 521000;
+ 10. delete old records from qualifier_child and qualifier_descendent
+      delete from qualifier_child
+       where child_id between 520000 and 521000;
+      delete from qualifier_descendent
+       where child_id between 520000 and 521000;
+ 11. delete old records from qualifier
+      delete from qualifier
+       where qualifier_id between 520000 and 521000;
+ 12. delete test qualifier types from qualifier_type
+      delete from qualifier_type where qualifier_type in ('TST1', 'TST2');
+
+

@@ -1,0 +1,74 @@
+Hi John,
+
+I don't know specifically which, if any, Roles DB functions are used for
+the Housing Billing application. The Student Information Systems people 
+have usually been self-reliant about setting up their own Functions and
+Authorizations in the Roles Database.
+
+I've listed Roles DB functions below that have been created or modified
+since the beginning of 2005 in the categories GAID (Graduate Aid), 
+GRAD (Graduate Admissions), and XSIS (Student Systems).  I also included 
+two functions in the category UADM (Undergrad Admissions) that were created
+in 2004.
+
+The functions SFS_HFS_MANAGER (Housing Manager) and 
+SFS_VIEW_ONLY (View only for SISTIM users) in the category 
+GRAD might apply to the application you are examining.
+The functions in category XSIS were set up by Huey Chan of the Warehouse
+team, and as far as she knows, they are only being used for the Warehouse.
+
+                                      Jim
+
+
+FUNCTION_NAME
+------------------------------
+FUNCTION_DESCRIPTION                               CAT CREATOR  MODIFIED
+-------------------------------------------------- ---- -------- ---------
+WGA PRIMARY DEPARTMENT
+Primary Department from Grad Aid perspective       GAID REPA     05-JAN-05
+
+SFS_ACCOUNT_COUNSELOR 
+Account Counselor for Student Fin Services         GRAD RAISA    06-JAN-05
+
+SFS_FRONT_DESK_REP
+Front desk rep for Student Fin Services            GRAD RAISA    06-JAN-05
+
+SFS_SUPERVISOR
+Student Financial Services supervisor function     GRAD RAISA    06-JAN-05
+
+SFS_VIEW_ONLY
+View only for SISTIM users                         GRAD MARIAF   06-JAN-05
+
+WGA_GSO_APPROVAL
+GSO Approval for stipend and salary > 15%          GAID SESKIN   10-MAR-05
+
+WGA_INSERT_UPDATE
+Enter, Update, or View GAID Appointment            GAID SESKIN   10-MAR-05
+
+WGA_MULTIPLE_ROLE 
+Joint Prog admins can enter awards in >1 dept.     GAID MARIAF   10-MAR-05
+
+WGA_VIEW
+View Appointment Only                              GAID SESKIN   10-MAR-05
+
+SFS_HFS_MANAGER
+Housing Manager                                    GRAD RAISA    06-APR-05
+
+STUDENT_BIO_VIEW
+View student biographic data                       XSIS HSCHAN   30-AUG-05
+
+STUDENT_PICTURE_VIEW
+View Student's MIT Card Picture                    XSIS HSCHAN   02-SEP-05
+
+GRAD_ADMIT_ENTER_FUNDING_SOURC 
+Enter the offer or known source of funding for app GRAD NWRIGHT  08-FEB-06
+
+GRAD_ADMIT_IMPERSONATE 
+Impersonate another use for testing in the web     GRAD NWRIGHT  08-FEB-06
+
+
+ADM_PORTAL_BASIC
+Display and edit prospect data                     UADM EDMUND   17-JUN-04
+
+ADM_PORTAL_RECRUIT
+Full portal reporting                              UADM EDMUND   17-JUN-04

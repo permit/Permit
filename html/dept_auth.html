@@ -1,0 +1,92 @@
+<HTML>
+<HEAD>
+<TITLE>Show departmental SAP authorizations</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY BGCOLOR="#fafafa">
+<TABLE>
+<TR><TD><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></TD>
+<TD>
+<H1>Rough approximation of SAP authorizations for a "department"</H1></TD>
+</TR>
+</TABLE>
+<P>
+<i>For most users, the newer <a href="dlc_auth.html">display of SAP 
+authorizations based on the department hierarchy</a> 
+will be a better choice than this report.  However,
+the other report requires you to specify a whole department, whereas this
+report allows you to specify any custom or standard Fund Center, which 
+could represent a subset of a department.</i>
+<P>
+This report will first find
+a list of people who "can spend or commit funds," "report by fund/fc,"
+do "invoice approval unlimited" or "travel documents approval" on at least 
+one fund or fund center within a given branch of the Fund Center hierarchy, 
+and then find and display all SAP authorizations for that list of people.
+<P>
+For example, if you specify fund center group FC_SLOAN, the report:
+<ol>
+<li>finds all people having authorizations for a qualifier of
+FC_SLOAN, FC_SLOAN01, FC100303, F1507600, or any other fund or 
+fund center that falls under FC_SLOAN in the tree, and 
+then 
+<li>shows all SAP 
+authorizations (spending, reporting, approving, etc.) for those people
+</ol>
+<P>
+Notice that the report in this example will not necessarily show all 
+authorizations related to the Sloan School.  If a person has 
+reporting or approval authorizations for Sloan-related qualifiers in the
+Cost/Profit Center hierarchy or in the Spending Group hierarchy but no
+authorizations for funds or fund centers under FC_SLOAN, then
+the person will not be selected in step (1) and none of their authorizations
+will be displayed.
+<HR>
+<FORM METHOD="GET" ACTION="/cgi-bin/sap-auth.cgi">
+Specify a Fund Center or 
+Fund Center group (e.g., FC_SLOAN01), pick format, filter, and sort
+options, and then click SUBMIT to display a report.
+<BR>
+<table>
+<tr><td><strong>Fund Center<br>or FC group: </strong></td>
+<td><INPUT TYPE=TEXT NAME=qualcode></td></tr>
+<tr><td><strong>Format option:</strong></td>
+<td><INPUT TYPE=RADIO NAME=format VALUE=1 CHECKED>
+ 1. Display qualifier name<br>
+<INPUT TYPE=RADIO NAME=format VALUE=2>
+ 2. Display flags (do_function, grant, in_effect_today, modified_by, date)</td>
+</tr>
+<tr><td><strong>Filter option:</strong></td>
+<td><INPUT TYPE=RADIO NAME=filter VALUE=1>
+1. Show only authorizations for funds and FCs within the FC group<br>
+<INPUT TYPE=RADIO NAME=filter VALUE=2 CHECKED>
+2. Show all authorizations for selected people</td>
+</tr>
+<tr><td><strong>Sort option:</strong></td>
+<td><INPUT TYPE=RADIO NAME=sort VALUE=1 CHECKED>
+1. Sort by Kerberos username
+<BR>
+<INPUT TYPE=RADIO NAME=sort VALUE=2>
+2. Sort by last name and first name</td>
+</tr>
+</table>
+<center><INPUT TYPE="SUBMIT" VALUE="Submit"></center>
+</FORM>
+<hr>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>

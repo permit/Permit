@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <!-- 
+    Created by the Middlegen Hibernate plugin 2.1
+
+    http://boss.bekk.no/boss/middlegen/
+    http://www.hibernate.org/
+-->
+  <class name="edu.mit.isda.permitservice.dataobjects.Authorization" table="authorization">
+    <composite-id class="edu.mit.isda.permitservice.dataobjects.AuthorizationPK" name="authorizationPK">
+      <key-property column="authorization_id" name="authorizationId"/>
+      <key-property column="function_id" name="functionId"/>
+      <key-property column="qualifier_id" name="qualifierId"/>
+    </composite-id>
+    <property column="is_active_now" name="isActiveNow" type="yes_no"/>
+    <property column="grant_authorization" name="grantAuthorization"/>
+    <property column="do_function" name="doFunction"/>
+    <property column="modified_by" name="modifiedBy"/>
+    <property column="modified_date" name="modifiedDate" type="date"/>
+    <property column="effective_date" name="effectiveDate" type="date"/>
+    <property column="expiration_date" name="expirationDate" type="date"/>
+    <!-- Associations -->
+    <!-- bi-directional many-to-one association to Person -->
+    <many-to-one class="edu.mit.isda.permitservice.dataobjects.Person" name="person" not-null="true">
+      <column name="KERBEROS_NAME"/>
+    </many-to-one>
+    <!-- bi-directional many-to-one association to Category -->
+    <many-to-one class="edu.mit.isda.permitservice.dataobjects.Category" name="category" not-null="true">
+      <column name="FUNCTION_CATEGORY"/>
+    </many-to-one>
+    <!-- bi-directional many-to-one association to Function -->
+    <many-to-one class="edu.mit.isda.permitservice.dataobjects.Function" name="function" not-null="true">
+      <column name="FUNCTION_ID"/>
+    </many-to-one>
+    <!-- bi-directional many-to-one association to Qualifier -->
+    <many-to-one class="edu.mit.isda.permitservice.dataobjects.Qualifier" name="qualifier" not-null="true">
+      <column name="QUALIFIER_ID"/>
+    </many-to-one>
+  </class>
+ 
+  <sql-query callable="true" name="LISTAUTHSBYPERSON_SP">	
+	<return alias="auth" class="edu.mit.isda.permitservice.dataobjects.Authorization">	
+	</return>		
+        { ? = call rolessrv.get_auth_person_cursor2(?,?,?,?,?,?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) }
+  </sql-query>
+
+  <sql-query callable="true" name="GET_USERAUTH_SP">	
+	<return alias="auth" class="edu.mit.isda.permitservice.dataobjects.Authorization">	
+	</return>		
+        { ? = call rolessrv.get_auth_person_cursor2(?,?,?,?,?,?,?,?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) }
+  </sql-query>
+  <sql-query callable="true" name="LISTAUTHSBYCRIT_SP">	
+	<return alias="auth" class="edu.mit.isda.permitservice.dataobjects.Authorization">	
+	</return>		
+       {  call rolessrv.get_auth_general_cursor(?,?,?,
+       ?,?,?,?,
+       ?,?,?,?,
+       ?,?,?,?,
+       ?,?,?,?,
+       ?,?,?,?,
+       ?,?,?,?,
+       ?,?,?,?,
+       ?,?,?,?,
+       ?,?,?,?,
+       ?,?,?,?) }
+
+  </sql-query>
+
+ 
+
+  <sql-query name="CAN_CREATE_AUTH">
+<return-scalar column="val" type="string"/>
+select 1 as myret, auth_sf_can_create_auth(?, ?, ?,'Y','GD') as val FROM dual
+</sql-query>
+</hibernate-mapping>

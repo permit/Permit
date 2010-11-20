@@ -1,0 +1,302 @@
+<HTML>
+<HEAD>
+<TITLE>Payroll Roles now recorded in the perMIT system</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H2>Payroll Roles now recorded in the perMIT system</H2>
+</td></tr></table>
+<p>
+<h3>I. Payroll-related (PAYR) roles recorded in perMIT system</h3>
+The perMIT system category for Payroll authorizations is abbreviated
+as PAYR. 
+The perMIT system is used to record several PAYR roles, which control 
+people's ability to perform various transactions in SAP or view data 
+in SAP or the Warehouse.
+<p />
+PAYR authorizations in the perMIT system will be maintained by the
+Business Liaison Team and HR, and many are also maintainable by
+departmental HR Primary Authorizers.
+<p>
+<h3>II. Explanation of authorizations in the perMIT system</h3>
+<p>
+In the perMIT system, a person can have one or more Authorizations, where 
+an Authorization describes a role or permission to perform some business 
+function.  Even if we are describing a role that does not strictly represent 
+the authority to do something, such as a contact person, we still use
+the perMIT system technical term <b>Authorization</b>.
+Every Authorization has three parts: a 
+person (who), a function (what) and a qualifier (where). A <b>person</b> is a 
+Kerberos username.  A <b>function</b> is what the person may do. A 
+<b>qualifier</b> defines the area in which a person may perform that function,
+for instance, an organizational unit.
+<p />
+PAYR Authorizations have Qualifiers from several different hierarchies 
+in the perMIT system: 
+<blockquote>
+  <table border>
+    <tr><th align=left>Qualifier&nbsp;<br>type</th>
+        <th align=left>Type of objects in the hierarchy</th></tr>
+    <tr><td>PMIT&nbsp;</td>
+        <td>PCMIT-0 hierarchy of Profit Centers</td></tr>
+    <tr><td>PCCS&nbsp;</td><td>Cost Object Supervisors and
+        Cost Objects within the PCMIT-0 hierarchy of Profit Centers</td></tr>
+    <tr><td>COST&nbsp;</td><td>Cost Objects within the Standard
+        hierarchy of Profit Centers</td></tr>
+    <tr><td>ORG2&nbsp;</td><td>Hierarchy of 8-digit HR Org. Units</td></tr>
+    <tr><td>PYTG&nbsp;</td>
+        <td>Time Groups within the HR Org Unit hierarchy</td></tr>
+    <tr><td>PDED&nbsp;</td>
+        <td>Payroll deduction types</td></tr>
+  </table>
+</blockquote>
+Thus, some PAYR Authorizations have Qualifiers that are financial objects,
+and others that are HR Org Units.  Still other PAYR Authorizations are 
+"all-or-nothing", and apply to all financial or organizational units 
+at MIT; these have a NULL Qualifier.  (The authorizations with a qualifier 
+type of PDED, Payroll
+deduction type, are also authorizations for central 
+administrators, and they apply to all organizational units at MIT.) 
+<p />
+Like any other category of Authorizations in the perMIT system, 
+PAYR Authorizations can be granted at various levels in the pertinent 
+hierarchies (e.g., the Org Unit hierarchy, the PCMIT-0 Profit Center
+hierarchy, etc.).  For example, if the Authorization uses an HR Org Unit 
+as its qualifier, it can be granted at the DLC level (e.g., 
+10000429 Biology), a school or area level (e.g., 10000030 Science Area), 
+or a higher level (e.g., 10000001 Provost Area, or 10000000 MIT-All).
+When an Authorization is granted at a higher level than a DLC, the
+Authorization applies to all DLCs within that area.  Thus, 
+an Authorization whose qualifier is 1000030 Science Area applies to
+10000429 Biology, 10000491 Chemistry, 10000533 Mathematics, etc..
+<p />
+Authorizations defined in the perMIT system are distributed to the
+systems that use the Authorizations for controlling access, 
+such as SAP and MIT's Data Warehouse. 
+<p>
+<h3>III. View PAYR roles on the web</h3>
+<p>
+<small>Many employees at MIT are already authorized to HR-related
+Authorizations via the Roles web interface.  If you think you should be
+authorized to view this information but you are not, see the rules for
+who is allowed to view Authorizations described in the memo
+<a href="/metaauth_help.html">
+perMIT system Meta-authorizations</a>.</small>
+<p>
+Click one of the items below to view Payroll-related roles from the Roles
+Database.
+<ul>
+  <li>View PAYR authorizations for a given DLC 
+    <ul>
+      <li><a href="/cgi-bin/auth_tree_by_dlc.cgi?action=first_page">View PAYR authorizations within various hierarchies</a> <br>
+          <small>You will be taken to a web form where you specify a DLC.  
+             Then you will see a series of links to take you to displays 
+             of PAYR Authorizations related to that DLC within various 
+             hierarchies, e.g., PMIT, PCCS, ORG2, and PYTG.</small>
+      <p />
+      <li><a href="/dlc_auth_generic.html">View PAYR authorizations grouped by person</a> <br>
+          <small>You will be taken to a web form where you specify a category
+             (such as PAYR or HR) and a department code (such as D_BIOLOGY).  
+             The resulting report will show 
+             authorizations grouped by person for the specified category and
+             DLC.</small>
+    </ul>
+  <p />
+  <li>View authorizations globally, i.e., throughout all organizations 
+      at MIT
+  <p />
+  <ul>
+    <li><a
+    href="/cgi-bin/qualauth2b.pl?category=META&qualtype=DEPT&show_all=1&detail=2&rolesflag=N&group_option=2&expand_auth=Y&levels=20">
+    View HR Primary Authorizers</a> (who have the authority to maintain 
+    authorizations in the HR and PAYR categories)
+    <p />
+    <li><a
+  href="/cgi-bin/qualauth2b.pl?category=PAYR&qualtype=PMIT&detail=2&rolesflag=N&group_option=2&levels=20">View the PMIT hierarchy</a> (PCMIT-0) along with the PAYR authorizations within that hierarchy
+    <p />
+    <li><a
+  href="/cgi-bin/qualauth2b.pl?category=PAYR&qualtype=PCCS&detail=2&rolesflag=N&group_option=2&levels=3">View the PCCS hierarchy</a>  along with the PAYR authorizations within that hierarchy (profit centers, cost object supervisors and cost objects)
+    <p />
+    <li><a
+  href="/cgi-bin/qualauth2b.pl?category=PAYR&qualtype=COST&detail=2&rolesflag=N&group_option=2&levels=3">View the COST hierarchy</a>  along with the PAYR authorizations within that hierarchy (profit centers and cost objects within the standard PC hierarchy)
+    <p />
+    <li><a
+  href="/cgi-bin/qualauth2b.pl?category=PAYR&qualtype=ORG2&detail=2&rolesflag=N&group_option=2&levels=20">View the ORG2 hierarchy</a>  along with the PAYR authorizations within that hierarchy (8-digit HR Org Units)
+    <p />
+    <li><a
+  href="/cgi-bin/qualauth2b.pl?category=PAYR&qualtype=PYTG&detail=2&rolesflag=N&group_option=2&levels=3">View the PYTG hierarchy</a>  along with the PAYR authorizations within that hierarchy (Time Groups within the HR Org Unit hierarchy)
+    <p />
+    <li><a
+  href="/cgi-bin/qualauth2b.pl?category=PAYR&qualtype=PDED&detail=2&rolesflag=N&group_option=2&levels=3">View central Payroll authorizations for reporting on deduction data</a> (qualifier is a deduction type).
+    <p />
+    <li><a
+  href="/cgi-bin/qualauth2b.pl?category=PAYR&qualtype=NULL&detail=2&rolesflag=N&group_option=2&levels=3">View central Payroll "all-or-nothing" authorizations</a> (having a NULL qualifier)
+  </ul>
+</ul>
+<p>
+ 
+<h3>IV. Definition of Functions used in HR roles</h3>
+<p>
+<blockquote>
+<table border>
+  <tr><th>Function name</th><th>Definition</th>
+      <th colspan=2>Qualifier type</th></tr>
+  <tr><td colspan=4 bgcolor="#E0E0E0" align=center>
+    Authorizations that can be restricted to a DLC or smaller unit</td></tr>
+  <tr><td>DACCA ADDRESSEE</td>
+      <td>Addressee for centrally printed DACCAs (1 per PC)</td>
+      <td width="5%">PMIT</td><td width="20%">PCs within the PCMIT-0 hierarchy)</td>
+      </tr>
+  <tr><td>DACCA ADDRESSEE-AMOUNT ONLY</td>
+      <td>Addressee for printed DACCA-salaried copy</td>
+      <td>PMIT</td><td>PCs within the PCMIT-0 hierarchy</td></tr>
+  <tr><td>DACCA ADDRESSEE-PERCENT ONLY</td>
+      <td>Addressee for printed DACCA-percent only</td>
+      <td>PMIT</td<td>PCs within the PCMIT-0 hierarchy</b></td></tr>
+  <tr><td>EDACCA ADMIN-PERCENT ONLY</td>
+      <td>Can certify DACCA as proxy - percent only view</td>
+      <td>PCCS</td>
+      <td>CO Supervisors, COs, or PCs within the PCMIT-0 hierarchy</td></tr>
+  <tr><td>EDACCA ADMINISTRATOR</td>
+      <td>Can certify DACCA as proxy - salary and percent</td>
+      <td>PCCS</td>
+      <td>CO Supervisors, COs, or PCs within the PCMIT-0 hierarchy</td></tr>
+  <tr><td>EDACCA CERTIFIER</td>
+      <td>Can certify DACCA - salary and percent view</td>
+      <td>PCCS</td>
+      <td>CO Supervisors, COs, or PCs within the PCMIT-0 hierarchy</td></tr>
+  <tr><td>EDACCA CERTIFIER-PERCENT ONLY</td>
+      <td>Can certify DACCA - percent only view</td>
+      <td>PCCS</td>
+      <td>CO Supervisors, COs, or PCs within the PCMIT-0 hierarchy</td></tr>
+  <tr><td>ESDS DISTR MAINT-NO SALARY</td>
+      <td>Maintain salary distr in ESDS-no salary view</td>
+      <td>ORG2</td>
+      <td>HR Org Units</td></tr>
+  <tr><td>ESDS DISTR MAINT-SEE SALARY</td>
+      <td>Maintain salary distr in ESDS with salary view</td>
+      <td>ORG2</td>
+      <td>HR Org Units</td></tr>
+  <tr><td>ESDS TRSFR-IN DISTR-NO SALARY</td>
+      <td>Maint transfers-in distr in ESDS-no salary view</td>
+      <td>PMIT</td>
+      <td>PCs within the PCMIT-0 hierarchy</td></tr>
+  <tr><td>ESDS TRSFR-IN DISTR-SEE SALARY</td>
+      <td>Maint transfers-in distr in ESDS with salary view</td>
+      <td>PMIT</td>
+      <td>PCs within the PCMIT-0 hierarchy</td></tr>
+  <tr><td>RPT HOURS PAID W/OUT $$ BY ORG</td>
+      <td>View hours paid by pay-period, type of pay no $$$</td>
+      <td>ORG2</td>
+      <td>HR Org Units</td></tr>
+  <tr><td>RPT HOURS PAID WITH $$$ BY ORG</td>
+      <td>View hours paid by pay-period, type of pay with $$</td>
+      <td>ORG2</td>
+      <td>HR Org Units</td></tr>
+  <tr><td>RPT ON EDACCA W/OUT $$$ BY CO</td>
+      <td>Report on EDACCA without $$$ by Cost Object</td>
+      <td>COST</td>
+      <td>Cost Objects within the Standard PC hierarchy</td></tr>
+  <tr><td>RPT ON EDACCA W/OUT $$$ BY ORG</td>
+      <td>Report on EDACCA without $$$ by HR Org Unit</td>
+      <td>ORG2</td>
+      <td>HR Org Units</td></tr>
+  <tr><td>RPT ON EDACCA WITH $$$ BY CO</td>
+      <td>Report on EDACCA with $$$ by Cost Object</td>
+      <td>COST</td>
+      <td>Cost Objects within the Standard PC hierarchy</td></tr>
+  <tr><td>RPT ON EDACCA WITH $$$ BY ORG</td>
+      <td>Report on EDACCA with $$$ by HR Org Unit</td>
+      <td>ORG2</td>
+      <td>HR Org Units</td></tr>
+  <tr><td>STUDENT PAF AUTHORIZER</td>
+      <td>Create and approve student Pers Action Forms</td>
+      <td>PYTG</td>
+      <td>Time Groups within the Org Unit hierarchy</td></tr>
+  <tr><td>TIMESHEET ADMINISTRATOR</td>
+      <td>Enter timesheets/distribution; approve timesheets</td>
+      <td>PYTG</td>
+      <td>Time Groups within the Org Unit hierarchy</td></tr>
+  <tr><td>TIMESHEET APPROVER</td>
+      <td>Enter and approve timesheets in SAPWeb.</td>
+      <td>PYTG</td>
+      <td>Time Groups within the Org Unit hierarchy</td></tr>
+  <tr><td>TIMESHEET DISTRIBUTION ENTRY</td>
+      <td>Enter distribution data on timesheets</td>
+      <td>PYTG</td>
+      <td>Time Groups within the Org Unit hierarchy</td></tr>
+  <tr><td colspan=4 bgcolor="#E0E0E0" align=center>
+    Central administrators authorizations</td>
+  </tr>
+  <tr><td>DISPLAY PAY STUBS</td>
+      <td>For use by Payroll Office</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>DISPLAY PAYROLL POSTING SUMARY</td>
+      <td>For use by Payroll Office</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>EDACCA CENTRAL USER-SEE SALARY</td>
+      <td>For use by Payroll - central access to DACCAs</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>ESDS CENTRAL USER-SEE SALARY</td>
+      <td>For use by Payroll Office</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>MAINT DEDUCTIONS</td>
+      <td>Create and maintain deduction data in SAP</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>MAINT GARNISHMENTS</td>
+      <td>Create and maintain garnishment data in SAP</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>MAINT TAX INFOTYPES</td>
+      <td>Create and maintain tax infotype data in SAP</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>MAINT TIME GROUPS</td>
+      <td>Create and maintain time groups in SAP</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>PROCESS OFF-CYCLE PAYROLLS</td>
+      <td>Process off-cycle payrolls in SAP</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>PROCESS PAYROLL</td>
+      <td>Process weekly, monthly empl payrolls in SAP</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>PROCESS PAYROLL FEEDS</td>
+      <td>Process Payroll feeds in SAP</td>
+      <td>NULL</td><td>none</td></tr?
+  <tr><td>PROCESS PAYROLL POSTINGS</td>
+      <td>Process payroll postings in SAP</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>REPORT ON ALL PAYROLL DATA</td>
+      <td>Report on all data - includes confidential data</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>REPORT ON DEDUCTION DATA</td>
+      <td>For use by central offices</td>
+      <td>PDED</td>
+      <td>Payroll Deduction Types</td></tr>
+  <tr><td>TIMESHEET ADMINISTR-CENTRAL</td>
+      <td>For use by Payroll Office - central time admin</td>
+      <td>NULL</td><td>none</td></tr>
+  <tr><td>TIMESHEET SUPER-CENTRAL</td>
+      <td>For use by Payroll Office - central time super</td>
+      <td>NULL</td><td>none</td></tr>
+</table>
+</blockquote>
+<p>
+<small>Last modified by repa on 6/13/2006</small>
+</BODY>
+</HTML>
+ 

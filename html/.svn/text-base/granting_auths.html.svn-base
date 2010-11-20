@@ -1,0 +1,88 @@
+<HTML>
+<TITLE>perMIT system Authorizations for Creating other Auths</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td><H2>Authorizations for creating other Authorizations</H2></td></tr>
+</table>
+<P>
+<H3>Three types of authorizations for creating other authorizations</H3>
+In the perMIT system, ones authority to create (or delete or modify) 
+other Authorizations is controlled by Authorizations.  Note that anyone 
+authorized to create Authoriations is also authorized to delete or 
+modify them.  Authorizations for maintaining other Authorizations work 
+in one of three ways:
+<ol>
+<li><strong>Primary Authorizers maintain Authorizations related to a DLC's 
+    resources</strong>
+<br>A person with an Authorization for either the Function 
+"HR PRIMARY AUTHORIZER" or "FINANCIAL PRIMARY AUTHORIZER" is able to 
+maintain Authorizations for a common set of
+business Functions with Qualifiers related to the resources of a 
+specified department.  
+<p />This is the most common way method for giving 
+a person the authority to maintain Authorizations.  The Qualifier for
+these Authorizations is a DLC (Department, Lab or Center).
+<P></li>
+<li><strong>Central administrators can maintain Authorizations within a 
+    Category or application area</strong>
+<br>A person with an Authorization for the Function "CREATE AUTHORIZATIONS", 
+where the Qualifier is a Category (or application area such as HR or EHS) 
+can create, delete, or modify any Authorization within the given Category.
+Generally, a small number of administrators within central offices 
+have this level of authority.
+<p />
+</li>
+<li><strong>Individuals can be given the authority to create Authorizations 
+    for specific Functions and Qualifiers via the Grant flag</strong>
+<br>Each Authorization in the perMIT system has a "Grant" flag.  If 
+the Grant flag is set to "Y", then the holder of that Authorization can 
+create Authorizations with the same Function and either the same Qualifier 
+or a child of the original Qualifier.  For example, suppose we have the
+following Authorization:
+<blockquote>
+  <table border>
+  <tr><th>Person</th><th>Function</th><th>Qualifier</th>
+             <th>Grant</th><th>Do-function</th></tr>
+  <tr><td>JOE1234 (Joe User)</td><td>REPORT ON WIDGETS</td>
+      <td>D_SCHOOL_SCI (School or Science)</td><td>Y</td><td>Y</td></tr>
+  </table>
+</blockquote>
+This Authorization would allow JOE1234 to REPORT ON WIDGETS for the
+School of Science or any of the DLCs within the School of Science, such 
+as Biology, Mathematics, Chemistry, etc..  Since the Grant flag is set to
+"Y", JOE1234 would also be able to grant a similar Authorization to any
+user for the Function "REPORT ON WIDGETS" and either the School of Science 
+or any DLC under the School of Science.
+<p />
+Note that in this example the Do-function flag is set to "Y", which allows 
+JOE1234 to perform the Function REPORT ON WIDGETS himself.  If 
+Do-function were set to "N", then JOE1234 would be allowed to grant 
+Authorizations to anyone (including himself), but not actually 
+REPORT ON WIDGETS himself (unless he modifies or adds an Authorization for
+himself).
+</li>
+</ol>
+<p>
+There is a complete audit trail of all Authorizations granted, making it 
+easy for auditors or system administrators to report on Authorizations 
+created by anyone.
+<HR>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>

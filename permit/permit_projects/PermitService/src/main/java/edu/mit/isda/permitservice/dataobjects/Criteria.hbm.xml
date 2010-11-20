@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <!-- 
+    Created by the Middlegen Hibernate plugin 2.1
+
+    http://boss.bekk.no/boss/middlegen/
+    http://www.hibernate.org/
+-->
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.Criteria">
+    <id column="critid" name="criteriaId">
+      <generator class="hilo"/>
+    </id>
+    <property column="sid" name="id"/>
+    <property column="sname" name="selectionName" not-null="true"/>
+    <property column="screenid" name="screenId"/>
+    <property column="screenname" name="screenName"/>
+    <property column="critname" name="criteriaName"/>
+    <property column="nnapply" name="apply"/>
+    <property column="nextid" name="nextScreen"/>
+    <property column="nnvalue" name="value"/>
+    <property column="nochange" name="noChange"/>
+    <property column="sqlfrag" name="sqlFragment"/>
+    <property column="seq" name="sequence"/>
+    <property column="widget" name="widget"/>
+  </class>
+  <sql-query name="GET_CRITERIA">	
+            <return alias="criteria" class="edu.mit.isda.permitservice.dataobjects.Criteria"/>	
+            select ss.selection_id sid, ss.selection_name sname, ss.screen_id screenid, 
+                   sn.screen_name screenname, ci.criteria_id critid, c.criteria_name critname, 
+                   IFNULL(usc.apply, ci.default_apply) nnapply, ci.next_scrn_selection_id nextid, IFNULL(usc.value, ci.default_value) nnvalue,
+                   ci.no_change nochange, c.sql_fragment sqlfrag, ci.sequence seq, wid.program_widget_id widget
+            from selection_set2 ss, screen2 sn,  criteria2 c, 
+            selection_criteria2 ci left outer join user_selection_criteria2 usc  on ( usc.selection_id=ci.selection_id and usc.criteria_id=ci.criteria_id and usc.username=? )
+           left outer join special_selection_set2 wid on ( wid.selection_id=ci.next_scrn_selection_id)
+            where
+                sn.screen_id=ss.screen_id
+                and ci.selection_id=ss.selection_id
+                and ss.selection_id=?
+                and c.criteria_id=ci.criteria_id
+                order by screenid, sid, seq
+
+
+        </sql-query>
+
+        <!--
+                    select ss.selection_id sid, ss.selection_name sname, ss.screen_id screenid,
+                   sn.screen_name screenname, ci.criteria_id critid, c.criteria_name critname,
+                   nvl(usc.apply, ci.default_apply) nnapply, ci.next_scrn_selection_id nextid, nvl(usc.value, ci.default_value) nnvalue,
+                   ci.no_change nochange, c.sql_fragment sqlfrag, ci.sequence seq, wid.program_widget_id widget
+            from selection_set2 ss, screen2 sn, selection_criteria2 ci, criteria2 c, user_selection_criteria2 usc, special_selection_set2 wid
+            where sn.screen_id=ss.screen_id and ci.selection_id=ss.selection_id and ss.selection_id=?
+                  and c.criteria_id=ci.criteria_id and usc.username(+)=? and usc.selection_id(+)=ci.selection_id and usc.criteria_id(+)=ci.criteria_id and wid.selection_id(+)=ci.next_scrn_selection_id
+            order by 3, 1, 12 -->
+
+</hibernate-mapping>

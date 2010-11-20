@@ -1,0 +1,87 @@
+* Primary PI (*PRIMARY PI)
+  A person is a Primary PI for a Room Set if their MIT ID matches the
+  MIT ID in the record for the Room Set in the table 
+  wareuser.whehsta_pi_work_area.
+
+* EHS Reps (*EHS REP)
+  A person is an EHS Rep for a given Room Set if we find a record for
+  the person's MIT ID and the Room Set code in table 
+  wareuser.whehss_work_area.
+  
+* Room reps (*ROOM REP)
+  A person is an EHS Room Rep for a given Room if we find a record
+  for the person's MIT ID and the Room code with function_code 'ERR'
+  in the table wareuser.whehss_function_detail.
+
+* Secondary PI by room (*SECONDARY PI)
+  A person is a Secondary PI for a room if we find a record for that 
+  person's MIT ID and the Room code with function_code 'ERP' in the table 
+  wareuser.whehss_function_detail
+
+* Secondary PI by room set (*SECONDARY PI)
+  A person is a Secondary PI for a room set if we find a record for that 
+  person's MIT ID and the Room Set code with function_code 'ESS' 
+  in the table wareuser.whehss_function_detail.
+
+* EHS Emergency Contact for a room (*EHS EMERGENCY CONTACT)
+  A person is an EHS Emergency Contact for a given Room if we find a record
+  for the person's MIT ID and the Room code with function_code 'ERC'
+  in the table wareuser.whehss_function_detail.
+
+* EHS Reconciler (*EHS Reconciler) 
+  A person is an EHS Reconciler for a DLC/PI if we find a record 
+  for the person's MIT ID and the DLC/PI work-area code for the DLC/PI
+  along with a type key of 'BEPT' in the warehouse table
+  wareuser.whehsta_reconciler_detail.
+
+* SARA Reporter (*SARA Reporter)
+  A person is a SARA reporter for a given Room Set if we find a record
+  in the warehouse table wareuser.whehss_work_area where the column
+  sara_reporter_mit_id matches the person's MIT ID number and the 
+  Room Set code matches the work_area code.
+
+* View Room Set Info (part 1) - EHS Rep (*VIEW ROOM SET INFO)
+  A person is allowed to view data for a room set if they are an EHS Rep 
+  for the Room Set.
+
+* View Room Set Info (part 2) - Secondary PI by room set (*VIEW ROOM SET INFO)
+  A person is allowed to view data for a room set if they are a Secondary PI 
+  for the Room Set.
+
+* View Room Set Info (part 3) - Room rep or Emrg Contact (*VIEW ROOM SET INFO) 
+  A person is allowed to view data for a room set if they are a Room Rep or 
+  Emergency Contact person for a Room that is part of the given Room Set.
+
+* View Room Set Info (part 4) - Primary PI (*VIEW ROOM SET INFO)
+  A person is allowed to view data for a room set if they are the 
+  Primary PI for that Room Set.
+
+* View EHS Training Report (part 1) - EHS Rep (*VIEW EHS TRAINING REPORT)
+  An EHS Rep for a DLC/PI is allowed to view training records for trainees
+  attached to the DLC/PI
+
+* View EHS Training Report (part 2) - Secondary PI by Room Set
+  A Secondary PI for a Room Set under a DLC/PI is allowed to view 
+  training records for trainees attached to the DLC/PI
+
+* View EHS Training Report (part 3) - Secondary PI by Room or Room Rep
+  A Secondary PI for a Room or Room Rep for a Room, where the room is
+  attached to a Room Set which in turn is attached to a DLC/PI, is 
+  allowed to view training records for trainees attached to the DLC/PI
+
+* View EHS Training Report (part 4) - EHS Reconciler
+  An EHS Reconciler for a DLC/PI is allowed to view training records
+  for trainees attached to the DLC/PI
+
+* View EHS Training Report (part 5) - Primary PI
+  A Primary PI within a DLC is allowed to view training records
+  for trainees attached to the DLC/PI
+
+* View Room Set Info Limited - SARA Reporter (*VIEW ROOM SET LIMITED)
+  A person is allowed to view data for a room set if they are a SARA Reporter
+  for the given Room Set.  (Ignore if they have full 'View Room Set Info'
+  privileges based on one of the other rules.)
+
+  
+
+

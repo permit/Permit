@@ -1,0 +1,5521 @@
+-- ----------------------------------------------------------------------
+-- MySQL Migration Toolkit
+-- SQL Create Script
+--
+--  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+--  For contact and other information see: http://mit.edu/permit/
+--
+--  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+--  Public License as published by the Free Software Foundation; either version 2 of the License.
+--
+--  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+--  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+--  License for more details.
+--
+--  You should have received a copy of the GNU General Public License along with this program; if not, write 
+--  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+--
+-- ----------------------------------------------------------------------
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE DATABASE IF NOT EXISTS `rolesbb`
+  CHARACTER SET latin1 COLLATE latin1_swedish_ci;
+USE `rolesbb`;
+-- -------------------------------------
+-- Routines
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_ancestors_qc`;
+-- FUNCTION auth_sf_ancestors_qc
+--                 (a_qual_id IN STRING,
+--                  a_list    IN STRING)
+-- RETURN STRING
+-- IS
+-- CURSOR get_ancestors IS
+--   SELECT parent_id from qualifier_child
+--         where child_id = a_qual_id;
+-- v_out_list varchar2(500);
+-- v_temp varchar2(500) := '';
+-- v_qual_id qualifier.qualifier_id%TYPE;
+-- begin
+--   v_out_list := a_list;
+--   OPEN get_ancestors;
+--   FETCH get_ancestors INTO v_qual_id;
+--   WHILE (NOT get_ancestors%NOTFOUND) LOOP
+--     v_out_list := v_out_list || to_char(v_qual_id) || ' ';
+--     if length(v_out_list) < 400 then
+--       select auth_sf_ancestors_qc(to_char(v_qual_id), v_out_list)
+--        into v_out_list
+--        from dual;
+--     end if;
+--     FETCH get_ancestors INTO v_qual_id;
+--   END LOOP;
+--   CLOSE get_ancestors;
+--   RETURN v_out_list;
+--   EXCEPTION
+--     WHEN NO_DATA_FOUND THEN
+--       CLOSE get_ancestors;
+--       RETURN v_out_list;
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_ancestors_qd`;
+-- FUNCTION auth_sf_ancestors_qd
+--                 (a_qual_id IN STRING)
+-- RETURN STRING
+-- IS
+-- CURSOR get_ancestors IS
+--   SELECT parent_id from qualifier_descendent
+--         where child_id = a_qual_id;
+-- v_out_list varchar2(500) := ' ';
+-- v_qual_id qualifier.qualifier_id%TYPE;
+-- begin
+--   OPEN get_ancestors;
+--   FETCH get_ancestors INTO v_qual_id;
+--   WHILE (NOT get_ancestors%NOTFOUND) LOOP
+--     v_out_list := v_out_list || to_char(v_qual_id) || ' ';
+--     FETCH get_ancestors INTO v_qual_id;
+--   END LOOP;
+--   CLOSE get_ancestors;
+--   RETURN v_out_list;
+--   EXCEPTION
+--     WHEN NO_DATA_FOUND THEN
+--       CLOSE get_ancestors;
+--       RETURN v_out_list;
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_can_create_auth`;
+-- FUNCTION auth_sf_can_create_auth
+-- 		(AI_USER IN VARCHAR2,
+--                  AI_FUNCTION_NAME IN FUNCTION.FUNCTION_NAME%TYPE,
+-- 		 AI_QUALIFIER_CODE IN QUALIFIER.QUALIFIER_CODE%TYPE,
+-- 		 AI_DO_FUNCTION IN AUTHORIZATION.DO_FUNCTION%TYPE,
+-- 		 AI_GRANT_AND_VIEW IN AUTHORIZATION.GRANT_AND_VIEW%TYPE)
+-- 		RETURN char
+-- IS
+-- a_function_name authorization.function_name%type;
+-- a_qualifier_code authorization.qualifier_code%type;
+-- a_do_function authorization.do_function%type;
+-- a_grant_and_view authorization.grant_and_view%type;
+-- v_count number := 0;
+-- v_category_code function.function_category%type;
+-- v_function_id function.function_id%type;
+-- v_qualcode qualifier.qualifier_code%type;
+-- v_qualifier_id qualifier.qualifier_id%type;
+-- v_today date;
+-- 
+-- begin
+--   a_function_name := upper(ai_function_name);
+--   a_qualifier_code := upper(ai_qualifier_code);
+--   a_do_function := upper(ai_do_function);
+--   a_grant_and_view := upper(ai_grant_and_view);
+--   /* We'll need to know the function_category and function_id
+--      for this function_name.
+--      Then, get the qualifier_code associated with this category,
+--      e.g., 'CATSAP', or 'CATLABD'.  ('CATALL' means all categories) */
+--   select function_category, function_id into v_category_code, v_function_id
+--         from function where function_name = a_function_name;
+--   v_qualcode := concat('CAT',v_category_code);
+--   v_qualcode := replace(v_qualcode, ' ');  /* Remove trailing blanks */
+-- 
+--   /* 1.  Can the user create any authorization within the given category? */
+--   select count(*) into v_count from authorization a
+-- 	where a.function_name = 'CREATE AUTHORIZATIONS'
+-- 	      and a.kerberos_name = ai_user
+--               and a.qualifier_code in (v_qualcode,'CATALL')
+--               and a.do_function = 'Y'
+--               and a.effective_date <= sysdate
+--               and (a.expiration_date is NULL or a.expiration_date >= sysdate);
+--   if v_count > 0 then
+--     return 'Y';
+--   end if;
+-- 
+--   /* 1.5  Can the user create the authorization based on a
+--           PRIMARY AUTHORIZOR authorization? */
+--   --if a_qualifier_code = 'NULL' then
+--   --  select count(*) into v_count from authorization a, function f
+--   --     where a.function_name = 'PRIMARY AUTHORIZOR'
+--   --        and a.kerberos_name = ai_user
+--   --        and a.do_function = 'Y'
+--   --        and a.effective_date <= sysdate
+--   --        and (a.expiration_date is NULL or a.expiration_date >= sysdate)
+--   --        and f.function_name = a_function_name
+--   --        and f.qualifier_type = 'NULL'
+--   --        and f.primary_authorizable = 'Y';
+--   --else
+--   --  select count(*) into v_count from authorization a,
+--   --    primary_auth_descendent qd, qualifier q, function f
+--   --    where a.function_name = 'PRIMARY AUTHORIZOR'
+--   --        and a.kerberos_name = ai_user
+--   --        and qd.parent_id = a.qualifier_id
+--   --        and q.qualifier_id = qd.child_id
+--   --        and q.qualifier_code = a_qualifier_code
+--   --        and a.do_function = 'Y'
+--   --        and a.effective_date <= sysdate
+--   --        and (a.expiration_date is NULL or a.expiration_date >= sysdate)
+--   --        and f.function_name = a_function_name
+--   --        and f.primary_authorizable in ('Y', 'D');
+--   --end if;
+--   if a_qualifier_code = 'NULL' then
+--     select count(*) into v_count from authorization a, function f1,
+--                                       function f2
+--        where f1.function_name = a.function_name
+--           and f1.IS_PRIMARY_AUTH_PARENT = 'Y'
+-- 	  and a.kerberos_name = ai_user
+--           and a.do_function = 'Y'
+--           and sysdate
+--               between a.effective_date and nvl(a.expiration_date,sysdate)
+--           and f2.function_name = a_function_name
+--           and f2.qualifier_type = 'NULL'
+--           and f2.primary_authorizable = 'Y'
+--           and f2.primary_auth_group = f1.primary_auth_group;
+--   else
+--     select count(*) into v_count from authorization a,
+--       primary_auth_descendent qd, qualifier q, function f1, function f2
+--       where f1.function_name = a.function_name
+--           and f1.IS_PRIMARY_AUTH_PARENT = 'Y'
+-- 	  and a.kerberos_name = ai_user
+--           and qd.parent_id = a.qualifier_id
+--           and q.qualifier_id = qd.child_id
+--           and q.qualifier_code = a_qualifier_code
+--           and a.do_function = 'Y'
+--           and sysdate
+--               between a.effective_date and nvl(a.expiration_date,sysdate)
+--           and f2.function_name = a_function_name
+--           and f2.primary_authorizable in ('Y', 'D')
+--           and f2.primary_auth_group = f1.primary_auth_group;
+--   end if;
+--   if v_count > 0 then
+--     return 'Y';
+--   end if;
+-- 
+--   /* At this point, the requestor cannot create any auth in the category,
+--      and cannot create the authorization based on being a Prim. Authorizor.
+--      We'll need to see if he has an authorization for the specific function
+--      and qualifier that allows him to grant the authorization.  His
+--      authorization will need to have grant_and_view = 'GD' if he is
+--      trying to create an authorization where do_function = 'Y' or
+--      grant_and_view = 'GD'.  Otherwise, his authorization will need to
+--      have grant_and_view in ('GD', 'GV'). */
+-- 
+--   /* 2.  Does the requestor have an authorization with matching
+--          function and *exactly* matching qualifier that allows him to
+--          create a similar authorization?  */
+--   if ((a_do_function = 'Y') or (a_grant_and_view = 'GD')) then
+--      select count(*) into v_count from authorization
+--        where kerberos_name = ai_user
+--        and function_id = v_function_id
+--        and qualifier_code = a_qualifier_code
+--        and grant_and_view = 'GD'   /* <- Here's what's different */
+--        and effective_date <= sysdate
+--        and (sysdate <= expiration_date or expiration_date is NULL);
+--        if v_count > 0 then
+--           return 'Y';
+--        end if;
+--   else
+--      select count(*) into v_count from authorization
+--        where kerberos_name = ai_user
+--        and function_id = v_function_id
+--        and qualifier_code = a_qualifier_code
+--        and grant_and_view in ('GV', 'GD') /* <- Here's what's different */
+--        and effective_date <= sysdate
+--        and (sysdate <= expiration_date or expiration_date is NULL);
+--        if v_count > 0 then
+--           return 'Y';
+--        end if;
+--   end if;
+-- 
+--   /* 3.  Does the requestor have an authorization with matching
+--          function and qualifier that is a parent of the desired
+--          qualifier that allows him to create a similar authorization?  */
+--   select qualifier_id into v_qualifier_id from qualifier
+--     where qualifier_code = a_qualifier_code
+--     and qualifier_type = (select qualifier_type from function where
+--     function_name = a_function_name);
+--   if ((a_do_function = 'Y') or (a_grant_and_view = 'GD')) then
+--      select count(*) into v_count from authorization
+--        where kerberos_name = ai_user
+--        and function_id = v_function_id
+--        and descend = 'Y'
+--        and qualifier_id in (select parent_id from qualifier_descendent
+--          where child_id = v_qualifier_id)
+--        and grant_and_view = 'GD'   /* <- Here's what's different */
+--        and effective_date <= sysdate
+--        and (sysdate <= expiration_date or expiration_date is NULL);
+--        if v_count > 0 then
+--           return 'Y';
+--        end if;
+--   else
+--      select count(*) into v_count from authorization
+--        where kerberos_name = ai_user
+--        and function_id = v_function_id
+--        and descend = 'Y'
+--        and qualifier_id in (select parent_id from qualifier_descendent
+--          where child_id = v_qualifier_id)
+--        and grant_and_view in ('GV', 'GD')   /* <- Here's what's different */
+--        and effective_date <= sysdate
+--        and (sysdate <= expiration_date or expiration_date is NULL);
+--        if v_count > 0 then
+--           return 'Y';
+--        end if;
+--   end if;
+-- 
+--   /* At this point, the person is not authorized to create the auth. */
+--   return 'N';
+-- 
+--   EXCEPTION
+--       WHEN NO_DATA_FOUND THEN
+-- 	return 'N';
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_can_create_function`;
+-- FUNCTION auth_sf_can_create_function
+-- 		(a_user IN varchar2,
+-- 		 a_category_code IN category.function_category%TYPE)
+-- RETURN char
+-- IS
+-- v_count number := 0;
+-- v_qualcode varchar2(15);
+-- begin
+--   /* return 'Y'; */
+--   /* Is requestor authorized to create function for the function_category? */
+--   v_qualcode := concat('CAT',a_category_code);  /* Example: CATSAP */
+--   v_qualcode := replace(v_qualcode, ' ');  /* Remove trailing blanks */
+--   select count(*) into v_count from authorization a, function f, qualifier q
+-- 	where a.function_id = f.function_id and
+-- 	      f.function_name = 'CREATE FUNCTIONS' and
+-- 	      f.function_category = 'META' and
+-- 	      a.qualifier_id = q.qualifier_id and
+-- 	      q.qualifier_code in (v_qualcode, 'CATALL') and
+-- 	      a.kerberos_name = a_user
+--               and a.do_function = 'Y'
+--               and a.effective_date <= sysdate
+--               and (a.expiration_date is NULL or a.expiration_date >= sysdate);
+--   if v_count > 0 then
+--      return 'Y';
+--   else
+--      return 'N';
+--   end if;
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_can_create_rule`;
+-- FUNCTION auth_sf_can_create_rule
+-- 		(AI_USER IN STRING,
+-- 		 AI_RESULT_FUNCTION_CATEGORY IN STRING)
+-- 		RETURN char
+-- IS
+-- v_count number := 0;
+-- v_qualcode qualifier.qualifier_code%type;
+-- 
+-- 
+-- begin
+-- 
+--   v_qualcode := concat('CAT',AI_RESULT_FUNCTION_CATEGORY);
+--   v_qualcode := replace(v_qualcode, ' ');  /* Remove trailing blanks */
+-- 
+--   /* Can the user create any implied authorization rules within the given category? */
+-- 
+--   select count(*) into v_count
+-- 	from authorization a
+-- 	where a.kerberos_name = AI_USER
+-- 	and a.do_function = 'Y'
+-- 	and a.qualifier_code = v_qualcode;
+-- 
+--   select count(*) into v_count from authorization a
+-- 	where a.function_name = 'CREATE IMPLIED AUTH RULES'
+-- 	      and a.kerberos_name = AI_USER
+--               and a.qualifier_code = v_qualcode
+--               and a.do_function = 'Y'
+-- 	      and sysdate between a.effective_date and nvl(a.expiration_date, sysdate);
+--      if v_count > 0 then
+--        return 'Y';
+--      end if;
+-- 
+--     select count(*) into v_count
+--     from authorization a, qualifier_descendent qd, qualifier q
+--     where a.kerberos_name = AI_USER
+--     and q.qualifier_code = v_qualcode
+--     and a.function_name = 'CREATE IMPLIED AUTH RULES'
+--     and a.do_function = 'Y'
+--     and sysdate between a.effective_date and nvl(a.expiration_date, sysdate)
+--     and qd.child_id = q.qualifier_id
+--     and qd.parent_id = a.qualifier_id;
+-- 
+--   if v_count > 0 then
+--     return 'Y';
+--   end if;
+-- 
+-- 
+-- 
+--   /* At this point, the person is not authorized to create the auth. */
+--   return 'N';
+-- 
+--   EXCEPTION
+--       WHEN NO_DATA_FOUND THEN
+-- 	return 'N';
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_check_auth2`;
+-- FUNCTION auth_sf_check_auth2
+-- 		(a_function IN STRING,
+--                  a_qualifier IN STRING,
+--                  a_for_user IN STRING,
+--                  a_proxy_function IN STRING,
+--                  a_proxy_qualifier IN STRING)
+-- RETURN STRING
+-- IS
+-- v_retcode VARCHAR2(2);
+-- v_username VARCHAR2(16);
+-- begin
+--   if a_for_user is not NULL then
+--     v_retcode := ROLESAPI_IS_USER_AUTHORIZED(user, a_proxy_function,
+--                  a_proxy_qualifier);
+--     if v_retcode = 'N' then
+--       return 'X';
+--     else
+--       v_username := a_for_user;
+--     end if;
+--   else
+--     v_username := user;
+--   end if;
+--   v_username := upper(v_username);
+--   if substr(v_username, 1, 4) = 'OPS$' then
+--     v_username := substr(v_username, 5);
+--   end if;
+--   v_retcode := ROLESAPI_IS_USER_AUTHORIZED(v_username,a_function,a_qualifier);
+--   /* Kludge for qualifier maintenance routines.  Let people who can maintain
+--      FUND qualifiers also maintain SPGP qualifiers without specific
+--      authorization */
+--   if v_retcode != 'Y' and a_function = 'MAINTAIN QUALIFIERS'
+--                       and a_qualifier = 'QUAL_SPGP' then
+--     v_retcode := ROLESAPI_IS_USER_AUTHORIZED(v_username, a_function,
+--                                              'QUAL_FUND');
+--   end if;
+--   return v_retcode;
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_check_date_mmddyyyy`;
+-- FUNCTION auth_sf_check_date_mmddyyyy (in_date string)
+-- RETURN char
+-- IS
+-- v_date varchar2(10);
+-- begin
+--   v_date := to_date(in_date, 'MM/DD/YYYY');
+--   if substr(in_date, 7, 4)  between '1980' and '2100' then
+--     return '1';
+--   else
+--     return '0';
+--   end if;
+-- 
+-- EXCEPTION
+--   WHEN OTHERS then
+--     return '0';
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_check_date_noslash`;
+-- FUNCTION auth_sf_check_date_noslash (in_date string)
+-- RETURN char
+-- IS
+-- v_date varchar2(10);
+-- begin
+--   v_date := to_date(in_date, 'MMDDYYYY');
+--   if substr(in_date, 5, 4)  between '1500' and '2100' then
+--     return '1';
+--   else
+--     return '0';
+--   end if;
+-- 
+-- EXCEPTION
+--   WHEN OTHERS then
+--     return '0';
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_check_number`;
+-- FUNCTION auth_sf_check_number (in_number string)
+-- RETURN char
+-- IS
+-- v_number number;
+-- begin
+--   v_number := to_number(in_number);
+--   return '1';
+-- 
+-- EXCEPTION
+--   WHEN OTHERS then
+--     return '0';
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_check_version`;
+-- FUNCTION auth_sf_check_version
+-- 		(a_version IN STRING,
+--                  a_platform IN STRING)
+-- RETURN STRING
+-- IS
+-- v_message_type application_version.message_type%TYPE;
+-- v_message_text application_version.message_text%TYPE;
+-- v_last_name person.last_name%TYPE;
+-- v_first_name person.first_name%TYPE;
+-- v_mit_id person.mit_id%TYPE;
+-- begin
+--   select message_type, message_text into v_message_type, v_message_text
+--    from application_version
+--    where nvl(a_platform, ' ') between from_platform and to_platform
+--    and nvl(a_version, ' ') between from_version and to_version
+--    and rownum = 1;
+--   if v_message_type = 'N' then
+--     return 'N_';
+--   else
+--     return v_message_type || '_You are running version ''' || a_version
+--            || ''' on ''' || a_platform || '''. ' || v_message_text;
+--   end if;
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_convert_date_to_str`;
+-- FUNCTION auth_sf_convert_date_to_str
+-- 		(a_source_date IN date)
+-- RETURN STRING
+-- IS
+-- v_target_date_format VARCHAR2(255) := 'mmddyyyy';
+-- begin
+--   if a_source_date IS NULL then
+--     return '        '; /* 8 spaces */
+--   end if;
+--   return to_char(a_source_date, v_target_date_format);
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_convert_str_to_date`;
+-- FUNCTION auth_sf_convert_str_to_date
+-- 		(a_source_date IN STRING)
+-- RETURN DATE
+-- IS
+-- v_target_date_format VARCHAR2(255) := 'mmddyyyy hh24:mi:ss';
+-- begin
+--   if a_source_date = '        ' then /* if 8 spaces are used */
+-- 	return null;
+--   end if;
+--   return to_date(a_source_date || ' 00:00:00', v_target_date_format);
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_convert_time_to_str`;
+-- FUNCTION auth_sf_convert_time_to_str
+-- 		(a_source_date IN date)
+-- RETURN STRING
+-- IS
+-- v_target_date_format VARCHAR2(255) := 'mm/dd/yyyy hh:mi:ss';
+-- begin
+--   if a_source_date IS NULL then
+--     return '                   '; /* 19 spaces */
+--   end if;
+--   return to_char(a_source_date, v_target_date_format);
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_convert_user`;
+-- FUNCTION auth_sf_convert_user
+-- 		(a_user IN STRING)
+-- RETURN STRING
+-- IS
+-- v_username VARCHAR2(16);
+-- begin
+--   v_username := upper(a_user);
+--   if substr(v_username, 1, 4) = 'OPS$' then
+--     v_username := substr(v_username, 5);
+--   end if;
+--   return v_username;
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_edit_function`;
+-- FUNCTION auth_sf_edit_function
+-- 		(a_function_name IN authorization.function_name%TYPE,
+--                  a_do_function IN authorization.do_function%TYPE,
+--                  a_grant_and_view IN authorization.grant_and_view%TYPE,
+--                  a_effective_date IN authorization.effective_date%TYPE,
+--                  a_expiration_date IN authorization.expiration_date%TYPE)
+-- RETURN STRING
+-- IS
+-- v_function_name varchar2(33);
+-- begin
+--   v_function_name := a_function_name;
+--   /* If user cannot execute the authorization today, put parentheses
+--      around the function_name */
+--   if ( (a_do_function = 'N') or (a_effective_date > SYSDATE)
+--        or (nvl(a_expiration_date, SYSDATE) < SYSDATE) ) then
+--     v_function_name := '(' || v_function_name || ')';
+--   end if;
+--   /* If user can grant the function, then put a plus before the
+--      function_name */
+--   if (a_grant_and_view = 'GD') then
+--     v_function_name := '+' || v_function_name;
+--   end if;
+--   return v_function_name;
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_get_1st_token`;
+-- FUNCTION auth_sf_get_1st_token
+--                 (a_list IN STRING)
+-- RETURN STRING
+-- IS
+-- v_token VARCHAR2(20) := '';
+-- v_pos1 BINARY_INTEGER;
+-- v_pos2 BINARY_INTEGER;
+-- begin
+--   v_pos1 := 1;
+--   while substr(a_list,v_pos1,1) = ' ' loop  /* Find first non-blank char */
+--     v_pos1 := v_pos1 + 1;
+--     if v_pos1 = length(a_list) then
+--       return v_token;
+--     end if;
+--   end loop;
+--   v_pos2 := instr(a_list, ' ', v_pos1);  /* Find the next blank */
+--   if v_pos2 = 0 then
+--     v_pos2 := length(a_list) + 1;
+--   end if;
+--   /* Get the string starting at v_pos1 and ending 1 char before v_pos2 */
+--   v_token := substr(a_list, v_pos1, v_pos2 - v_pos1);
+--   return v_token;
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_get_correct_value`;
+-- FUNCTION auth_sf_get_correct_value(a_value IN STRING)
+-- RETURN STRING IS
+-- begin
+--   if rtrim(lower(a_value)) = '<me>' then
+--      return user;
+--   else
+--      return a_value;
+--   end if;
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_get_fragment`;
+-- FUNCTION AUTH_SF_GET_FRAGMENT(C_ID IN INTEGER, C_VALUE IN STRING)
+-- RETURN VARCHAR2 IS
+-- COND_FRAGMENT VARCHAR2(255) := '';
+-- RETURN_FRAGMENT VARCHAR2(255) := '';
+-- REPLACE_STR VARCHAR2(10) := '?';
+-- SUB_STR1 VARCHAR2(10) := '';
+-- SUB_STR2 VARCHAR2(10) := '''';
+-- BEGIN
+--   SELECT RTRIM(LTRIM(C.SQL_FRAGMENT)) INTO COND_FRAGMENT FROM CRITERIA C WHERE C.CRITERIA_ID = C_ID;
+--   IF COND_FRAGMENT != 'NULL' THEN
+--      IF INSTR(COND_FRAGMENT, '%?%') > 0 THEN
+--         REPLACE_STR := '%?%';
+-- 	SUB_STR1 := '%';
+-- 	SUB_STR2 := '%''';
+--      ELSIF INSTR(COND_FRAGMENT, '?%') > 0 THEN
+-- 	REPLACE_STR := '?%';
+-- 	SUB_STR2 := '%''';
+--      ELSIF INSTR(COND_FRAGMENT, '?') = 0 THEN
+-- 	RETURN COND_FRAGMENT;
+--      END IF;
+--      RETURN_FRAGMENT := REPLACE(COND_FRAGMENT, REPLACE_STR, '''' || SUB_STR1 || upper(C_VALUE) || SUB_STR2);
+--   END IF;
+--   RETURN RETURN_FRAGMENT;
+-- END;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_get_scrn_id`;
+-- FUNCTION auth_sf_get_scrn_id(a_selection_id INTEGER)
+-- RETURN INTEGER IS
+-- scrn_id integer := 0;
+-- begin
+--   select ss.screen_id into scrn_id from selection_set ss
+-- 	where ss.selection_id = a_selection_id and ROWNUM < 2;
+--   return scrn_id;
+--   EXCEPTION
+-- 	WHEN OTHERS THEN
+-- 	    return scrn_id;
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_is_auth_active`;
+-- FUNCTION auth_sf_is_auth_active
+-- 		(a_do_function string,
+--                  a_effective_date IN date,
+--                  a_expiration_date IN date)
+-- RETURN STRING
+-- IS
+-- begin
+--   if (a_do_function = 'Y') and (a_effective_date <= sysdate)
+--       and (nvl(a_expiration_date,sysdate) >= sysdate) then
+--     return 'Y';
+--   else
+--     return 'N';
+--   end if;
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_is_auth_current`;
+-- FUNCTION auth_sf_is_auth_current
+-- 		(a_effective_date IN date,
+--                  a_expiration_date IN date)
+-- RETURN STRING
+-- IS
+-- begin
+--   if (a_effective_date <= sysdate)
+--       and (nvl(a_expiration_date,sysdate) >= sysdate) then
+--     return 'Y';
+--   else
+--     return 'N';
+--   end if;
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_qual_subtype`;
+-- FUNCTION auth_sf_qual_subtype
+-- 		(a_qual_type IN qualifier.qualifier_type%TYPE,
+--                  a_qual_code IN qualifier.qualifier_code%TYPE,
+--                  a_qual_ch IN qualifier.custom_hierarchy%TYPE)
+-- RETURN STRING
+-- IS
+-- begin
+--   if (a_qual_type = 'COST') then
+--     if (substr(a_qual_code,1,2) = 'P_') then
+--        return 'Group of child WBSs, diff. prof. ctr.';
+--     elsif (a_qual_ch = 'Y') then
+--        return 'Custom group of prof ctr. or cost coll.';
+--     elsif (substr(a_qual_code,1,4) = '0HPC') then
+--        return 'Group of profit centers';
+--     elsif (substr(a_qual_code,1,3) = '0PC') then
+--        return 'Profit center';
+--     elsif (substr(a_qual_code,1,1) = 'C') then
+--        return 'Cost center';
+--     elsif (substr(a_qual_code,1,1) = 'I') then
+--        return 'Internal order';
+--     elsif (substr(a_qual_code,1,1) = 'P') then
+--        return 'Project';
+--     else
+--        return 'Unknown';
+--     end if;
+--   elsif (a_qual_type = 'PROF') then
+--     if (a_qual_ch = 'Y') then
+--        return 'Custom group of profit centers';
+--     elsif (substr(a_qual_code,1,3) = '0HP') then
+--        return 'Group of profit centers';
+--     elsif (substr(a_qual_code,1,2) = 'PC') then
+--        return 'Profit center';
+--     else
+--        return 'Unknown';
+--     end if;
+--   elsif (a_qual_type = 'FUND') then
+--     if (a_qual_ch = 'Y') then
+--        return 'Custom group of fund centers';
+--     elsif (substr(a_qual_code,1,2) = 'FC') then
+--        return 'Fund center';
+--     elsif (substr(a_qual_code,1,1) = 'F') then
+--        return 'Fund';
+--     else
+--        return 'Unknown';
+--     end if;
+--   else
+--     return '';
+--   end if;
+-- end ;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_remove_token`;
+-- FUNCTION auth_sf_remove_token
+--                 (a_token IN STRING,
+--                  a_list IN STRING)
+-- RETURN STRING
+-- IS
+-- v_list VARCHAR2(1000) := a_list;
+-- v_list_left VARCHAR2(1000);
+-- v_list_right VARCHAR2(1000);
+-- v_continue BINARY_INTEGER := 1;
+-- v_pos1 BINARY_INTEGER;
+-- v_pos2 BINARY_INTEGER;
+-- begin
+--   if (substr(v_list,1,1) != ' ') then  /* Make sure list has leading blank */
+--     v_list := ' ' || v_list;
+--   end if;
+--   if (substr(v_list,length(v_list),1) != ' ') then  /* Trailing blank */
+--     v_list := v_list || ' ';
+--   end if;
+--   while v_continue = 1 loop
+--     v_pos1 := instr(v_list, ' ' || a_token || ' ');  /* Position of token */
+--     if v_pos1 > 0 then
+--       v_list_left := substr(v_list, 1, v_pos1);  /* Left of token */
+--       v_list_right := substr(v_list, v_pos1+length(a_token)+2);  /* Right */
+--       v_list := v_list_left || v_list_right;
+--     else
+--       v_continue := 0;
+--     end if;
+--   end loop;
+--   return v_list;
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`auth_sf_user_priv_list`;
+-- FUNCTION auth_sf_user_priv_list
+--   (ai_user IN authorization.KERBEROS_NAME%TYPE)
+-- RETURN char
+-- IS
+-- v_count number := 0;
+-- v_user authorization.KERBEROS_NAME%TYPE;
+-- v_priv_array varchar2(10) := 'NNNNNNNNNN';
+-- begin
+--   v_user := upper(ai_user);
+--   if v_user = '*' then /* If parameter is *, set v_user to calling user */
+--      v_user := user;
+--   end if;
+--   /* If user has a Meta authorization for creating authorizations, or if
+--      he has one or more authorizations where GRANT_AND_VIEW = 'GV' or 'GD',
+--      then set the first byte to 'Y'. */
+--   --select count(*) into v_count from authorization a
+--   --  where a.function_name in ('CREATE AUTHORIZATIONS', 'PRIMARY AUTHORIZOR')
+--   --          and a.function_category = 'META' and
+--   --          a.kerberos_name = v_user
+--   --          and a.do_function = 'Y'
+--   --          and a.effective_date <= sysdate
+--   --          and (a.expiration_date is NULL or a.expiration_date >= sysdate);
+--   select count(*) into v_count from authorization a, function f
+--       where a.function_id = f.function_id
+--               and (f.is_primary_auth_parent = 'Y'
+--                    or f.function_name = 'CREATE AUTHORIZATIONS')
+--               and a.kerberos_name = v_user
+--               and a.do_function = 'Y'
+--               and a.effective_date <= sysdate
+--               and (a.expiration_date is NULL or a.expiration_date >= sysdate);
+--   if v_count > 0 then
+--     v_priv_array := 'Y' || substr(v_priv_array,2);
+--   else
+--     select count(*) into v_count from authorization a
+--         where a.kerberos_name = v_user
+--               and a.grant_and_view in ('GV','GD')
+--               and a.effective_date <= sysdate
+--               and (a.expiration_date is NULL or a.expiration_date >= sysdate);
+--     if v_count > 0 then
+--       v_priv_array := 'Y' || substr(v_priv_array,2);
+--     end if;
+--   end if;
+-- 
+--   /* If user has a Meta authorization for creating functions, then set the
+--      second byte to 'Y'. */
+--   select count(*) into v_count from authorization a
+--         where a.function_name = 'CREATE FUNCTIONS' and
+--               a.function_category = 'META' and
+--               a.kerberos_name = v_user
+--               and a.effective_date <= sysdate
+--               and (a.expiration_date is NULL or a.expiration_date >= sysdate);
+--   if v_count > 0 then
+--     v_priv_array := substr(v_priv_array,1,1) || 'Y' || substr(v_priv_array,3);
+--   end if;
+-- 
+--   return v_priv_array;
+-- end ;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_check_version`;
+-- PROCEDURE auth_sp_check_version
+-- 		(a_version IN STRING,
+--                  a_platform IN STRING,
+--                  a_message OUT STRING)
+-- IS
+-- v_message_type application_version.message_type%TYPE;
+-- v_message_text application_version.message_text%TYPE;
+-- v_last_name person.last_name%TYPE;
+-- v_first_name person.first_name%TYPE;
+-- v_mit_id person.mit_id%TYPE;
+-- begin
+--   select last_name, first_name, mit_id
+--    into v_last_name, v_first_name, v_mit_id
+--    from person
+--    where kerberos_name = upper(user);
+--   insert into connect_log
+--    (roles_username, connect_date, client_version, client_platform,
+--     last_name, first_name, mit_id)
+--    values (user, sysdate, a_version, a_platform,
+--     v_last_name, v_first_name, v_mit_id);
+--   select message_type, message_text into v_message_type, v_message_text
+--    from application_version
+--    where nvl(a_platform, ' ') between from_platform and to_platform
+--    and nvl(a_version, ' ') between from_version and to_version
+--    and rownum = 1;
+--   if v_message_type = 'N' then
+--     a_message := 'N_';
+--   else
+--     a_message := v_message_type || '_You are running version ''' || a_version
+--            || ''' on ''' || a_platform || '''. ' || v_message_text;
+--   end if;
+-- end ;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_copy_authorizations`;
+-- PROCEDURE auth_sp_copy_authorizations
+-- 		(ai_category IN function.function_category%TYPE,
+-- 	         ai_source_kerberos_name IN  authorization.kerberos_name%TYPE,
+-- 		 ai_dest_kerberos_name IN  authorization.kerberos_name%TYPE,
+--                  ao_message OUT VARCHAR2)
+-- IS
+-- v_date date := sysdate; /* Save sysdate */
+-- v_count number;
+-- v_count2 number;
+-- v_count3 number;
+-- v_user_count number;
+-- a_source_kerberos_name authorization.kerberos_name%TYPE;
+-- a_dest_kerberos_name authorization.kerberos_name%TYPE;
+-- a_category function.function_category%TYPE;
+-- a_bad_function authorization.function_name%TYPE;
+-- a_bad_qc authorization.qualifier_code%TYPE;
+-- begin
+--   a_source_kerberos_name := upper(ai_source_kerberos_name);
+--   a_dest_kerberos_name := upper(ai_dest_kerberos_name);
+--   a_category := upper(ai_category);
+--   /* Make sure the destination kerberos_name is valid */
+--   select count(*) into v_user_count from person
+--     where kerberos_name = a_dest_kerberos_name;
+--   /* How many authorizations is user allowed to copy? */
+--   select count(*) into v_count from AUTHORIZATION A1
+-- 	where A1.kerberos_name = a_source_kerberos_name
+--         and A1.function_category = a_category
+--         and not exists (SELECT A2.AUTHORIZATION_ID FROM AUTHORIZATION A2
+--            WHERE A2.KERBEROS_NAME = a_dest_kerberos_name
+--            AND A2.FUNCTION_ID = A1.FUNCTION_ID
+--            AND A2.QUALIFIER_CODE = A1.QUALIFIER_CODE)
+--         and auth_sf_can_create_auth(user, A1.function_name, A1.qualifier_code,
+--         A1.do_function, A1.grant_and_view) = 'Y';
+--   /* How many authorizations could be copied if user was authorized? */
+--   select count(*) into v_count2 from AUTHORIZATION A1
+-- 	where A1.kerberos_name = a_source_kerberos_name
+--         and A1.function_category = a_category
+--         and not exists (SELECT A2.AUTHORIZATION_ID FROM AUTHORIZATION A2
+--            WHERE A2.KERBEROS_NAME = a_dest_kerberos_name
+--            AND A2.FUNCTION_ID = A1.FUNCTION_ID
+--            AND A2.QUALIFIER_CODE = A1.QUALIFIER_CODE);
+--   /* If user is not authorized to copy them all, exit with an error message */
+--   if v_count2 > v_count then
+--     v_count3 := v_count2 - v_count;
+--     select A1.function_name, A1.qualifier_code into a_bad_function, a_bad_qc
+--         from AUTHORIZATION A1, authorization A2
+-- 	where A1.kerberos_name = a_source_kerberos_name
+--         and A1.function_category = a_category
+--         and A2.kerberos_name(+) = a_dest_kerberos_name
+--         and A2.function_id(+) = A1.function_id
+--         and A2.qualifier_code(+) = A1.qualifier_code
+--         and A2.function_id is NULL
+--         and rownum = 1
+--         and auth_sf_can_create_auth(user,
+--           A1.function_name, A1.qualifier_code,
+--         A1.do_function, A1.grant_and_view) = 'N';
+--     ao_message := 'You are not authorized to copy ' || to_char(v_count3)
+--          || ' of the ' || to_char(v_count2) || ' authorizations, e.g., '
+--          || a_bad_function || ', qual=' || a_bad_qc;
+--     --ao_message := 'You are not authorized to copy all these authorizations';
+--   elsif v_count = 0 then
+--     ao_message := 'No authorizations to be copied for ''' ||
+--       a_source_kerberos_name || ''' in category ''' ||
+--       a_category || '''';
+--   elsif v_user_count = 0 then
+--     ao_message := 'Destination kerberos_name ''' ||
+--       a_dest_kerberos_name || ''' does not exist.';
+--   else
+--       insert into authorization
+--       select authorization_sequence.nextval,
+--                   A1.FUNCTION_ID, a1.QUALIFIER_ID,
+--                   a_dest_kerberos_name,
+-- 		  A1.QUALIFIER_CODE, A1.FUNCTION_NAME, A1.FUNCTION_CATEGORY,
+--                   A1.QUALIFIER_NAME, user, v_date, A1.DO_FUNCTION,
+--                   A1.GRANT_AND_VIEW, A1.DESCEND,
+-- 	          greatest(A1.EFFECTIVE_DATE, SYSDATE),
+--                   A1.EXPIRATION_DATE from authorization A1
+-- 	  where A1.kerberos_name = a_source_kerberos_name
+--           and A1.function_category = a_category
+--           and not exists (SELECT A2.AUTHORIZATION_ID FROM AUTHORIZATION A2
+--             WHERE A2.KERBEROS_NAME = a_dest_kerberos_name
+--             AND A2.FUNCTION_ID = A1.FUNCTION_ID
+--             AND A2.QUALIFIER_CODE = A1.QUALIFIER_CODE);
+--      ao_message := TO_CHAR(v_count) || ' authorizations copied.';
+--   end if;
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_create_auth2`;
+-- PROCEDURE AUTH_SP_CREATE_AUTH2
+-- 		(AI_FUNCTION_NAME IN FUNCTION.FUNCTION_NAME%TYPE,
+-- 		 AI_QUALIFIER_CODE IN QUALIFIER.QUALIFIER_CODE%TYPE,
+-- 		 AI_KERBEROS_NAME IN PERSON.KERBEROS_NAME%TYPE,
+-- 		 AI_DO_FUNCTION IN AUTHORIZATION.DO_FUNCTION%TYPE,
+-- 		 AI_GRANT_AND_VIEW IN AUTHORIZATION.GRANT_AND_VIEW%TYPE,
+-- 		 AI_DESCEND IN AUTHORIZATION.DESCEND%TYPE,
+-- 		 AI_EFFECTIVE_DATE IN STRING,
+-- 		 AI_EXPIRATION_DATE IN STRING,
+-- 		 a_modified_by OUT AUTHORIZATION.modified_by%TYPE,
+-- 		 a_modified_date OUT STRING,
+--                  a_authorization_id OUT AUTHORIZATION.authorization_id%TYPE
+-- 		)
+-- IS
+-- V_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- V_QUALIFIER_ID QUALIFIER.QUALIFIER_ID%TYPE;
+-- V_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- V_QUALIFIER_NAME QUALIFIER.QUALIFIER_NAME%TYPE;
+-- V_QUALIFIER_TYPE QUALIFIER.QUALIFIER_TYPE%TYPE;
+-- V_FUNCTION_ID FUNCTION.FUNCTION_ID%TYPE;
+-- V_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- V_FUNCTION_CATEGORY FUNCTION.FUNCTION_CATEGORY%TYPE;
+-- v_status integer;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- A_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- A_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- A_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- A_DO_FUNCTION AUTHORIZATION.DO_FUNCTION%TYPE;
+-- A_GRANT_AND_VIEW AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- A_DESCEND AUTHORIZATION.DESCEND%TYPE;
+-- A_EFFECTIVE_DATE varchar2(255);
+-- A_EXPIRATION_DATE varchar2(255);
+-- 
+-- BEGIN
+--   a_kerberos_name := upper(ai_kerberos_name);
+--   a_function_name := upper(ai_function_name);
+--   a_qualifier_code := upper(ai_qualifier_code);
+--   a_do_function := upper(ai_do_function);
+--   a_grant_and_view := upper(ai_grant_and_view);
+--   a_descend := upper(ai_descend);
+--   a_effective_date := upper(ai_effective_date);
+--   a_expiration_date := upper(ai_expiration_date);
+-- 
+--   /* Adjust grant_and_view.  User sees 'Y' <=> database contains 'GD' */
+--   if (a_grant_and_view = 'Y ' or a_grant_and_view = 'GD') then
+--     a_grant_and_view := 'GD';
+--   else
+--     a_grant_and_view := 'N ';
+--   end if;
+-- 
+--   v_status := 1;  /* Make sure function_name is in function_table */
+--   select function_id, function_name, function_category, qualifier_type
+--     into v_function_id, v_function_name, v_function_category, v_qualifier_type
+--     from function
+--     where function_name = a_function_name;
+-- 
+--   v_status := 2;  /* Make sure qualifier_name is in qualifier_table */
+--   select qualifier_id, qualifier_code, qualifier_name
+--     into v_qualifier_id, v_qualifier_code, v_qualifier_name
+--     from qualifier where qualifier_code = a_qualifier_code
+--     and qualifier_type = v_qualifier_type;
+-- 
+--   v_status := 3;  /* Check existence of kerberos_name */
+--   select kerberos_name into v_kerberos_name
+--     from person where kerberos_name = a_kerberos_name;
+-- 
+--   -- Old: Check special case: If function is PRIMARY AUTHORIZOR, then the
+--   -- qualifier must start with D_.
+--   --if (v_function_name = 'PRIMARY AUTHORIZOR'
+--   --    and substr(v_qualifier_code, 1, 2) <> 'D_') then
+--   --   raise_application_error(roles_msg.err_20015_no,
+--   --			     roles_msg.err_20015_msg);
+--   --end if;
+--   -- New: Check special case: If function's qualifier_type is 'DEPT', then
+--   -- qualifier must start with D_.
+--   if (v_qualifier_type = 'DEPT'
+--       and substr(v_qualifier_code, 1, 2) <> 'D_') then
+--      raise_application_error(roles_msg.err_20015_no,
+-- 			     roles_msg.err_20015_msg);
+--   end if;
+-- 
+--   -- check ability to create authorization
+--   if auth_sf_can_create_auth(USER, AI_FUNCTION_NAME, AI_QUALIFIER_CODE,
+-- 	AI_DO_FUNCTION, AI_GRANT_AND_VIEW) = 'N' then
+--      raise_application_error(roles_msg.err_20014_no,
+-- 			     roles_msg.err_20014_msg);
+--   end if;
+-- 
+--   insert into authorization
+-- 	values(authorization_sequence.nextval, V_FUNCTION_ID, V_QUALIFIER_ID,
+-- 		A_KERBEROS_NAME, V_QUALIFIER_CODE, V_FUNCTION_NAME,
+-- 		V_FUNCTION_CATEGORY, V_QUALIFIER_NAME, user,
+-- 		sysdate, A_DO_FUNCTION, A_GRANT_AND_VIEW, A_DESCEND,
+-- 		greatest(auth_sf_convert_str_to_date(A_EFFECTIVE_DATE),
+--                         sysdate),
+-- 		auth_sf_convert_str_to_date(A_EXPIRATION_DATE));
+--   a_modified_by := user;
+--   a_modified_date := auth_sf_convert_date_to_str(sysdate);
+--   select authorization_id into a_authorization_id
+--     from authorization where kerberos_name = a_kerberos_name
+--     and function_category = V_FUNCTION_CATEGORY
+--     and function_name = V_FUNCTION_NAME
+--     and qualifier_code = V_QUALIFIER_CODE;
+-- 
+--   EXCEPTION
+-- 	WHEN NO_DATA_FOUND THEN
+--             if v_status = 1 then
+-- 		   v_msg_no := roles_msg.err_20001_no;
+-- 		   v_msg := roles_msg.err_20001_msg;
+--             elsif v_status = 2 then
+--                    v_msg_no := roles_msg.err_20017_no;
+--                    v_msg := roles_msg.err_20017_msg;
+--             else
+-- 		   v_msg_no := roles_msg.err_20003_no;
+-- 		   v_msg := roles_msg.err_20003_msg;
+--             end if;
+--       	    raise_application_error(v_msg_no, v_msg);
+-- 	WHEN DUP_VAL_ON_INDEX THEN
+-- 	  raise_application_error(roles_msg.err_20007_no,
+--             roles_msg.err_20007_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_create_authorizations`;
+-- PROCEDURE AUTH_SP_CREATE_AUTHORIZATIONS
+-- 		(AI_FUNCTION_NAME IN FUNCTION.FUNCTION_NAME%TYPE,
+-- 		 AI_QUALIFIER_CODE IN QUALIFIER.QUALIFIER_CODE%TYPE,
+-- 		 AI_KERBEROS_NAME IN PERSON.KERBEROS_NAME%TYPE,
+-- 		 AI_DO_FUNCTION IN AUTHORIZATION.DO_FUNCTION%TYPE,
+-- 		 AI_GRANT_AND_VIEW IN AUTHORIZATION.GRANT_AND_VIEW%TYPE,
+-- 		 AI_DESCEND IN AUTHORIZATION.DESCEND%TYPE,
+-- 		 AI_EFFECTIVE_DATE IN STRING,
+-- 		 AI_EXPIRATION_DATE IN STRING,
+-- 		 a_modified_by OUT AUTHORIZATION.modified_by%TYPE,
+-- 		 a_modified_date OUT STRING
+-- 		)
+-- IS
+-- V_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- V_QUALIFIER_ID QUALIFIER.QUALIFIER_ID%TYPE;
+-- V_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- V_QUALIFIER_NAME QUALIFIER.QUALIFIER_NAME%TYPE;
+-- V_QUALIFIER_TYPE QUALIFIER.QUALIFIER_TYPE%TYPE;
+-- V_FUNCTION_ID FUNCTION.FUNCTION_ID%TYPE;
+-- V_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- V_FUNCTION_CATEGORY FUNCTION.FUNCTION_CATEGORY%TYPE;
+-- v_status integer;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- A_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- A_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- A_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- A_DO_FUNCTION AUTHORIZATION.DO_FUNCTION%TYPE;
+-- A_GRANT_AND_VIEW AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- A_DESCEND AUTHORIZATION.DESCEND%TYPE;
+-- A_EFFECTIVE_DATE varchar2(255);
+-- A_EXPIRATION_DATE varchar2(255);
+-- BEGIN
+--   a_kerberos_name := upper(ai_kerberos_name);
+--   a_function_name := upper(ai_function_name);
+--   a_qualifier_code := upper(ai_qualifier_code);
+--   a_do_function := upper(ai_do_function);
+--   a_grant_and_view := upper(ai_grant_and_view);
+--   a_descend := upper(ai_descend);
+--   a_effective_date := upper(ai_effective_date);
+--   a_expiration_date := upper(ai_expiration_date);
+--   /* Adjust grant_and_view.  User sees 'Y' <=> database contains 'GD' */
+--   if (a_grant_and_view = 'Y ' or a_grant_and_view = 'GD') then
+--     a_grant_and_view := 'GD';
+--   else
+--     a_grant_and_view := 'N ';
+--   end if;
+--   v_status := 1;  /* Make sure function_name is in function_table */
+--   select function_id, function_name, function_category, qualifier_type
+--     into v_function_id, v_function_name, v_function_category, v_qualifier_type
+--     from function
+--     where function_name = a_function_name;
+--   v_status := 2;  /* Make sure qualifier_name is in qualifier_table */
+--   select qualifier_id, qualifier_code, qualifier_name
+--     into v_qualifier_id, v_qualifier_code, v_qualifier_name
+--     from qualifier where qualifier_code = a_qualifier_code
+--     and qualifier_type = v_qualifier_type;
+--   v_status := 3;  /* Check existence of kerberos_name */
+--   select kerberos_name into v_kerberos_name
+--     from person where kerberos_name = a_kerberos_name;
+--   -- check authorization
+--   if auth_sf_can_create_auth(USER, AI_FUNCTION_NAME, AI_QUALIFIER_CODE,
+-- 	AI_DO_FUNCTION, AI_GRANT_AND_VIEW) = 'N' then
+--      raise_application_error(roles_msg.err_20014_no,
+-- 			     roles_msg.err_20014_msg);
+--   end if;
+--   insert into authorization
+-- 	values(authorization_sequence.nextval, V_FUNCTION_ID, V_QUALIFIER_ID,
+-- 		A_KERBEROS_NAME, V_QUALIFIER_CODE, V_FUNCTION_NAME,
+-- 		V_FUNCTION_CATEGORY, V_QUALIFIER_NAME, user,
+-- 		sysdate, A_DO_FUNCTION, A_GRANT_AND_VIEW, A_DESCEND,
+-- 		auth_sf_convert_str_to_date(A_EFFECTIVE_DATE),
+-- 		auth_sf_convert_str_to_date(A_EXPIRATION_DATE));
+--   a_modified_by := user;
+--   a_modified_date := auth_sf_convert_date_to_str(sysdate);
+--   EXCEPTION
+-- 	WHEN NO_DATA_FOUND THEN
+--             if v_status = 1 then
+-- 		   v_msg_no := roles_msg.err_20001_no;
+-- 		   v_msg := roles_msg.err_20001_msg;
+--             elsif v_status = 2 then
+--                    v_msg_no := roles_msg.err_20017_no;
+--                    v_msg := roles_msg.err_20017_msg;
+--             else
+-- 		   v_msg_no := roles_msg.err_20003_no;
+-- 		   v_msg := roles_msg.err_20003_msg;
+--             end if;
+--       	    raise_application_error(v_msg_no, v_msg);
+-- 	WHEN DUP_VAL_ON_INDEX THEN
+-- 	  raise_application_error(roles_msg.err_20007_no,
+--             roles_msg.err_20007_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_create_function`;
+-- PROCEDURE AUTH_SP_CREATE_FUNCTION
+-- 		(ai_function_name IN function.function_name%TYPE,
+-- 		 ai_function_description IN function.function_description%TYPE,
+-- 		 ai_function_category IN category.function_CATEGORY%TYPE,
+-- 		 ai_qualifier_type IN qualifier_type.qualifier_type%TYPE,
+-- 		 a_creator OUT function.CREATOR%TYPE,
+-- 		 a_modified_by OUT function.MODIFIED_BY%TYPE,
+-- 		 a_modified_date OUT STRING
+-- 		)
+-- IS
+-- v_qualifier_type qualifier_type.qualifier_type%TYPE;
+-- v_function_category category.function_CATEGORY%TYPE;
+-- a_function_name function.FUNCTION_NAME%TYPE;
+-- a_function_description function.FUNCTION_DESCRIPTION%TYPE;
+-- a_function_category category.FUNCTION_CATEGORY%TYPE;
+-- a_qualifier_type qualifier_type.QUALIFIER_TYPE%TYPE;
+-- v_status integer;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- begin
+--   a_function_name := upper(ai_function_name);
+--   a_function_description := ai_function_description; /* Preserve mixed case. */
+--   a_function_category := upper(ai_function_category);
+--   a_qualifier_type := upper(ai_qualifier_type);
+--   if auth_sf_can_create_function(user, a_function_category) = 'N' then
+--      raise_application_error(roles_msg.err_20014_no,
+--        'Not authorized to create functions in category '''
+--        || a_function_category || '''');
+--   end if;
+--   v_status := 1;
+--   select qualifier_type into v_qualifier_type from qualifier_type where
+--     qualifier_type = a_qualifier_type; /* Make sure qualifier_type exists */
+--   v_status := 2;
+--   select function_category into v_function_category from category where
+--     function_category = a_function_category; /* Check function_category */
+--   insert into function
+--         (function_id, function_name, function_description, function_category,
+--          creator, modified_by, modified_date, qualifier_type) /* P_A, later */
+-- 	values(function_sequence.nextval, a_function_name,
+-- 		a_function_description, a_function_category,
+-- 		user, user, sysdate, a_qualifier_type);
+--   a_creator := user;
+--   a_modified_by := user;
+--   a_modified_date := auth_sf_convert_date_to_str(sysdate);
+--   EXCEPTION
+-- 	WHEN NO_DATA_FOUND THEN
+--             if v_status = 1 then
+-- 		     v_msg_no := roles_msg.err_20008_no;
+-- 		     v_msg := roles_msg.err_20008_msg;
+--             else
+-- 		     v_msg_no := roles_msg.err_20016_no;
+-- 		     v_msg := roles_msg.err_20016_msg;
+--             end if;
+--       	    raise_application_error(v_msg_no, v_msg);
+-- 	WHEN DUP_VAL_ON_INDEX THEN
+-- 	    raise_application_error(roles_msg.err_20009_no,
+-- 				roles_msg.err_20009_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_delete_authorizations`;
+-- PROCEDURE auth_sp_delete_authorizations
+-- 		(a_auth_id IN authorization.authorization_id%TYPE)
+-- IS
+-- V_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- V_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- V_DO_FUNCTION AUTHORIZATION.DO_FUNCTION%TYPE;
+-- V_GRANT_AND_VIEW AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- ao_message varchar2(255);
+-- BEGIN
+--   /* Make sure the authorization already exists */
+--   select function_name, qualifier_code, do_function, grant_and_view
+--         into V_FUNCTION_NAME, V_QUALIFIER_CODE, V_DO_FUNCTION, V_GRANT_AND_VIEW
+--         from authorization
+--         where authorization_id = a_auth_id;
+--   if auth_sf_can_create_auth(USER, V_FUNCTION_NAME, V_QUALIFIER_CODE,
+--         V_DO_FUNCTION, V_GRANT_AND_VIEW) = 'N' then
+--      ao_message := 'You are not authorized to delete '
+--        || ' this authorization. function='
+--        || V_FUNCTION_NAME || ', qual=' || v_qualifier_code;
+--      raise_application_error(roles_msg.err_20014_no,
+-- 			     ao_message);
+--   end if;
+--   delete authorization where authorization_id = a_auth_id;
+--   EXCEPTION
+--         WHEN NO_DATA_FOUND THEN
+--           raise_application_error(roles_msg.err_20020_no,
+--                                   roles_msg.err_20020_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_delete_function`;
+-- PROCEDURE auth_sp_delete_function
+-- 		(a_function_id IN function.FUNCTION_ID%TYPE)
+-- IS
+-- v_function_category function.function_category%TYPE;
+-- v_count number := 0;
+-- begin
+--   /* Find the function category, and make sure user is authorized to
+--      delete functions in this category */
+--   select function_category into v_function_category
+--         from function
+-- 	where function_id = a_function_id;
+--   if auth_sf_can_create_function(user, v_function_category) = 'N' then
+--      raise_application_error(roles_msg.err_20014_no,
+--        'Not authorized to delete functions in category '''
+--        || v_function_category || '''');
+--   end if;
+--   select count(*) into v_count
+--         from authorization
+-- 	where function_id = a_function_id;
+--   if v_count > 0 then
+--      raise_application_error(roles_msg.err_20022_no,
+--        'Function cannot be deleted. ' || to_char(v_count) || ' authorizations'
+--         || ' reference this function');
+--   end if;
+--   delete function where function_id = a_function_id;
+--   EXCEPTION
+--       WHEN NO_DATA_FOUND THEN
+-- 	raise_application_error(roles_msg.err_20019_no,
+--                                 roles_msg.err_20019_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_delete_qual`;
+-- PROCEDURE auth_sp_delete_qual
+--                 (ai_qualtype     IN STRING,
+--                  ai_qualcode     IN STRING,
+--                  ai_for_user     IN STRING,
+--                  ao_message      OUT STRING)
+-- IS
+-- v_qualid qualifier.qualifier_id%TYPE;
+-- v_count number;
+-- v_count2 number;
+-- v_count3 number := 0;
+-- v_qualtype qualifier.qualifier_type%TYPE;
+-- v_qualcode qualifier.qualifier_code%TYPE;
+-- v_related_qualcode qualifier.qualifier_code%TYPE := '';
+-- v_qualtype_code qualifier.qualifier_code%TYPE;
+-- v_check_auth varchar2(2);
+-- v_message varchar2(255) := 'Miscellaneous error in auth_sp_delete_qual';
+-- v_message_no integer:= -20100;
+-- BEGIN
+--   v_qualtype := upper(ai_qualtype);
+--   v_qualcode := upper(ai_qualcode);
+--   /* Set a SAVEPOINT in case we need to ROLLBACK later (different one for
+--      SPGP transactions, which might be recursive call of this routine) */
+--   if v_qualtype = 'SPGP' then
+--     SAVEPOINT save_qual_spgp_trans;
+--   else
+--     SAVEPOINT save_qual_transactions;
+--   end if;
+--   /* Make sure qualtype and qualcode exist */
+--   select nvl(max(qualifier_id),-99) into v_qualid
+--     from qualifier where qualifier_type = v_qualtype
+--     and qualifier_code = v_qualcode;
+--   if v_qualid = -99 then
+--     v_message_no := -20105;
+--     v_message := 'Error: Qualifier code ''' || v_qualcode || ''' type '''
+--                   || v_qualtype ||  ''' not found';
+--   else
+--     /* Make sure user is authorized to maintain qualifiers of the given
+--        qualifier type */
+--     v_qualtype_code := 'QUAL_' || v_qualtype; /* Qualifier for this qualtype */
+--     v_check_auth := AUTH_SF_CHECK_AUTH2('MAINTAIN QUALIFIERS', v_qualtype_code,
+--                      ai_for_user, 'PROXY TO MAINTAIN QUAL', v_qualtype_code);
+--     if v_check_auth = 'N' then
+--       v_message_no := -20102;
+--       v_message := '''' || nvl(ai_for_user, user)
+--                    || ''' not authorized to maintain qualifiers of type '''
+--                    || v_qualtype_code || '''';
+--     elsif v_check_auth = 'X' then
+--       v_message_no := -20103;
+--       v_message := '''' || user
+--                    || ''' not authorized to act as proxy for qualifier'
+--                    || ' maintenance for type '''
+--                    || v_qualtype_code || '''';
+--     else
+--       /* Make sure qualifier has no children. */
+--       select count(*) into v_count
+--         from qualifier_child where parent_id = v_qualid;
+--       /* Make sure there are no authorizations for the qualifier */
+--       select count(*) into v_count2
+--         from authorization where qualifier_id = v_qualid;
+--       /* If this is an FC_ qualifier, make sure there are no authorizations
+--          for related SG_ qualifier */
+--       if v_qualtype = 'FUND' and substr(v_qualcode, 1, 3) = 'FC_' then
+--         v_related_qualcode := 'SG' || substr(v_qualcode, 3);
+--         select count(*) into v_count3
+--           from authorization a, qualifier q
+--           where a.qualifier_id = q.qualifier_id
+--           and q.qualifier_type = 'SPGP'
+--           and q.qualifier_code = v_related_qualcode;
+--       end if;
+--       if v_count > 0 then
+--         v_message_no := -20106;
+--         v_message := 'Qualifier ''' || v_qualcode || ''' type '''
+--            || v_qualtype || ''' has children and cannot be deleted.';
+--       elsif v_count2 > 0 then
+--         v_message_no := -20107;
+--         v_message := 'Qualifier ''' || v_qualcode || ''' type '''
+--            || v_qualtype || ''' has authorizations and cannot be deleted.';
+--       elsif v_count3 > 0 then
+--         v_message_no := -20116;
+--         v_message := 'Related qualifier ''' || v_related_qualcode
+--           || ''' has authorizations. ''' || v_qualcode
+--           || ''' cannot be deleted.';
+--       else
+--         /* Adjust has_child of parents where this qualifier was the
+--            only child */
+--         update qualifier set has_child = 'N' where qualifier_id in
+--           (select parent_id from qualifier_child
+--             where parent_id in
+--             (select parent_id from qualifier_child where child_id
+--              = v_qualid) group by parent_id having count(*) = 1);
+--         /* Delete records from qualifier_child and qualifier_descendent */
+--         delete from qualifier_child where child_id = v_qualid;
+--         delete from qualifier_descendent where child_id = v_qualid;
+--         /* Delete record from qualifier_table */
+--         delete from qualifier where qualifier_id = v_qualid;
+--         /* Update the audit trail. */
+--         /* Set success message */
+--         v_message_no := 0;  /* No errors */
+--         ao_message := 'Qualifier ''' || v_qualcode || ''' type '''
+--           || v_qualtype || ''' has been deleted.';
+--       end if;
+--     end if;
+--   end if;
+--   /*  If there were no errors recorded, and if the added qualifier is
+--       of type FUND and starts with 'FC_', then do a similar delete for
+--       a parallel Spending Group qualifier. */
+--   ao_message := 'v_related_qualcode is ''' || v_related_qualcode
+--        || ''' v_message_no is ' || to_char(v_message_no);
+--   if substr(v_related_qualcode, 1, 2) = 'SG' and v_message_no = 0 then
+--     auth_sp_delete_qual('SPGP', v_related_qualcode, ai_for_user, v_message);
+--   end if;
+--   /* If there were any errors recorded, then raise an error condition.
+--      This will be trapped by the EXCEPTION handler which will need to raise
+--      the error condition "for real". */
+--   if v_message_no != 0 then
+--     raise_application_error(v_message_no, v_message);
+--   end if;
+--   EXCEPTION
+--     WHEN OTHERS THEN
+--       if v_qualtype = 'SPGP' then
+--         ROLLBACK TO save_qual_spgp_trans;
+--       else
+--         ROLLBACK TO save_qual_transactions;
+--       end if;
+--       if v_message_no = 0 then /* Error was encountered in subroutine */
+--         v_message := substr(sqlerrm, 1, 255);
+--         v_message_no := sqlcode;
+--       end if;
+--       raise_application_error(v_message_no, v_message);
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_delete_sql_lines`;
+-- PROCEDURE auth_sp_delete_sql_lines AS
+-- begin
+--   delete log_sql where sessionid = userenv('SESSIONID');
+--   commit;
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_duplicate_sys_criteria`;
+-- PROCEDURE auth_sp_duplicate_sys_criteria IS
+-- CURSOR get_sys_criteria IS
+--   SELECT selection_id, criteria_id FROM criteria_instance
+-- 	where username = 'SYSTEM'
+--     MINUS
+--   SELECT selection_id, criteria_id FROM criteria_instance
+-- 	where username = user;
+-- tmp_selection_id  criteria_instance.selection_id%TYPE;
+-- tmp_criteria_id criteria_instance.criteria_id%TYPE;
+-- begin
+--   OPEN get_sys_criteria;
+--   LOOP
+--     FETCH get_sys_criteria INTO tmp_selection_id, tmp_criteria_id;
+--     IF get_sys_criteria%NOTFOUND THEN
+-- 	CLOSE get_sys_criteria;
+-- 	EXIT;
+--     END IF;
+--      insert into criteria_instance
+-- 	select selection_id, criteria_id,
+-- 		user, apply, auth_sf_get_correct_value(value),
+-- 		 next_scrn_selection_id,
+-- 		no_change, sequence
+-- 		 from criteria_instance
+-- 		where selection_id = tmp_selection_id and
+-- 		      criteria_id = tmp_criteria_id and
+-- 		      username = 'SYSTEM';
+--   END LOOP;
+--   EXCEPTION
+--     WHEN NO_DATA_FOUND THEN
+-- 	CLOSE get_sys_criteria;
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_fix_qd_add`;
+-- PROCEDURE auth_sp_fix_qd_add
+--                 (a_qual_id IN STRING)
+-- IS
+-- v_qc_list VARCHAR2(1000);
+-- v_qd_list VARCHAR2(1000);
+-- v_qual_id VARCHAR2(10);
+-- v_pos1 BINARY_INTEGER;
+-- v_pos2 BINARY_INTEGER;
+-- --temp_message VARCHAR2(255);  -- For diagnostics
+-- begin
+--   --select 'A1. ' || to_char(sysdate, 'HH:MI:SS') into temp_message from dual;
+--   --DBMS_OUTPUT.PUT_LINE(temp_message);
+--   v_qc_list := auth_sf_ancestors_qc(a_qual_id, ' ');
+--   --select 'A2. ' || to_char(sysdate, 'HH:MI:SS') into temp_message from dual;
+--   --DBMS_OUTPUT.PUT_LINE(temp_message);
+--   v_qd_list := auth_sf_ancestors_qd(a_qual_id);
+--   --select 'A3. ' || to_char(sysdate, 'HH:MI:SS') into temp_message from dual;
+--   --DBMS_OUTPUT.PUT_LINE(temp_message);
+--   while length(v_qc_list) > 1 loop  /* Loop through items from QC list */
+--     v_qual_id := auth_sf_get_1st_token(v_qc_list);  /* Get next item */
+--     v_pos1 := instr(v_qd_list, ' ' || v_qual_id || ' '); /* Match in QD list?*/
+--     if v_pos1 > 0 then
+--       v_qd_list := auth_sf_remove_token(v_qual_id,v_qd_list); /*Rem fr QD lst*/
+--     else
+--       insert into qualifier_descendent values (v_qual_id, a_qual_id);
+--       /* Add the parent to each descendent where it doesn't exist already */
+--       insert into qualifier_descendent
+--         select v_qual_id, qd.child_id from qualifier_descendent qd
+--         where qd.parent_id = a_qual_id
+--         and not exists
+--         (select child_id from qualifier_descendent
+--          where parent_id = v_qual_id and child_id = qd.child_id);
+--     end if;
+--     v_qc_list := auth_sf_remove_token(v_qual_id,v_qc_list); /*Rem. fr. QC lst*/
+--   end loop;
+--   --select 'A4. ' || to_char(sysdate, 'HH:MI:SS') into temp_message from dual;
+--   --DBMS_OUTPUT.PUT_LINE(temp_message);
+--   --/* For remaining items in QD list, generate delete items */
+--   --while length(v_qd_list) > 1 loop  /* Loop through items from QD list */
+--   --  v_qual_id := auth_sf_get_1st_token(v_qd_list);  /* Get next item */
+--   --  delete from qualifier_descendent where parent_id = v_qual_id
+--   --   and child_id = a_qual_id;
+--   --  v_qd_list:= auth_sf_remove_token(v_qual_id,v_qd_list); /*Rem fr. QD lst*/
+--   --end loop;
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_fix_qd_for_1_qual`;
+-- PROCEDURE auth_sp_fix_qd_for_1_qual
+--                 (a_qual_id IN STRING)
+-- IS
+-- v_qc_list VARCHAR2(1000);
+-- v_qd_list VARCHAR2(1000);
+-- v_qual_id VARCHAR2(10);
+-- v_pos1 BINARY_INTEGER;
+-- v_pos2 BINARY_INTEGER;
+-- begin
+--   v_qc_list := auth_sf_ancestors_qc(a_qual_id, ' ');
+--   v_qd_list := auth_sf_ancestors_qd(a_qual_id);
+--   while length(v_qc_list) > 1 loop  /* Loop through items from QC list */
+--     v_qual_id := auth_sf_get_1st_token(v_qc_list);  /* Get next item */
+--     v_pos1 := instr(v_qd_list, ' ' || v_qual_id || ' '); /* Match in QD list?*/
+--     if v_pos1 > 0 then
+--       v_qd_list := auth_sf_remove_token(v_qual_id,v_qd_list); /*Rem fr QD lst*/
+--     else
+--       insert into qualifier_descendent values (v_qual_id, a_qual_id);
+--     end if;
+--     v_qc_list := auth_sf_remove_token(v_qual_id,v_qc_list); /*Rem. fr. QC lst*/
+--   end loop;
+--   /* For remaining items in QD list, generate delete items */
+--   while length(v_qd_list) > 1 loop  /* Loop through items from QD list */
+--     v_qual_id := auth_sf_get_1st_token(v_qd_list);  /* Get next item */
+--     delete from qualifier_descendent where parent_id = v_qual_id
+--      and child_id = a_qual_id;
+--     v_qd_list := auth_sf_remove_token(v_qual_id,v_qd_list); /*Rem fr. QD lst*/
+--   end loop;
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_fix_qd_for_many_qual`;
+-- PROCEDURE auth_sp_fix_qd_for_many_qual
+--                 (a_qual_id IN STRING)
+-- IS
+-- CURSOR get_descendents IS
+--   SELECT child_id from qualifier_descendent
+--         where parent_id = a_qual_id;
+-- v_qual_id qualifier.qualifier_id%TYPE;
+-- begin
+--   auth_sp_fix_qd_for_1_qual (a_qual_id);  /* Fix qd table for orig id */
+--   OPEN get_descendents;
+--   FETCH get_descendents INTO v_qual_id;
+--   WHILE (NOT get_descendents%NOTFOUND) LOOP
+--     auth_sp_fix_qd_for_1_qual (v_qual_id);  /* Fix qd table for descendents */
+--     FETCH get_descendents INTO v_qual_id;
+--   END LOOP;
+--   CLOSE get_descendents;
+--   EXCEPTION
+--     WHEN NO_DATA_FOUND THEN
+--       CLOSE get_descendents;
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_insert_qual`;
+-- PROCEDURE auth_sp_insert_qual
+--                 (ai_qualtype     IN STRING,
+--                  ai_qualcode     IN STRING,
+--                  ai_parent_code  IN STRING,
+--                  ai_qualname     IN STRING,
+--                  ai_for_user     IN STRING,
+--                  ao_message      OUT STRING)
+-- IS
+-- v_qualid qualifier.qualifier_id%TYPE;
+-- v_count number;
+-- v_qualtype qualifier.qualifier_type%TYPE;
+-- v_qual_level qualifier.qualifier_level%TYPE;
+-- v_qualcode qualifier.qualifier_code%TYPE;
+-- v_parent_code qualifier.qualifier_code%TYPE;
+-- v_parent_id qualifier.qualifier_id%TYPE;
+-- v_qualtype_code qualifier.qualifier_code%TYPE;
+-- v_custom_hierarchy qualifier.custom_hierarchy%TYPE;
+-- v_check_auth varchar2(2);
+-- v_message varchar2(255) := 'Miscellaneous error in auth_sp_insert_qual';
+-- v_message_no integer:= -20100;
+-- begin
+--   /* Set a SAVEPOINT in case we need to ROLLBACK later */
+--   SAVEPOINT save_qual_transactions;
+--   /* Make sure a qualifier of this type already exists. Get next
+--      available qualifier_id. */
+--   v_qualcode := upper(ai_qualcode);
+--   v_qualtype := upper(ai_qualtype);
+--   select nvl(max(qualifier_id)+1,-99) into v_qualid
+--     from qualifier where qualifier_type = v_qualtype;
+--   select count(*) into v_count from qualifier where qualifier_type = v_qualtype
+--     and qualifier_code = v_qualcode;
+--   if v_qualid = -99 then
+--     v_message := 'Error: Qualifier type ''' || v_qualtype || ''' not found';
+--     v_message_no := -20101;
+--   elsif v_count > 0 then
+--     v_message := 'Error: Qualifier code ''' || v_qualcode || ''' type '''
+--                  || v_qualtype || ''' already exists';
+--     v_message_no := -20104;
+--   else
+--     /* Make sure user is authorized to insert a qualifier of the given
+--        qualifier type */
+--     v_qualtype_code := 'QUAL_' || v_qualtype; /* Qualifier for this qualtype */
+--     v_check_auth := AUTH_SF_CHECK_AUTH2('MAINTAIN QUALIFIERS', v_qualtype_code,
+--                      ai_for_user, 'PROXY TO MAINTAIN QUAL', v_qualtype_code);
+--     if v_check_auth = 'N' then
+--       v_message_no := -20102;
+--       v_message := '''' || nvl(ai_for_user, user)
+--                    || ''' not authorized to maintain qualifiers of type '''
+--                    || v_qualtype_code || '''';
+--     elsif v_check_auth = 'X' then
+--       v_message_no := -20103;
+--       v_message := '''' || user
+--                    || ''' not authorized to act as proxy for qualifier'
+--                    || ' maintenance for type '''
+--                    || v_qualtype_code || '''';
+--     else
+--       /* Make sure ai_parent_code exists. */
+--       v_parent_code := upper(ai_parent_code);
+--       select nvl(max(qualifier_level+1), -99), max(qualifier_id)
+--         into v_qual_level, v_parent_id
+--         from qualifier where qualifier_type = v_qualtype
+--         and qualifier_code = v_parent_code;
+--       if v_qual_level = -99 then
+--         v_message_no := -20103;
+--         v_message := 'Error: Parent code ''' || v_parent_code ||
+--                       ''' type ''' || v_qualtype || ''' does not exist.';
+--       else
+--         /* Determine custom_hierarchy setting:  NULL except for FC_ quals. */
+--         if (v_qualtype = 'FUND'
+--             and substr(v_qualcode, 1, 3) = 'FC_') then
+--           v_custom_hierarchy := 'Y';
+--         else
+--           v_custom_hierarchy := NULL;
+--         end if;
+--         /* Insert record into qualifier_table */
+--         insert into qualifier (QUALIFIER_ID,  QUALIFIER_CODE,
+--           QUALIFIER_NAME, QUALIFIER_TYPE, HAS_CHILD,
+--           QUALIFIER_LEVEL, CUSTOM_HIERARCHY)
+--           values (v_qualid, v_qualcode, ai_qualname, v_qualtype, 'N',
+--                   v_qual_level, v_custom_hierarchy);
+--         /* Insert record into qualifier_child table */
+--         insert into qualifier_child (PARENT_ID, CHILD_ID)
+--           values (v_parent_id, v_qualid);
+--         /* Update parent qualifier setting has_child = 'Y' */
+--         update qualifier set has_child = 'Y'
+--           where qualifier_id = v_parent_id;
+--         /* Call auth_sp_fix_qd_for_1_qual(new_qual_id) */
+--         auth_sp_fix_qd_for_1_qual (v_qualid);  /* Fix qd table */
+--         /* Update the audit trail. */
+--         /* Set success message */
+--         v_message_no := 0;  /* No errors */
+--         ao_message := 'Qualifier ''' || v_qualcode ||
+--           ''' successfully added to ''' || v_qualtype || ''' hierarchy';
+--       end if;
+--     end if;
+--   end if;
+--   /* If there were any errors recorded, then raise an error condition.
+--      This will be trapped by the EXCEPTION handler which will need to raise
+--      the error condition "for real". */
+--   if v_message_no != 0 then
+--     raise_application_error(v_message_no, v_message);
+--   end if;
+--   EXCEPTION
+--     WHEN OTHERS THEN
+--       ROLLBACK TO save_qual_transactions;
+--       raise_application_error(v_message_no, v_message);
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_update_authorizations`;
+-- PROCEDURE auth_sp_update_authorizations
+-- 	(AI_AUTHORIZATION_ID IN AUTHORIZATION.AUTHORIZATION_ID%TYPE,
+-- 	 AI_FUNCTION_NAME IN FUNCTION.FUNCTION_NAME%TYPE,
+-- 	 AI_QUALIFIER_CODE IN QUALIFIER.QUALIFIER_CODE%TYPE,
+-- 	 AI_KERBEROS_NAME IN PERSON.KERBEROS_NAME%TYPE,
+-- 	 AI_DO_FUNCTION IN AUTHORIZATION.DO_FUNCTION%TYPE,
+-- 	 AI_GRANT_AND_VIEW IN AUTHORIZATION.GRANT_AND_VIEW%TYPE,
+-- 	 AI_DESCEND IN AUTHORIZATION.DESCEND%TYPE,
+-- 	 AI_EFFECTIVE_DATE IN STRING,
+-- 	 AI_EXPIRATION_DATE IN STRING,
+-- 	 a_modified_by OUT AUTHORIZATION.modified_by%TYPE,
+-- 	 a_modified_date OUT STRING
+-- 	)
+-- IS
+-- V_FUNCTION_ID AUTHORIZATION.FUNCTION_ID%TYPE;
+-- V_QUALIFIER_ID AUTHORIZATION.QUALIFIER_ID%TYPE;
+-- V_KERBEROS_NAME AUTHORIZATION.KERBEROS_NAME%TYPE;
+-- V_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- V_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- V_FUNCTION_CATEGORY AUTHORIZATION.FUNCTION_CATEGORY%TYPE;
+-- V_QUALIFIER_NAME QUALIFIER.QUALIFIER_NAME%TYPE;
+-- V_QUALIFIER_TYPE QUALIFIER.QUALIFIER_NAME%TYPE;
+-- V_MODIFIED_BY AUTHORIZATION.MODIFIED_BY%TYPE;
+-- V_DO_FUNCTION AUTHORIZATION.DO_FUNCTION%TYPE;
+-- V_GRANT_AND_VIEW AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- V_DESCEND AUTHORIZATION.DESCEND%TYPE;
+-- V_EFFECTIVE_DATE AUTHORIZATION.EFFECTIVE_DATE%TYPE;
+-- V_EXPIRATION_DATE AUTHORIZATION.EXPIRATION_DATE%TYPE;
+-- v_status integer;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- a_function_id FUNCTION.FUNCTION_ID%TYPE;
+-- a_function_name FUNCTION.FUNCTION_NAME%TYPE;
+-- a_qualifier_id AUTHORIZATION.QUALIFIER_ID%TYPE;
+-- a_qualifier_code AUTHORIZATION.QUALIFIER_CODE%TYPE;
+-- a_kerberos_name AUTHORIZATION.KERBEROS_NAME%TYPE;
+-- a_do_function AUTHORIZATION.DO_FUNCTION%TYPE;
+-- a_grant_and_view AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- a_descend AUTHORIZATION.DESCEND%TYPE;
+-- a_effective_date AUTHORIZATION.EFFECTIVE_DATE%TYPE;
+-- a_expiration_date varchar2(255);
+-- old_qualifier_code AUTHORIZATION.QUALIFIER_CODE%TYPE;
+-- old_kerberos_name AUTHORIZATION.KERBEROS_NAME%TYPE;
+-- BEGIN
+-- 
+--   a_kerberos_name := upper(ai_kerberos_name);
+--   a_function_name := upper(ai_function_name);
+--   a_qualifier_code := upper(ai_qualifier_code);
+--   a_do_function := upper(ai_do_function);
+--   a_grant_and_view := upper(ai_grant_and_view);
+--   a_descend := upper(ai_descend);
+--   a_effective_date := auth_sf_convert_str_to_date(ai_effective_date);
+--   a_expiration_date := upper(ai_expiration_date);
+-- 
+--   /* Adjust grant_and_view.  User sees 'Y' <=> database contains 'GD' */
+--   if (a_grant_and_view = 'Y ' or a_grant_and_view = 'GD') then
+--     a_grant_and_view := 'GD';
+--   else
+--     a_grant_and_view := 'N ';
+--   end if;
+-- 
+--   /* Make sure the authorization already exists */
+--   v_status := 0;
+--   select function_id, function_name, qualifier_id, qualifier_code,
+--         kerberos_name, modified_by, do_function, grant_and_view, descend,
+--         effective_date, expiration_date
+--         into
+--         V_FUNCTION_ID, V_FUNCTION_NAME, V_QUALIFIER_ID, OLD_QUALIFIER_CODE,
+--         OLD_KERBEROS_NAME, V_MODIFIED_BY,
+--         V_DO_FUNCTION, V_GRANT_AND_VIEW, V_DESCEND,
+--         V_EFFECTIVE_DATE, V_EXPIRATION_DATE
+--         from authorization
+--         where authorization_id = ai_authorization_id;
+-- 
+--   /* Make sure new function_id is valid */
+--   v_status := 1;
+--   select function_id, function_category, qualifier_type
+--         into V_FUNCTION_ID, V_FUNCTION_CATEGORY, V_QUALIFIER_TYPE
+--         from function
+--  	where function_name = a_function_name;
+-- 
+--   /* Make sure new qualifier_id is valid */
+--   v_status := 2;
+--   select qualifier_code, qualifier_name, qualifier_id
+--         into V_QUALIFIER_CODE, V_QUALIFIER_NAME, V_QUALIFIER_ID
+--         from qualifier
+-- 	where qualifier_code = a_qualifier_code
+--         and qualifier_type = v_qualifier_type;
+-- 
+--   /* Make sure new kerberos_name is valid */
+--   v_status := 3;
+--   select kerberos_name into V_KERBEROS_NAME from person
+-- 	where kerberos_name = a_kerberos_name;
+-- 
+--   -- Old: Check special case: If function is PRIMARY AUTHORIZOR, then the
+--   -- qualifier must start with D_.
+--   --if (v_function_name = 'PRIMARY AUTHORIZOR'
+--   --    and substr(v_qualifier_code, 1, 2) <> 'D_') then
+--   --   raise_application_error(roles_msg.err_20015_no,
+--   --			     roles_msg.err_20015_msg);
+--   --end if;
+--   -- New: Check special case: If function's qualifier_type is 'DEPT', then
+--   -- qualifier must start with D_.
+--   if (v_qualifier_type = 'DEPT'
+--       and substr(v_qualifier_code, 1, 2) <> 'D_') then
+--      raise_application_error(roles_msg.err_20015_no,
+-- 			     roles_msg.err_20015_msg);
+--   end if;
+-- 
+-- 
+--   /* Check authorization to update this.  To do so, user must have
+--      'CREATE AUTHORIZATION' ability for old and new set of values */
+--   /* Old */
+--     if auth_sf_can_create_auth(USER, V_FUNCTION_NAME, V_QUALIFIER_CODE,
+-- 	  V_DO_FUNCTION, V_GRANT_AND_VIEW) = 'N' then
+--        raise_application_error(roles_msg.err_20014_no,
+-- 	  		     roles_msg.err_20014_msg);
+--     end if;
+--   /* New */
+--     if auth_sf_can_create_auth(USER, A_FUNCTION_NAME, A_QUALIFIER_CODE,
+-- 	  AI_DO_FUNCTION, A_GRANT_AND_VIEW) = 'N' then
+--        raise_application_error(roles_msg.err_20014_no,
+-- 	  		     roles_msg.err_20014_msg);
+--     end if;
+-- 
+--   /* If major fields changed but effective_date didn't,
+--      then set new EFFECTIVE_DATE = max(SYSDATE, old EFFECTIVE_DATE) */
+--     if ((a_kerberos_name <> old_kerberos_name
+--          or a_function_name <> v_function_name
+--          or a_qualifier_code <> old_qualifier_code)
+--         and v_effective_date = a_effective_date
+--         and SYSDATE > a_effective_date) then
+--        a_effective_date := SYSDATE;
+--     end if;
+-- 
+--   update authorization
+--     set FUNCTION_ID = v_function_id, QUALIFIER_ID = v_qualifier_id,
+--       KERBEROS_NAME = a_kerberos_name, QUALIFIER_CODE = v_qualifier_code,
+--       FUNCTION_NAME = a_function_name, FUNCTION_CATEGORY = v_function_category,
+--       QUALIFIER_NAME = v_qualifier_name, MODIFIED_BY = user,
+--       MODIFIED_DATE = sysdate, DO_FUNCTION = a_do_function,
+--       GRANT_AND_VIEW = a_grant_and_view, DESCEND = a_descend,
+--       EFFECTIVE_DATE = A_EFFECTIVE_DATE,
+--       EXPIRATION_DATE = auth_sf_convert_str_to_date(A_EXPIRATION_DATE)
+--     where AUTHORIZATION_ID = ai_authorization_id;
+--   a_modified_by := user;
+--   a_modified_date := auth_sf_convert_date_to_str(sysdate);
+-- 
+--   EXCEPTION
+-- 	WHEN NO_DATA_FOUND THEN
+-- 	  if v_status = 0 then
+-- 	     v_msg_no := roles_msg.err_20010_no;
+-- 	     v_msg := roles_msg.err_20010_msg;
+-- 	  elsif v_status = 1 then
+-- 	     v_msg_no := roles_msg.err_20001_no;
+-- 	     v_msg := roles_msg.err_20001_msg;
+-- 	  elsif v_status = 2 then
+--  	     v_msg_no := roles_msg.err_20017_no;
+-- 	     v_msg := roles_msg.err_20017_msg;
+-- 	  else
+-- 	     v_msg_no := roles_msg.err_20003_no;
+-- 	     v_msg := roles_msg.err_20003_msg;
+--           end if;
+-- 	  raise_application_error(v_msg_no, v_msg);
+-- 	WHEN DUP_VAL_ON_INDEX THEN
+-- 	  raise_application_error(roles_msg.err_20007_no,
+--             roles_msg.err_20007_msg);
+--      /*   WHEN OTHERS THEN
+--           raise_application_error(roles_msg.err_20018_no,
+--                                   roles_msg.err_20018_msg);  */
+-- 
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_update_auth_dates`;
+-- PROCEDURE AUTH_SP_UPDATE_AUTH_DATES
+-- 		(ai_category IN function.function_category%TYPE,
+--                  ai_kerberos_name IN authorization.kerberos_name%TYPE,
+-- 		 ai_action_type IN STRING,
+--          	 AI_EFFECTIVE_DATE IN STRING,
+--          	 AI_EXPIRATION_DATE IN STRING,
+--                  ao_message OUT VARCHAR2)
+-- IS
+-- v_count number;
+-- v_count2 number;
+-- v_user_count number;
+-- a_kerberos_name authorization.kerberos_name%TYPE;
+-- a_category function.function_category%TYPE;
+-- a_action_type varchar2(2) := ai_action_type;
+-- A_EFFECTIVE_DATE varchar2(255);
+-- A_EXPIRATION_DATE varchar2(255);
+-- v_status integer;
+-- a_date date;
+-- begin
+--   a_kerberos_name := upper(ai_kerberos_name);
+--   a_category := upper(ai_category);
+--   a_effective_date := ai_effective_date;
+--   a_expiration_date := ai_expiration_date;
+--   v_status := 0;  /* Miscellaneous error */
+--   /* Make sure the kerberos_name is valid */
+--   select count(*) into v_user_count from person
+--     where kerberos_name = a_kerberos_name;
+--   /* How many authorizations is user allowed to update? */
+--   select count(*) into v_count from AUTHORIZATION A1
+-- 	where A1.kerberos_name = a_kerberos_name
+--         and A1.function_category = a_category
+--         and auth_sf_can_create_auth(user, A1.function_name, A1.qualifier_code,
+--         A1.do_function, A1.grant_and_view) = 'Y';
+--   /* How many authorizations could be updated if user was authorized? */
+--   select count(*) into v_count2 from AUTHORIZATION A1
+-- 	where A1.kerberos_name = a_kerberos_name
+--         and A1.function_category = a_category;
+--   /* If user is not authorized to copy them all, exit with an error message */
+--   if v_count2 > v_count then
+--     ao_message := 'You are not authorized to update all these authorizations';
+--   elsif v_user_count = 0 then
+--     ao_message := 'Kerberos_name ''' ||
+--       a_kerberos_name || ''' does not exist.';
+--   elsif v_count = 0 then
+--     ao_message := 'No authorizations to be updated for ''' ||
+--       a_kerberos_name || ''' in category ''' || a_category || '''';
+--   else
+--     if a_action_type = '1' then /* Set effective date */
+--       v_status := 1;  /* Bad effective_date */
+--       a_date := auth_sf_convert_str_to_date(a_effective_date);
+--       v_status := 0;  /* Miscellaneous error */
+--       UPDATE AUTHORIZATION SET EFFECTIVE_DATE = a_date
+--         WHERE KERBEROS_NAME = a_kerberos_name
+--         AND FUNCTION_CATEGORY = a_category;
+--       ao_message := 'Effective date modified in ' ||
+--                     TO_CHAR(v_count) || ' authorizations.';
+--     elsif a_action_type = '2' then /* Set expiration date to new value */
+--       v_status := 2;  /* Bad expiration_date */
+--       a_date := auth_sf_convert_str_to_date(a_expiration_date);
+--       v_status := 0;  /* Miscellaneous error */
+--       UPDATE AUTHORIZATION SET EXPIRATION_DATE = a_date
+--         WHERE KERBEROS_NAME = a_kerberos_name
+--         AND FUNCTION_CATEGORY = a_category;
+--       ao_message := 'Expiration date modified in ' ||
+--                     TO_CHAR(v_count) || ' authorizations.';
+--     elsif a_action_type = '3' then /* Set expiration date to NULL */
+--       UPDATE AUTHORIZATION SET EXPIRATION_DATE = NULL
+--         WHERE KERBEROS_NAME = a_kerberos_name
+--         AND FUNCTION_CATEGORY = a_category;
+--       ao_message := 'Expiration date turned off in ' ||
+--                     TO_CHAR(v_count) || ' authorizations.';
+--     else
+--       ao_message := 'Application error. Bad action_type: ' || a_action_type;
+--     end if;
+--   end if;
+--   EXCEPTION
+--     WHEN OTHERS THEN
+--       if v_status = 1 then
+-- 	ao_message := 'Bad format in effective date: ''' || a_effective_date
+--           || '''';
+--       elsif v_status = 2 then
+-- 	ao_message := 'Bad format in expiration date: ''' || a_expiration_date
+--           || '''';
+--       else
+-- 	ao_message := 'System error in auth_sp_update_auth_dates';
+--       end if;
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_update_criteria`;
+-- PROCEDURE auth_sp_update_criteria
+--                                (a_selection_id IN NUMBER,
+-- 				a_criteria_id IN NUMBER,
+-- 				a_username IN STRING,
+-- 				a_apply IN STRING,
+-- 				a_value IN STRING,
+-- 				a_next_scrn_selection_id IN NUMBER)
+-- IS
+-- begin
+--   update criteria_instance
+-- 		set apply = a_apply,
+-- 		    value = a_value,
+-- 		    next_scrn_selection_id = a_next_scrn_selection_id
+-- 	where 	selection_id = a_selection_id and
+-- 		criteria_id = a_criteria_id and
+-- 		username = a_username;
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_update_def_sel_id`;
+-- PROCEDURE auth_sp_update_def_sel_id
+-- 			(a_cur_selection_id IN hide_default.selection_id%TYPE,
+-- 			 a_new_selection_id IN hide_default.selection_id%TYPE)
+-- AS
+-- v_num integer := 0;
+-- begin
+--   --raise_application_error(-20001, to_char(a_cur_selection_id) || ';' ||
+-- 	--			  to_char(a_new_selection_id));
+--   if a_new_selection_id = a_cur_selection_id then
+-- 	return;
+--   end if;
+--   select count(*) into v_num from hide_default
+-- 			     where selection_id = a_cur_selection_id and
+-- 				   apply_username = user;
+--   if v_num = 0 then
+-- 	select count(*) into v_num from hide_default
+-- 			     where selection_id = a_cur_selection_id and
+-- 				   apply_username = 'SYSTEM';
+-- 	if v_num <> 0 then
+-- 	   insert into hide_default
+-- 		select a_new_selection_id, user, default_flag, hide_flag
+-- 			from hide_default
+-- 			where selection_id = a_cur_selection_id and
+-- 			      apply_username = 'SYSTEM';
+-- 	else
+-- 	   insert into hide_default values (a_new_selection_id, user, 'Y', 'N');
+-- 	end if;
+--   else
+-- 	insert into hide_default
+-- 		select a_new_selection_id, user, default_flag, hide_flag
+-- 			from hide_default
+-- 			where selection_id = a_cur_selection_id and
+-- 			      apply_username = user;
+-- 	delete hide_default where selection_id = a_cur_selection_id and
+-- 				  apply_username = user;
+--   end if;
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_update_function`;
+-- PROCEDURE auth_sp_update_function
+-- 	(ai_orig_function_name IN function.FUNCTION_NAME%TYPE,
+-- 	 ai_orig_function_category IN function.FUNCTION_CATEGORY%TYPE,
+-- 	 ai_function_name IN function.FUNCTION_NAME%TYPE,
+-- 	 ai_function_description IN function.FUNCTION_DESCRIPTION%TYPE,
+-- 	 ai_function_category IN function.FUNCTION_CATEGORY%TYPE,
+-- 	 ai_qualifier_type IN qualifier_type.qualifier_type%TYPE,
+-- 	 a_modified_by OUT function.MODIFIED_BY%TYPE,
+-- 	 a_modified_date OUT STRING
+-- 	)
+-- IS
+-- v_function_id function.function_id%TYPE;
+-- v_qualifier_type function.qualifier_type%TYPE;
+-- v_orig_qualifier_type function.qualifier_type%TYPE;
+-- v_function_category function.function_category%TYPE;
+-- v_status integer;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- v_count number;
+-- a_orig_function_name function.FUNCTION_NAME%TYPE;
+-- a_orig_function_category function.FUNCTION_CATEGORY%TYPE;
+-- a_function_name function.FUNCTION_NAME%TYPE;
+-- a_function_description function.FUNCTION_DESCRIPTION%TYPE;
+-- a_function_category function.FUNCTION_CATEGORY%TYPE;
+-- a_qualifier_type qualifier_type.qualifier_type%TYPE;
+-- begin
+--   a_orig_function_name := upper(ai_orig_function_name);
+--   a_orig_function_category := upper(ai_orig_function_category);
+--   a_function_name := upper(ai_function_name);
+--   a_function_description := ai_function_description; /* Preserve mixed case */
+--   a_function_category := upper(ai_function_category);
+--   a_qualifier_type := upper(ai_qualifier_type);
+--   v_status := 3;
+--   select function_id,qualifier_type into v_function_id,v_qualifier_type
+--         from function
+-- 	where function_name = a_orig_function_name
+--         and function_category = a_orig_function_category;
+--   v_orig_qualifier_type := v_qualifier_type;
+--   v_status := 1;
+--   if a_qualifier_type != v_qualifier_type then
+--     select qualifier_type into v_qualifier_type from qualifier_type
+--           where qualifier_type = a_qualifier_type;
+--   end if;
+--   v_status := 2;
+--   if a_function_category != a_orig_function_category then
+--     select function_category into v_function_category from category
+--           where function_category = a_function_category;
+--     /* Check authorization to modify new function category */
+--     if auth_sf_can_create_function(user, v_function_category) = 'N' then
+--        raise_application_error(roles_msg.err_20014_no,
+--        'Not authorized to update functions in category '''
+--        || v_function_category || '''');
+--     end if;
+--   end if;
+--   /* Check authorization to modify old function category */
+--   if auth_sf_can_create_function(user, a_orig_function_category) = 'N' then
+--      raise_application_error(roles_msg.err_20014_no,
+--        'Not authorized to update functions in category '''
+--        || a_orig_function_category || '''');
+--   end if;
+--   /* Check to make we are not changing the qualifier_type for a function
+--      referenced by existing authorizations */
+--   select count(*) into v_count from authorization a, function f
+--      where a.function_id = f.function_id and a.function_id = v_function_id;
+--   if (v_count > 0) and (a_qualifier_type <> v_orig_qualifier_type) then
+--        raise_application_error(roles_msg.err_20011_no,
+-- 			     roles_msg.err_20011_msg);
+--   end if;
+--   /* No errors.  Go ahead and update the function. */
+--   update function set function_name = a_function_name,
+-- 				FUNCTION_DESCRIPTION = a_function_description,
+-- 				FUNCTION_CATEGORY = a_function_category,
+-- 				modified_by = user,
+-- 				modified_date = sysdate,
+-- 				qualifier_type = v_qualifier_type
+-- 	where FUNCTION_ID = v_function_id;
+--   if sql%notfound then
+--      raise_application_error(roles_msg.err_20012_no,
+-- 			     roles_msg.err_20012_msg);
+--   end if;
+--   /* If needed, update FUNCTION_NAME, FUNCTION_CATEGORY in applicable auths. */
+--   if ((a_orig_function_name <> a_function_name)
+--       or (a_orig_function_category <> a_function_category)) then
+--     update authorization set FUNCTION_NAME = a_function_name,
+--       FUNCTION_CATEGORY = a_function_category
+--       where function_id = v_function_id;
+--   end if;
+--   a_modified_by := user;
+--   a_modified_date := auth_sf_convert_date_to_str(sysdate);
+--   EXCEPTION
+--       WHEN NO_DATA_FOUND THEN
+-- 	if v_status = 1 then
+-- 	   v_msg_no := roles_msg.err_20008_no;
+-- 	   v_msg := roles_msg.err_20008_msg;
+-- 	elsif v_status = 2 then
+--            v_msg_no := roles_msg.err_20016_no;
+--            v_msg := roles_msg.err_20016_msg;
+--         else
+-- 	   v_msg_no := roles_msg.err_20012_no;
+-- 	   v_msg := roles_msg.err_20012_msg;
+-- 	end if;
+-- 	raise_application_error(v_msg_no, v_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_update_qualcode`;
+-- PROCEDURE auth_sp_update_qualcode
+--                 (ai_qualtype     IN STRING,
+--                  ai_qualcode     IN STRING,
+--                  ai_newqualcode  IN STRING,
+--                  ai_for_user     IN STRING,
+--                  ao_message      OUT STRING)
+-- IS
+-- v_qualid qualifier.qualifier_id%TYPE;
+-- v_qualid2 qualifier.qualifier_id%TYPE;
+-- v_qualtype qualifier.qualifier_type%TYPE;
+-- v_qualcode qualifier.qualifier_code%TYPE;
+-- v_qualtype_code qualifier.qualifier_code%TYPE;
+-- v_newqualcode qualifier.qualifier_code%TYPE;
+-- v_check_auth varchar2(2);
+-- v_message varchar2(255) := 'Miscellaneous error in auth_sp_update_qualcode';
+-- v_message_no integer:= -20100;
+-- BEGIN
+--   /* Set a SAVEPOINT in case we need to ROLLBACK later */
+--   SAVEPOINT save_qual_transactions;
+--   v_qualtype := upper(ai_qualtype);
+--   v_qualcode := upper(ai_qualcode);
+--   v_newqualcode := upper(ai_newqualcode);
+--   /* Make sure qualtype and qualcode exist */
+--   select nvl(max(qualifier_id),-99) into v_qualid
+--     from qualifier where qualifier_type = v_qualtype
+--     and qualifier_code = v_qualcode;
+--   select nvl(max(qualifier_id),-99) into v_qualid2
+--     from qualifier where qualifier_type = v_qualtype
+--     and qualifier_code = v_newqualcode;
+--   if v_qualid = -99 then
+--     v_message_no := -20105;
+--     v_message := 'Error: Old qualifier code ''' || v_qualcode || ''' type '''
+--                   || v_qualtype ||  ''' not found';
+--   elsif v_qualid2 != -99 then
+--     v_message_no := -20106;
+--     v_message := 'Error: New qualifier code ''' || v_newqualcode
+--                   || ''' type ''' || v_qualtype ||  ''' already exists';
+--   else
+--     /* Make sure user is authorized to maintain qualifiers of the given
+--        qualifier type */
+--     v_qualtype_code := 'QUAL_' || v_qualtype; /* Qualifier for this qualtype */
+--     v_check_auth := AUTH_SF_CHECK_AUTH2('MAINTAIN QUALIFIERS', v_qualtype_code,
+--                      ai_for_user, 'PROXY TO MAINTAIN QUAL', v_qualtype_code);
+--     if v_check_auth = 'N' then
+--       v_message_no := -20102;
+--       v_message := '''' || nvl(ai_for_user, user)
+--                    || ''' not authorized to maintain qualifiers of type '''
+--                    || v_qualtype_code || '''';
+--     elsif v_check_auth = 'X' then
+--       v_message_no := -20103;
+--       v_message := '''' || user
+--                    || ''' not authorized to act as proxy for qualifier'
+--                    || ' maintenance for type '''
+--                    || v_qualtype_code || '''';
+--     elsif length(ai_newqualcode) > 15 then
+--       v_message_no := -20116;
+--       v_message := 'Error: New qualifier code is longer than 15 characters.';
+--     else
+--       update qualifier set qualifier_code = v_newqualcode
+--        where qualifier_id = v_qualid;
+--       update authorization set qualifier_code = v_newqualcode
+--        where qualifier_id = v_qualid;
+--       v_message_no := 0;
+--       ao_message := 'Qualifier code ''' || v_qualcode ||
+--         ''' type ''' || v_qualtype || ''' sucessfully changed to '''
+--         || v_newqualcode || '''';
+--     end if;
+--   end if;
+--   /* If there were any errors recorded, then raise an error condition.
+--      This will be trapped by the EXCEPTION handler which will need to raise
+--      the error condition "for real". */
+--   if v_message_no != 0 then
+--     raise_application_error(v_message_no, v_message);
+--   end if;
+--   EXCEPTION
+--     WHEN OTHERS THEN
+--       ROLLBACK TO save_qual_transactions;
+--       raise_application_error(v_message_no, v_message);
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_update_qualname`;
+-- PROCEDURE auth_sp_update_qualname
+--                 (ai_qualtype     IN STRING,
+--                  ai_qualcode     IN STRING,
+--                  ai_qualname     IN STRING,
+--                  ai_for_user     IN STRING,
+--                  ao_message      OUT STRING)
+-- IS
+-- v_qualid qualifier.qualifier_id%TYPE;
+-- v_qualtype qualifier.qualifier_type%TYPE;
+-- v_qualcode qualifier.qualifier_code%TYPE;
+-- v_qualtype_code qualifier.qualifier_code%TYPE;
+-- v_qualname qualifier.qualifier_name%TYPE;
+-- v_check_auth varchar2(2);
+-- v_message varchar2(255) := 'Miscellaneous error in auth_sp_update_qualname';
+-- v_message_no integer:= -20100;
+-- BEGIN
+--   /* Set a SAVEPOINT in case we need to ROLLBACK later */
+--   SAVEPOINT save_qual_transactions;
+--   v_qualtype := upper(ai_qualtype);
+--   v_qualcode := upper(ai_qualcode);
+--   /* Make sure qualtype and qualcode exist */
+--   select nvl(max(qualifier_id),-99) into v_qualid
+--     from qualifier where qualifier_type = v_qualtype
+--     and qualifier_code = v_qualcode;
+--   if v_qualid = -99 then
+--     v_message_no := -20105;
+--     v_message := 'Error: Qualifier code ''' || v_qualcode || ''' type '''
+--                   || v_qualtype ||  ''' not found';
+--   else
+--     /* Make sure user is authorized to maintain qualifiers of the given
+--        qualifier type */
+--     v_qualtype_code := 'QUAL_' || v_qualtype; /* Qualifier for this qualtype */
+--     v_check_auth := AUTH_SF_CHECK_AUTH2('MAINTAIN QUALIFIERS', v_qualtype_code,
+--                      ai_for_user, 'PROXY TO MAINTAIN QUAL', v_qualtype_code);
+--     if v_check_auth = 'N' then
+--       v_message_no := -20102;
+--       v_message := '''' || nvl(ai_for_user, user)
+--                    || ''' not authorized to maintain qualifiers of type '''
+--                    || v_qualtype_code || '''';
+--     elsif v_check_auth = 'X' then
+--       v_message_no := -20103;
+--       v_message := '''' || user
+--                    || ''' not authorized to act as proxy for qualifier'
+--                    || ' maintenance for type '''
+--                    || v_qualtype_code || '''';
+--     elsif length(ai_qualname) > 50 then
+--       v_message_no := -20115;
+--       v_message := 'Error: New qualifier name is longer than 50 characters.';
+--     else
+--       v_qualname := ai_qualname;
+--       update qualifier set qualifier_name = v_qualname
+--        where qualifier_id = v_qualid;
+--       update authorization set qualifier_name = v_qualname
+--        where qualifier_id = v_qualid;
+--       v_message_no := 0;
+--       ao_message := 'Qualifier name for ''' || v_qualcode ||
+--         ''' type ''' || v_qualtype || ''' sucessfully updated.';
+--     end if;
+--   end if;
+--   /* If there were any errors recorded, then raise an error condition.
+--      This will be trapped by the EXCEPTION handler which will need to raise
+--      the error condition "for real". */
+--   if v_message_no != 0 then
+--     raise_application_error(v_message_no, v_message);
+--   end if;
+--   EXCEPTION
+--     WHEN OTHERS THEN
+--       ROLLBACK TO save_qual_transactions;
+--       raise_application_error(v_message_no, v_message);
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_update_qualpar`;
+-- PROCEDURE auth_sp_update_qualpar
+--                 (ai_qualtype     IN STRING,
+--                  ai_childcode    IN STRING,
+--                  ai_old_parcode  IN STRING,
+--                  ai_new_parcode  IN STRING,
+--                  ai_for_user     IN STRING,
+--                  ao_message      OUT STRING)
+-- IS
+-- v_count number;
+-- v_qualtype qualifier.qualifier_type%TYPE;
+-- v_qual_level qualifier.qualifier_level%TYPE;
+-- v_childcode qualifier.qualifier_code%TYPE;
+-- v_childid qualifier.qualifier_id%TYPE;
+-- v_old_parcode qualifier.qualifier_code%TYPE;
+-- v_old_parid qualifier.qualifier_id%TYPE;
+-- v_new_parcode qualifier.qualifier_code%TYPE;
+-- v_new_parid qualifier.qualifier_id%TYPE;
+-- v_qualtype_code qualifier.qualifier_code%TYPE;
+-- v_check_auth varchar2(2);
+-- v_message varchar2(255) := 'Miscellaneous error in auth_sp_update_qualpar';
+-- v_message_no integer:= -20100;
+-- --temp_message VARCHAR2(255);  -- For diagnostics
+-- begin
+--   /* Set a SAVEPOINT in case we need to ROLLBACK later */
+--   --select '1. ' || to_char(sysdate, 'HH:MI:SS') into temp_message from dual;
+--   --DBMS_OUTPUT.PUT_LINE(temp_message);
+--   SAVEPOINT save_qual_transactions;
+--   /* Make sure a qualifier of this type already exists. */
+--   v_childcode := upper(ai_childcode);
+--   v_qualtype := upper(ai_qualtype);
+--   select nvl(max(qualifier_id),-99) into v_childid
+--     from qualifier where qualifier_type = v_qualtype
+--     and qualifier_code = v_childcode;
+--   if v_childid = -99 then
+--     v_message := 'Error: Qualifier ''' || v_childcode || ''' type '''
+--       || v_qualtype || ''' not found';
+--     v_message_no := -20101;
+--     raise_application_error(v_message_no, v_message);
+--   end if;
+--   /* Make sure user is authorized to insert a qualifier of the given
+--      qualifier type */
+--   v_qualtype_code := 'QUAL_' || v_qualtype; /* Qualifier for this qualtype */
+--   v_check_auth := AUTH_SF_CHECK_AUTH2('MAINTAIN QUALIFIERS', v_qualtype_code,
+--                    ai_for_user, 'PROXY TO MAINTAIN QUAL', v_qualtype_code);
+--   if v_check_auth = 'N' then
+--     v_message_no := -20102;
+--     v_message := '''' || nvl(ai_for_user, user)
+--                  || ''' not authorized to maintain qualifiers of type '''
+--                  || v_qualtype_code || '''';
+--     raise_application_error(v_message_no, v_message);
+--   elsif v_check_auth = 'X' then
+--     v_message_no := -20103;
+--     v_message := '''' || user
+--                  || ''' not authorized to act as proxy for qualifier'
+--                  || ' maintenance for type '''
+--                  || v_qualtype_code || '''';
+--     raise_application_error(v_message_no, v_message);
+--   end if;
+--   v_old_parcode := upper(ai_old_parcode);
+--   if (v_old_parcode is not NULL) then --If par. code is null,don't look for it.
+--     /* b. Make sure ai_old_parcode exists or is NULL. */
+--     select nvl(max(qualifier_level+1), -99), max(qualifier_id)
+--       into v_qual_level, v_old_parid
+--       from qualifier where qualifier_type = v_qualtype
+--       and qualifier_code = v_old_parcode;
+--     if (v_qual_level = -99) then
+--       v_message_no := -20103;
+--       v_message := 'Error: Old parent code ''' || v_old_parcode ||
+--                   ''' type ''' || v_qualtype || ''' does not exist.';
+--       raise_application_error(v_message_no, v_message);
+--     end if;
+--     /* c. Make sure old parent-child relationship exists */
+--     select count(*) into v_count
+--       from qualifier_child where parent_id = v_old_parid
+--       and child_id = v_childid;
+--     if v_count < 1 then
+--       v_message_no := -20108;
+--       v_message := 'Error: Qualifier ''' || v_old_parcode || ''' type '''
+--          || v_qualtype || ''' is not a parent of ''' || v_childcode
+--          || '''.';
+--       raise_application_error(v_message_no, v_message);
+--     end if;
+--     /* d. Make sure child has at least one other parent or new_parcode is
+--           not null */
+--     select count(*) into v_count
+--       from qualifier_child where child_id = v_childid;
+--     if (v_count < 2) and (ai_new_parcode is NULL) then
+--       v_message_no := -20109;
+--       v_message := 'Error. Dropping parent ''' || v_old_parcode
+--         || ''' would make ''' || v_childcode || ''' an orphan.';
+--       raise_application_error(v_message_no, v_message);
+--     end if;
+--   end if;
+--   --select '2. ' || to_char(sysdate, 'HH:MI:SS') into temp_message from dual;
+--   --DBMS_OUTPUT.PUT_LINE(temp_message);
+--   v_new_parcode := upper(ai_new_parcode);
+--   if (v_new_parcode is not NULL) then --If par. code is null,don't look for it.
+--     /* e. Make sure ai_new_parcode exists or is NULL. */
+--     select nvl(max(qualifier_id), -99)
+--       into v_new_parid
+--       from qualifier where qualifier_type = v_qualtype
+--       and qualifier_code = v_new_parcode;
+--     if (v_new_parid = -99) then
+--       v_message_no := -20110;
+--       v_message := 'Error: New parent code ''' || v_new_parcode ||
+--                   ''' type ''' || v_qualtype || ''' does not exist.';
+--       raise_application_error(v_message_no, v_message);
+--     end if;
+--     /* f. Make sure new parent-child relationship does not exist already */
+--     select count(*) into v_count
+--       from qualifier_child where parent_id = v_new_parid
+--       and child_id = v_childid;
+--     if (v_count > 0) then
+--       v_message := 'Error: Parent-child relationship already exists for ('''
+--                  || v_new_parcode || ''','''
+--                  || v_childcode || ''')';
+--       v_message_no := -20111;
+--       raise_application_error(v_message_no, v_message);
+--     end if;
+--     /* g. Make sure child is not equal to the new parent */
+--     if (v_childid = v_new_parid) then
+--       v_message := 'Error: Parent qualifier cannot equal child qualifier';
+--       v_message_no := -20112;
+--       raise_application_error(v_message_no, v_message);
+--     end if;
+--     /* h. Make sure child is not an ancestor of new parent */
+--     select count(*) into v_count
+--       from qualifier_descendent where parent_id = v_childid
+--       and child_id = v_new_parid;
+--     if v_count > 0 then
+--       v_message_no := -20113;
+--       v_message := 'Error: Parent-child relation would create a loop. '
+--         || v_childcode || ' is an ancestor of ' || v_new_parcode || '.';
+--       raise_application_error(v_message_no, v_message);
+--     end if;
+--   end if;
+--   /* i. Make sure both old and new parent codes are not null */
+--   if (v_old_parcode is NULL) and (v_new_parcode is NULL) then
+--     v_message_no := -20114;
+--     v_message := 'Error: Both old and new parent codes are null.';
+--     raise_application_error(v_message_no, v_message);
+--   end if;
+--   --select '3. ' || to_char(sysdate, 'HH:MI:SS') into temp_message from dual;
+--   --DBMS_OUTPUT.PUT_LINE(temp_message);
+--   /* We're done checking for error conditions */
+--   /* Delete old qualifier-child record */
+--   if v_old_parcode is not NULL then
+--     delete from qualifier_child where parent_id = v_old_parid
+--       and child_id = v_childid;
+--     /* Adjust has_child of parent if appropriate */
+--     update qualifier set has_child = 'N'
+--       where qualifier_id = v_old_parid
+--       and not exists
+--       (select parent_id from qualifier_child where parent_id
+--       = qualifier_id);
+--   end if;
+--   --select '4. ' || to_char(sysdate, 'HH:MI:SS') into temp_message from dual;
+--   --DBMS_OUTPUT.PUT_LINE(temp_message);
+--   /* Insert new qualifier-child record */
+--   if (v_new_parcode is not NULL) then
+--     insert into qualifier_child (PARENT_ID, CHILD_ID)
+--       values (v_new_parid, v_childid);
+--     /* Update parent qualifier setting has_child = 'Y' */
+--     update qualifier set has_child = 'Y'
+--       where qualifier_id = v_new_parid;
+--   end if;
+--   --select '4a. ' || to_char(sysdate, 'HH:MI:SS') into temp_message from dual;
+--   --DBMS_OUTPUT.PUT_LINE(temp_message);
+--   /* If we are just adding a new parent-child relation, call the simpler
+--      auth_sp_fix_qd_add(child_id).  Otherwise, call the more complex
+--      auth_sp_fix_qd_for_many(child_id).  */
+--   if (v_old_parcode is NULL) then
+--     auth_sp_fix_qd_add (v_childid);            /* Fix qd table */
+--   else
+--     auth_sp_fix_qd_for_many_qual (v_childid);  /* Fix qd table */
+--   end if;
+--   --select '5. ' || to_char(sysdate, 'HH:MI:SS') into temp_message from dual;
+--   --DBMS_OUTPUT.PUT_LINE(temp_message);
+--   /* Update the audit trail. */
+--   /* Set success message */
+--   v_message_no := 0;  /* No errors */
+--   if (v_old_parcode is NULL) then
+--     ao_message := 'New parent-child relationship successfully added for ('''
+--           || v_new_parcode || ''','''
+--           || v_childcode || ''')';
+--   elsif (v_new_parcode is NULL) then
+--     ao_message := 'Old parent-child relationship successfully deleted for ('''
+--           || v_old_parcode || ''','''
+--           || v_childcode || ''')';
+--   else
+--     ao_message := 'Parent of ''' || v_childcode
+--           || ''' successfully changed from ''' || v_old_parcode || ''' to '''
+--           || v_new_parcode;
+--   end if;
+--   /* ao_message := 'v_childcode=' || v_childcode || ' v_old_parcode='
+--                 || v_old_parcode || ' v_new_parcode=' || v_new_parcode; */
+--   EXCEPTION
+--     WHEN OTHERS THEN
+--       ROLLBACK TO save_qual_transactions;
+--       raise_application_error(v_message_no, v_message);
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`auth_sp_update_test`;
+-- PROCEDURE auth_sp_update_test
+-- 	(AI_AUTHORIZATION_ID IN STRING,
+-- 	 AI_FUNCTION_NAME IN FUNCTION.FUNCTION_NAME%TYPE,
+-- 	 AI_QUALIFIER_CODE IN QUALIFIER.QUALIFIER_CODE%TYPE,
+-- 	 AI_KERBEROS_NAME IN PERSON.KERBEROS_NAME%TYPE,
+-- 	 AI_DO_FUNCTION IN AUTHORIZATION.DO_FUNCTION%TYPE,
+-- 	 AI_GRANT_AND_VIEW IN AUTHORIZATION.GRANT_AND_VIEW%TYPE,
+-- 	 AI_DESCEND IN AUTHORIZATION.DESCEND%TYPE,
+-- 	 AI_EFFECTIVE_DATE IN STRING,
+-- 	 AI_EXPIRATION_DATE IN STRING,
+-- 	 a_modified_by OUT AUTHORIZATION.modified_by%TYPE,
+-- 	 a_modified_date OUT STRING
+-- 	)
+-- IS
+-- V_AUTHORIZATION_ID AUTHORIZATION.AUTHORIZATION_ID%TYPE;
+-- V_FUNCTION_ID AUTHORIZATION.FUNCTION_ID%TYPE;
+-- V_QUALIFIER_ID AUTHORIZATION.QUALIFIER_ID%TYPE;
+-- V_KERBEROS_NAME AUTHORIZATION.KERBEROS_NAME%TYPE;
+-- V_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- V_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- V_FUNCTION_CATEGORY AUTHORIZATION.FUNCTION_CATEGORY%TYPE;
+-- V_QUALIFIER_NAME QUALIFIER.QUALIFIER_NAME%TYPE;
+-- V_QUALIFIER_TYPE QUALIFIER.QUALIFIER_NAME%TYPE;
+-- V_MODIFIED_BY AUTHORIZATION.MODIFIED_BY%TYPE;
+-- V_DO_FUNCTION AUTHORIZATION.DO_FUNCTION%TYPE;
+-- V_GRANT_AND_VIEW AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- V_DESCEND AUTHORIZATION.DESCEND%TYPE;
+-- V_EFFECTIVE_DATE AUTHORIZATION.EFFECTIVE_DATE%TYPE;
+-- V_EXPIRATION_DATE AUTHORIZATION.EXPIRATION_DATE%TYPE;
+-- v_status integer;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- a_function_id FUNCTION.FUNCTION_ID%TYPE;
+-- a_function_name FUNCTION.FUNCTION_NAME%TYPE;
+-- a_qualifier_id AUTHORIZATION.QUALIFIER_ID%TYPE;
+-- a_qualifier_code AUTHORIZATION.QUALIFIER_CODE%TYPE;
+-- a_kerberos_name AUTHORIZATION.KERBEROS_NAME%TYPE;
+-- a_do_function AUTHORIZATION.DO_FUNCTION%TYPE;
+-- a_grant_and_view AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- a_descend AUTHORIZATION.DESCEND%TYPE;
+-- a_effective_date varchar2(255);
+-- a_expiration_date varchar2(255);
+-- BEGIN
+--   v_authorization_id := to_number(ai_authorization_id);
+--   a_kerberos_name := upper(ai_kerberos_name);
+--   a_function_name := upper(ai_function_name);
+--   a_qualifier_code := upper(ai_qualifier_code);
+--   a_do_function := upper(ai_do_function);
+--   a_grant_and_view := upper(ai_grant_and_view);
+--   a_descend := upper(ai_descend);
+--   a_effective_date := upper(ai_effective_date);
+--   a_expiration_date := upper(ai_expiration_date);
+--   /* Make sure the authorization already exists */
+--   v_status := 0;
+--   select function_id, qualifier_id, kerberos_name, modified_by,
+--         do_function, grant_and_view, descend,
+--         effective_date, expiration_date
+--         into V_FUNCTION_ID, V_QUALIFIER_ID, V_KERBEROS_NAME, V_MODIFIED_BY,
+--         V_DO_FUNCTION, V_GRANT_AND_VIEW, V_DESCEND,
+--         V_EFFECTIVE_DATE, V_EXPIRATION_DATE
+--         from authorization
+--         where authorization_id = ai_authorization_id;
+--   /* Make sure new function_id is valid */
+--   v_status := 1;
+--   select function_id, function_category, qualifier_type
+--         into V_FUNCTION_ID, V_FUNCTION_CATEGORY, V_QUALIFIER_TYPE
+--         from function
+--  	where function_name = a_function_name;
+--   /* Make sure new qualifier_id is valid */
+--   v_status := 2;
+--   select qualifier_code, qualifier_name
+--         into V_QUALIFIER_CODE, V_QUALIFIER_NAME
+--         from qualifier
+-- 	where qualifier_code = a_qualifier_code
+--         and qualifier_type = v_qualifier_type;
+--   /* Make sure new kerberos_name is valid */
+--   v_status := 3;
+--   select kerberos_name into V_KERBEROS_NAME from person
+-- 	where kerberos_name = a_kerberos_name;
+--   update authorization
+--     set FUNCTION_ID = v_function_id, QUALIFIER_ID = v_qualifier_id,
+--       KERBEROS_NAME = a_kerberos_name, QUALIFIER_CODE = v_qualifier_code,
+--       FUNCTION_NAME = a_function_name, FUNCTION_CATEGORY = v_function_category,
+--       QUALIFIER_NAME = v_qualifier_name, MODIFIED_BY = user,
+--       MODIFIED_DATE = sysdate, DO_FUNCTION = a_do_function,
+--       GRANT_AND_VIEW = a_grant_and_view, DESCEND = a_descend,
+--       EFFECTIVE_DATE = auth_sf_convert_str_to_date(A_EFFECTIVE_DATE),
+--       EXPIRATION_DATE = auth_sf_convert_str_to_date(A_EXPIRATION_DATE)
+--     where AUTHORIZATION_ID = ai_authorization_id;
+--   a_modified_by := user;
+--   a_modified_date := auth_sf_convert_date_to_str(sysdate);
+--   EXCEPTION
+-- 	WHEN NO_DATA_FOUND THEN
+-- 	  if v_status = 0 then
+-- 	     v_msg_no := roles_msg.err_20010_no;
+-- 	     v_msg := roles_msg.err_20010_msg;
+-- 	  elsif v_status = 1 then
+-- 	     v_msg_no := roles_msg.err_20001_no;
+-- 	     v_msg := roles_msg.err_20001_msg;
+-- 	  elsif v_status = 2 then
+--  	     v_msg_no := roles_msg.err_20017_no;
+-- 	     v_msg := roles_msg.err_20017_msg;
+-- 	  else
+-- 	     v_msg_no := roles_msg.err_20003_no;
+-- 	     v_msg := roles_msg.err_20003_msg;
+--           end if;
+-- 	  raise_application_error(v_msg_no, v_msg);
+-- 	WHEN DUP_VAL_ON_INDEX THEN
+-- 	  raise_application_error(roles_msg.err_20007_no,
+--             roles_msg.err_20007_msg);
+--      /*   WHEN OTHERS THEN
+--           raise_application_error(roles_msg.err_20018_no,
+--                                   roles_msg.err_20018_msg);  */
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`delete_fund_centers_rel_str`;
+-- PROCEDURE delete_fund_centers_rel_str (
+--    ai_fund_center   IN       VARCHAR2,
+--    ai_for_user      IN       VARCHAR2,
+--    ao_message       OUT      STRING
+-- )
+-- IS
+--    v_check_auth     VARCHAR2 (2);
+-- 
+--   not_author_to_maint_mod1_FC EXCEPTION;
+--   not_authorized_to_be_proxy   EXCEPTION;
+--    not_exists       EXCEPTION;
+--    null_value      EXCEPTION;
+--    v_message        VARCHAR2(255);
+--    v_message_no     INTEGER;
+--    v_count          NUMBER;
+--    v_fund_center    varchar2(10);
+-- BEGIN
+--    v_check_auth :=
+--       auth_sf_check_auth2 ('MAINTAIN MOD 1 FC',
+--                            'NULL',
+--                            ai_for_user,
+--                            'PROXY FOR ROLES ADMIN FUNC',
+--                            'NULL'
+--                           );
+-- 
+--     IF v_check_auth ='X'
+--   THEN
+--       RAISE not_authorized_to_be_proxy;
+--  ELSE
+--    IF v_check_auth ='N'
+-- THEN
+--    RAISE not_author_to_maint_mod1_FC;
+-- ELSE
+--       SELECT COUNT (fund_center_id)
+--         INTO v_count
+--         FROM rolesbb.rdb_t_funds_cntr_release_str
+--        WHERE fund_center_id = ai_fund_center;
+-- --
+--       select ai_fund_center into v_fund_center
+--       FROM dual;
+-- --
+--  IF v_fund_center is null
+--     THEN
+--     RAISE null_value;
+--    else
+--       if
+--        v_count > 0
+--       THEN
+--          DELETE FROM rolesbb.rdb_t_funds_cntr_release_str
+--                WHERE fund_center_id = ai_fund_center;
+-- 
+--          COMMIT;
+--          ao_message :=
+--                  'FUND CENTER ''' || ai_fund_center || ''' has been deleted.';
+--       ELSE
+--          IF v_count = 0
+--            THEN
+--   RAISE not_exists;
+-- --      ao_message := 'FUND CENTER ''' || ai_fund_center || ''' does not exist.';
+--         END IF;
+--       END IF;
+--    END IF;
+-- END IF;
+-- END IF;
+-- --
+-- EXCEPTION
+--    WHEN  not_author_to_maint_mod1_FC
+--    THEN
+--       v_message_no := -20100;
+--       ao_message := 'ORA'||v_message_no||' '||
+--             ''''
+--          || ai_for_user
+--          || ''' not authorized to maintain list of Model 1 fund centers';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN not_authorized_to_be_proxy
+--    THEN
+--       v_message_no :=20102;
+--      ao_message := 'ORA'||v_message_no||' '||
+--      'Database user '||' '||user||' is not authorized to act as a proxy for other users.';
+--     RAISE_APPLICATION_ERROR (v_message_no,ao_message);
+-- WHEN  null_value
+--  THEN
+--       v_message_no :=-20110;
+--       ao_message := 'ORA'||v_message_no||' '||
+--          ' Fund Center ID needs to be provided';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+-- WHEN not_exists
+--    THEN
+--     v_message_no :=-20101;
+--  ao_message := 'ORA'||v_message_no||' '||
+-- --      ''''
+-- --         || ai_fund_center ||
+-- --         ''' fund_center does not exist.';
+-- 'fund_center id = '||''''||ai_fund_center||''' does not exist';
+--     RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+--    WHEN OTHERS
+--    THEN
+--    v_message := SUBSTR (SQLERRM, 1, 255);
+--       v_message_no := SQLCODE;
+--   ao_message :=v_message_no||' '||v_message;
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`insert_fund_centers_rel_str`;
+-- PROCEDURE Insert_Fund_Centers_Rel_Str (
+--    ai_fund_center   IN       VARCHAR2,
+--    ai_for_user      IN       VARCHAR2,
+--    ao_message       OUT      STRING
+-- )
+-- IS
+--    v_check_auth          VARCHAR2 (2);
+--    not_authorized_to_be_proxy        EXCEPTION;
+--   not_author_to_maint_mod1_FC EXCEPTION;
+--    already_exists        EXCEPTION;
+--    too_long              EXCEPTION;
+--    too_short             EXCEPTION;
+--    not_numeric           EXCEPTION;
+--    null_value           EXCEPTION;
+--    v_message             VARCHAR2 (255);
+--    v_message_no          INTEGER;
+--    v_length              NUMBER;
+--    v_fund_center_count   NUMBER;
+--    v_numeric             VARCHAR2 (6);
+--   v_fund_center         VARCHAR2(20);
+-- BEGIN
+--    v_check_auth :=
+--       AUTH_SF_CHECK_AUTH2 ('MAINTAIN MOD 1 FC',
+--                            'NULL',
+--                            ai_for_user,
+--                            'PROXY FOR ROLES ADMIN FUNC',
+--                            'NULL'
+--                           );
+-- 
+--     IF v_check_auth ='X'
+--     THEN
+--       RAISE not_authorized_to_be_proxy;
+--    ELSE
+--     IF v_check_auth ='N'
+--     THEN RAISE not_author_to_maint_mod1_FC;
+--    end if;
+-- end if;
+-- SELECT LENGTH (ai_fund_center)
+--         INTO v_length
+--         FROM DUAL;
+-- 
+--       SELECT COUNT (*)
+--         INTO v_fund_center_count
+--         FROM rolesbb.RDB_T_FUNDS_CNTR_RELEASE_STR
+--        WHERE fund_center_id = ai_fund_center;
+-- 
+--       SELECT SUBSTR (ai_fund_center, 4, 6)
+--         INTO v_numeric
+--         FROM DUAL;
+-- 
+--       SELECT ai_fund_center
+--         INTO v_fund_center
+--         FROM DUAL;
+-- 
+--       IF v_length < 8
+--       THEN
+--          RAISE too_short;
+--       ELSE
+--          IF v_length > 8
+--          THEN
+--             RAISE too_long;
+--          ELSE
+--             IF v_fund_center_count > 0
+--             THEN
+--                RAISE already_exists;
+--             ELSE
+--                IF    (   SUBSTR (v_numeric, 1, 1) < '0'
+--                       OR SUBSTR (v_numeric, 1, 1) > '9'
+--                      )
+--                   OR (   SUBSTR (v_numeric, 2, 1) < '0'
+--                       OR SUBSTR (v_numeric, 2, 1) > '9'
+--                      )
+--                   OR (   SUBSTR (v_numeric, 3, 1) < '0'
+--                       OR SUBSTR (v_numeric, 3, 1) > '9'
+--                      )
+--                   OR (   SUBSTR (v_numeric, 4, 1) < '0'
+--                       OR SUBSTR (v_numeric, 4, 1) > '9'
+--                      )
+--                   OR (   SUBSTR (v_numeric, 5, 1) < '0'
+--                       OR SUBSTR (v_numeric, 5, 1) > '9'
+--                      )
+--                   OR (   SUBSTR (v_numeric, 6, 1) < '0'
+--                       OR SUBSTR (v_numeric, 6, 1) > '9'
+--                      )
+--                THEN
+--                   RAISE not_numeric;
+--                ELSE
+--                  IF v_fund_center is null
+--               THEN
+--                  RAISE null_value;
+--               ELSE
+--                 INSERT INTO rolesbb.RDB_T_FUNDS_CNTR_RELEASE_STR
+--                        VALUES (ai_fund_center, '1', ai_for_user, SYSDATE);
+-- 
+--                   COMMIT;
+--                   ao_message :=
+--                         'FUND CENTER '''
+--                      || ai_fund_center
+--                      || ''' has been inserted';
+--                END IF;
+--             END IF;
+--          END IF;
+--       END IF;
+--    END IF;
+-- --  END IF;
+-- --END IF;
+--  ---
+-- EXCEPTION
+--    WHEN not_author_to_maint_mod1_FC
+--    THEN
+--       v_message_no := -20101;
+--       ao_message :='ORA'||v_message_no||' '||
+--             ''''
+--          || ai_for_user
+--         || ''' not authorized to maintain list of Model 1 fund centers';
+--       RAISE_APPLICATION_ERROR (v_message_no,ao_message);
+-- -----
+-- WHEN not_authorized_to_be_proxy
+--    THEN
+--       v_message_no := -20102;
+--       ao_message :='ORA'||v_message_no||' '||
+--      'database user '||' '||user||' '|| 'is not authorized to act as a proxy for other users.';
+--      RAISE_APPLICATION_ERROR (v_message_no,ao_message);
+--  --
+--    WHEN already_exists
+--    THEN
+--       v_message_no := -20103;
+--       ao_message := 'ORA'||v_message_no||' '||
+--                    'FUND CENTER ''' || ai_fund_center || ''' already exists.';
+-- RAISE_APPLICATION_ERROR (v_message_no,ao_message);
+-- 
+-- --
+--    WHEN too_long
+--    THEN
+--       v_message_no := -20104;
+--       ao_message := 'ORA'||v_message_no||' '||
+--                   'FUND CENTER ''' || ai_fund_center || ''' IS too long.';
+-- RAISE_APPLICATION_ERROR (v_message_no,ao_message);
+-- 
+-- --
+--    WHEN too_short
+--    THEN
+--       v_message_no := -20105;
+--       ao_message :='ORA'||v_message_no||' '||
+--                     'FUND CENTER ''' || ai_fund_center || ''' IS too short.';
+-- RAISE_APPLICATION_ERROR (v_message_no,ao_message);
+-- 
+-- --
+--    WHEN not_numeric
+--    THEN
+--       v_message_no := -20106;
+--       ao_message :='ORA'||v_message_no||' '||
+--             'FUND CENTER '''
+--          || ai_fund_center
+--          || ''' must have numeric values after "FC"';
+-- RAISE_APPLICATION_ERROR (v_message_no,ao_message);
+-- 
+-- --
+-- WHEN null_value
+-- THEN
+--       v_message_no := -20110;
+--       ao_message :='ORA'||v_message_no||' '||
+--                     'FUND CENTER ID needs to be provided.';
+-- RAISE_APPLICATION_ERROR (v_message_no,ao_message);
+-- WHEN OTHERS
+--    THEN
+--       v_message := SUBSTR (SQLERRM, 1, 255);
+--       v_message_no := SQLCODE;
+--       ao_message := v_message_no||' '||v_message;
+-- RAISE_APPLICATION_ERROR (v_message_no,ao_message);
+-- 
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`recompile`;
+-- PROCEDURE recompile
+--    (status_in IN VARCHAR2 := 'INVALID',
+--     name_in IN VARCHAR2 := '%',
+--     schema_in IN VARCHAR2 := USER)
+-- IS
+--    v_objtype VARCHAR2(100);
+--    CURSOR obj_cur IS
+--       SELECT owner, object_name, object_type
+--         FROM ALL_OBJECTS
+--        WHERE status LIKE UPPER (status_in)
+--          AND object_name LIKE UPPER (name_in)
+--          AND object_type IN ('PACKAGE','PACKAGE BODY', 'FUNCTION','PROCEDURE')
+--          AND owner LIKE UPPER (schema_in)
+--       ORDER BY
+--          DECODE (object_type,
+--             'PACKAGE', 1, 'PACKAGE BODY', 2,
+--             'FUNCTION', 3, 'PROCEDURE', 4);
+-- BEGIN
+--    FOR rec IN obj_cur
+--    LOOP
+--       IF rec.object_type = 'PACKAGE'
+--       THEN
+--          v_objtype := 'PACKAGE SPECIFICATION';
+--       ELSE
+--          v_objtype := rec.object_type;
+--       END IF;
+--       DBMS_DDL.ALTER_COMPILE (v_objtype, rec.owner, rec.object_name);
+--       DBMS_OUTPUT.PUT_LINE
+--          ('Compiled ' || v_objtype || ' of ' ||
+--           rec.owner || '.' || rec.object_name);
+--    END LOOP;
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`rolesapi_batch_create_auth`;
+-- PROCEDURE ROLESAPI_BATCH_CREATE_AUTH
+-- 		(AI_SERVER_USER IN STRING,
+--                  AI_FOR_USER IN STRING,
+-- 		 AI_KERBEROS_NAME IN PERSON.KERBEROS_NAME%TYPE,
+--                  AI_AUTHORIZATION_ID IN STRING,
+-- 		 a_modified_by OUT STRING,
+-- 		 a_modified_date OUT STRING,
+--                  a_authorization_id OUT STRING
+-- 		)
+-- IS
+-- V_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- V_FOR_USER PERSON.KERBEROS_NAME%TYPE;
+-- V_SERVER_USER PERSON.KERBEROS_NAME%TYPE;
+-- V_AUTHORIZATION_ID AUTHORIZATION.AUTHORIZATION_ID%TYPE;
+-- v_status integer;
+-- v_error_no roles_msg.err_no%TYPE;
+-- v_error_msg roles_msg.err_msg%TYPE;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- A_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- v_server_has_auth varchar2(1);
+-- v_proxy_has_auth varchar2(1);
+-- 
+-- v_old_function_id authorization.function_id%type;
+-- v_old_function_name authorization.function_name%type;
+-- v_old_qualifier_id authorization.qualifier_id%type;
+-- v_old_qualifier_code authorization.qualifier_code%type;
+-- v_old_kerberos_name authorization.kerberos_name%type;
+-- v_old_function_category authorization.function_category%type;
+-- v_old_qualifier_name authorization.qualifier_name%type;
+-- v_old_descend authorization.descend%type;
+-- v_old_do_function authorization.do_function%type;
+-- v_old_grant_and_view authorization.grant_and_view%type;
+-- v_old_effective_date varchar2(20);
+-- v_old_expiration_date varchar2(20);
+-- v_count integer;
+-- 
+-- BEGIN
+--   v_for_user := upper(ai_for_user);
+--   if (ai_server_user is not null) then
+--     v_server_user := upper(ai_server_user);
+--   else
+--     v_server_user := upper(user);
+--   end if;
+--   a_kerberos_name := upper(ai_kerberos_name);
+-- 
+--   /* Verify that the input authorization ID matches an existing record.
+--      Get the old function_name and qualifier_code  */
+--   v_status := 1;  /* Make sure the given authorization_id is a number */
+--   select auth_sf_check_number(ai_authorization_id) into v_count from dual;
+--   if (v_count <> 1) then
+--      raise_application_error(-20010, 'Authorization_id '''
+--        || ai_authorization_id
+--        || ''') is not a valid number.');
+--   end if;
+--   v_authorization_id := to_number(ai_authorization_id);
+-- 
+--   v_status := 2;  /* Make sure authorization_id exists.  Read in the record.*/
+--   select count(*) into v_count
+--          from authorization
+--          where authorization_id = v_authorization_id;
+--   if (v_count < 1) then
+--      raise_application_error(-20011, 'Authorization_id '''
+--        || v_authorization_id
+--        || ''') is not a valid id.');
+--   end if;
+-- 
+--   select function_category, function_name, qualifier_code,
+--          do_function, grant_and_view,
+--           function_id, function_name, function_category, qualifier_id, kerberos_name,
+--           qualifier_name, descend,
+--           auth_sf_convert_date_to_str(effective_date),
+--           auth_sf_convert_date_to_str(expiration_date)
+--          into v_old_function_category, v_old_function_name, v_old_qualifier_code,
+--           v_old_do_function, v_old_grant_and_view,
+--           v_old_function_id, v_old_function_name,
+-- 	  v_old_function_category, v_old_qualifier_id, v_old_kerberos_name,
+--           v_old_qualifier_name, v_old_descend,
+--           v_old_effective_date, v_old_expiration_date
+--          from authorization
+--          where authorization_id = v_authorization_id;
+-- 
+--   v_status := 3;  /* Check existence of kerberos_name */
+--   --select kerberos_name into v_kerberos_name
+--   --  from person where kerberos_name = a_kerberos_name;
+--   select count(*) into v_count
+--     from person where kerberos_name = a_kerberos_name;
+--   if v_count = 0 then
+--     v_error_no := -20030;
+--     v_error_msg := 'Kerberos name ''' || a_kerberos_name || ''' not found.';
+--     raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+--   -- Check authority of Oracle login-user to be proxy for creating auths.
+--   if (v_server_user <> user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_old_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--      if v_server_has_auth <> 'Y' then
+--        v_error_no := roles_service_constant.err_20003_no;
+--        v_error_msg := roles_service_constant.err_20003_msg;
+--        v_error_msg := replace(v_error_msg, '<server_id>',
+--                               user);
+--        v_error_msg := replace(v_error_msg, '<function_category>',
+--                               v_old_function_category);
+--        raise_application_error(v_error_no, v_error_msg);
+--      end if;
+--   end if;
+-- 
+--   -- Check authority of server_user to be proxy for creating authorizations
+--   if (v_server_user <> v_for_user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(v_server_user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_old_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--   else  -- No need to worry about separate server authorization
+--     v_server_has_auth := 'Y';
+--   end if;
+--   if v_server_has_auth <> 'Y' then
+--     v_error_no := roles_service_constant.err_20003_no;
+--     v_error_msg := roles_service_constant.err_20003_msg;
+--     v_error_msg := replace(v_error_msg, '<server_id>',
+--                            v_server_user);
+--     v_error_msg := replace(v_error_msg, '<function_category>',
+--                            v_old_function_category);
+--     raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+--   -- check ability to create authorization
+--   if auth_sf_can_create_auth(v_for_user, v_old_function_name, v_old_qualifier_code,
+-- 	v_old_do_function, v_old_grant_and_view) = 'N' then
+--      v_error_no := roles_msg.err_20014_no;
+--      v_error_msg := 'User ''' || v_for_user
+--                    || ''' is not authorized to create authorizations'
+--                    || ' for function '''
+--                    || v_old_function_name || ''' and qualifier '''
+--                    || v_old_qualifier_code || '''.';
+--      raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+--   -- Make sure the authorization doesn't already exist
+--   select count(*) into v_count from authorization
+--     where kerberos_name = a_kerberos_name
+--     and function_id = v_old_function_id
+--     and qualifier_id = v_old_qualifier_id;
+--   if v_count > 0 then
+--     v_error_no := roles_msg.err_20007_no;
+--     v_error_msg := roles_msg.err_20007_msg;
+--   end if;
+-- 
+--   -- No errors were found.  Insert the new authorization.
+-- 
+--   insert into authorization
+-- 	values(authorization_sequence.nextval, V_OLD_FUNCTION_ID, V_OLD_QUALIFIER_ID,
+-- 		A_KERBEROS_NAME, V_OLD_QUALIFIER_CODE, V_OLD_FUNCTION_NAME,
+-- 		V_OLD_FUNCTION_CATEGORY, V_OLD_QUALIFIER_NAME, v_for_user,
+-- 		sysdate, V_OLD_DO_FUNCTION, V_OLD_GRANT_AND_VIEW, V_OLD_DESCEND,
+-- 		greatest(auth_sf_convert_str_to_date(V_OLD_EFFECTIVE_DATE),
+--                         sysdate),
+-- 		auth_sf_convert_str_to_date(V_OLD_EXPIRATION_DATE));
+--   --a_modified_by := v_for_user;
+--   select v_for_user || ':' || to_char(rdb_seq_auth_audit.currval)
+--       into a_modified_by from dual;
+--   a_modified_date := auth_sf_convert_date_to_str(sysdate);
+--   select to_char(authorization_id) into a_authorization_id
+--     from authorization where kerberos_name = a_kerberos_name
+--     and function_category = V_OLD_FUNCTION_CATEGORY
+--     and function_name = V_OLD_FUNCTION_NAME
+--     and qualifier_code = V_OLD_QUALIFIER_CODE;
+-- 
+--   EXCEPTION
+-- 	WHEN NO_DATA_FOUND THEN
+--             if v_status = 1 then
+-- 		   v_msg_no := roles_msg.err_20001_no;
+-- 		   v_msg := roles_msg.err_20001_msg;
+--             elsif v_status = 2 then
+--                    v_msg_no := roles_msg.err_20017_no;
+--                    v_msg := roles_msg.err_20017_msg;
+--             else
+-- 		   v_msg_no := roles_msg.err_20003_no;
+-- 		   v_msg := roles_msg.err_20003_msg;
+--             end if;
+--       	    raise_application_error(v_msg_no, v_msg);
+-- 	WHEN DUP_VAL_ON_INDEX THEN
+-- 	  raise_application_error(roles_msg.err_20007_no,
+--             roles_msg.err_20007_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`rolesapi_batch_update_auth`;
+-- PROCEDURE ROLESAPI_BATCH_UPDATE_AUTH
+-- 		(AI_SERVER_USER IN STRING,
+--                  AI_FOR_USER IN STRING,
+--                  AI_AUTHORIZATION_ID IN STRING,
+--                  AI_EFFECTIVE_DATE IN STRING,
+--                  AI_EXPIRATION_DATE IN STRING,
+--                  a_modified_by OUT STRING,
+--                  a_modified_date OUT STRING
+-- 		)
+-- IS
+-- V_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- V_FOR_USER PERSON.KERBEROS_NAME%TYPE;
+-- V_SERVER_USER PERSON.KERBEROS_NAME%TYPE;
+-- V_AUTHORIZATION_ID AUTHORIZATION.AUTHORIZATION_ID%TYPE;
+-- v_status integer;
+-- v_error_no roles_msg.err_no%TYPE;
+-- v_error_msg roles_msg.err_msg%TYPE;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- v_server_has_auth varchar2(1);
+-- v_proxy_has_auth varchar2(1);
+-- 
+-- A_EFFECTIVE_DATE varchar2(255);
+-- A_EXPIRATION_DATE varchar2(255);
+-- 
+-- v_old_function_id authorization.function_id%type;
+-- v_old_function_name authorization.function_name%type;
+-- v_old_qualifier_id authorization.qualifier_id%type;
+-- v_old_qualifier_code authorization.qualifier_code%type;
+-- v_old_kerberos_name authorization.kerberos_name%type;
+-- v_old_function_category authorization.function_category%type;
+-- v_old_qualifier_name authorization.qualifier_name%type;
+-- v_old_descend authorization.descend%type;
+-- v_old_do_function authorization.do_function%type;
+-- v_old_grant_and_view authorization.grant_and_view%type;
+-- v_old_effective_date varchar2(20);
+-- v_old_expiration_date varchar2(20);
+-- v_count integer;
+-- 
+-- BEGIN
+--   v_for_user := upper(ai_for_user);
+--   if (ai_server_user is not null) then
+--     v_server_user := upper(ai_server_user);
+--   else
+--     v_server_user := upper(user);
+--   end if;
+--   a_effective_date := to_char(trunc(sysdate), 'mmddyyyy');
+--   if ai_expiration_date is not null then
+--     a_expiration_date := ai_expiration_date;
+--   else
+--     a_expiration_date := '        ';
+--   end if;
+-- 
+-- 
+--   /* Verify that the input authorization ID matches an existing record.
+--      Get the old function_name and qualifier_code  */
+--   v_status := 1;  /* Make sure the given authorization_id is a number */
+--   select auth_sf_check_number(ai_authorization_id) into v_count from dual;
+--   if (v_count <> 1) then
+--      raise_application_error(-20010, 'Authorization_id '''
+--        || ai_authorization_id
+--        || ''') is not a valid number.');
+--   end if;
+--   v_authorization_id := to_number(ai_authorization_id);
+-- 
+--   v_status := 2;  /* Make sure authorization_id exists.  Read in the record.*/
+--   select count(*) into v_count
+--          from authorization
+--          where authorization_id = v_authorization_id;
+--   if (v_count < 1) then
+--      raise_application_error(-20011, 'Authoriziation_id '''
+--        || v_authorization_id
+--        || ''') is not a valid id.');
+--   end if;
+-- 
+--   /* Check the validity of the expiration_date field */
+--   if a_expiration_date <> '        ' then
+--     select auth_sf_check_date_noslash(a_expiration_date)
+--         into v_count from dual;
+--     if (v_count <> 1) then
+--        raise_application_error(-20011, 'Invalid expiration date '''
+--          || ai_expiration_date
+--          || ''' must be in mmddyyyy format.');
+--     end if;
+--   end if;
+-- 
+-- 
+--   select function_category, function_name, qualifier_code,
+--          do_function, grant_and_view,
+--           function_id, function_name, function_category, qualifier_id, kerberos_name,
+--           qualifier_name, descend,
+--           auth_sf_convert_date_to_str(effective_date),
+--           auth_sf_convert_date_to_str(expiration_date)
+--          into v_old_function_category, v_old_function_name, v_old_qualifier_code,
+--           v_old_do_function, v_old_grant_and_view,
+--           v_old_function_id, v_old_function_name,
+-- 	  v_old_function_category, v_old_qualifier_id, v_old_kerberos_name,
+--           v_old_qualifier_name, v_old_descend,
+--           v_old_effective_date, v_old_expiration_date
+--          from authorization
+--          where authorization_id = v_authorization_id;
+-- 
+--   -- Check authority of Oracle login-user to be proxy for creating auths.
+--   if (v_server_user <> user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_old_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--      if v_server_has_auth <> 'Y' then
+--        v_error_no := roles_service_constant.err_20003_no;
+--        v_error_msg := roles_service_constant.err_20003_msg;
+--        v_error_msg := replace(v_error_msg, '<server_id>',
+--                               user);
+--        v_error_msg := replace(v_error_msg, '<function_category>',
+--                               v_old_function_category);
+--        raise_application_error(v_error_no, v_error_msg);
+--      end if;
+--   end if;
+-- 
+--   -- Check authority of server_user to be proxy for creating authorizations
+--   if (v_server_user <> v_for_user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(v_server_user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_old_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--   else  -- No need to worry about separate server authorization
+--     v_server_has_auth := 'Y';
+--   end if;
+--   if v_server_has_auth <> 'Y' then
+--     v_error_no := roles_service_constant.err_20003_no;
+--     v_error_msg := roles_service_constant.err_20003_msg;
+--     v_error_msg := replace(v_error_msg, '<server_id>',
+--                            v_server_user);
+--     v_error_msg := replace(v_error_msg, '<function_category>',
+--                            v_old_function_category);
+--     raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+--   -- check ability to create authorization
+--   if auth_sf_can_create_auth(v_for_user, v_old_function_name, v_old_qualifier_code,
+-- 	v_old_do_function, v_old_grant_and_view) = 'N' then
+--      v_error_no := roles_msg.err_20014_no;
+--      v_error_msg := 'User ''' || v_for_user
+--                    || ''' is not authorized to create authorizations'
+--                    || ' for function '''
+--                    || v_old_function_name || ''' and qualifier '''
+--                    || v_old_qualifier_code || '''.';
+--      raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+--   -- Make sure there is at least one change to be made
+--   if not (nvl(v_old_expiration_date,'        ') = a_expiration_date
+--      ) then
+--     -- Update the authorization
+--     update authorization
+--         set function_id = v_old_function_id,
+--             qualifier_id = v_old_qualifier_id,
+--             kerberos_name = v_old_kerberos_name,
+--             qualifier_code = v_old_qualifier_code,
+--             function_name = v_old_function_name,
+--             function_category = v_old_function_category,
+--             qualifier_name = v_old_qualifier_name,
+--             modified_by = v_for_user,
+--             modified_date = sysdate,
+--             do_function = v_old_do_function,
+--             grant_and_view = v_old_grant_and_view,
+--             descend = v_old_descend,
+--             effective_date =
+-- 		auth_sf_convert_str_to_date(v_old_effective_date),
+--             expiration_date =
+--                 auth_sf_convert_str_to_date(A_EXPIRATION_DATE)
+--          where authorization_id = v_authorization_id;
+--    else
+--      raise_application_error(roles_msg.err_20002_no,
+--        'There are no changes to be made. Exp date = ' || a_expiration_date || ' Old = ' || v_old_expiration_date);
+--    end if;
+-- 
+--    a_modified_by := v_for_user;
+--    a_modified_date := sysdate;
+-- 
+--   EXCEPTION
+--         WHEN NO_DATA_FOUND THEN
+--             if v_status = 1 then
+--                    v_msg_no := roles_msg.err_20001_no;
+--                    v_msg := 'Invalid function ''' || v_old_function_name ||
+--                             ''' specified.';
+--             elsif v_status = 2 then
+--                    v_msg_no := roles_msg.err_20017_no;
+--                    v_msg := roles_msg.err_20017_msg;
+--             elsif v_status = 3 then
+--                    v_msg_no := roles_msg.err_20003_no;
+--                    v_msg := 'Invalid Kerberos_name ''' || v_old_kerberos_name ||
+--                             ''' specified.';
+--             elsif v_status = 5 then
+--                    v_msg_no := roles_msg.err_20010_no;
+--                    v_msg := roles_msg.err_20010_msg;
+--             else
+--                    v_msg_no := -20999;
+--                    v_msg := 'Internal program problem. Bad v_status_code'
+--                             || ' in procedure ROLESAPI_UPDATE_AUTH1.';
+--             end if;
+--             raise_application_error(v_msg_no, v_msg);
+--         WHEN DUP_VAL_ON_INDEX THEN
+--           raise_application_error(roles_msg.err_20007_no,
+--             roles_msg.err_20007_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`rolesapi_create_auth`;
+-- PROCEDURE ROLESAPI_CREATE_AUTH
+-- 		(AI_SERVER_USER IN STRING,
+--                  AI_FOR_USER IN STRING,
+--                  AI_FUNCTION_NAME IN FUNCTION.FUNCTION_NAME%TYPE,
+-- 		 AI_QUALIFIER_CODE IN QUALIFIER.QUALIFIER_CODE%TYPE,
+-- 		 AI_KERBEROS_NAME IN PERSON.KERBEROS_NAME%TYPE,
+-- 		 AI_DO_FUNCTION IN AUTHORIZATION.DO_FUNCTION%TYPE,
+-- 		 AI_GRANT_AND_VIEW IN AUTHORIZATION.GRANT_AND_VIEW%TYPE,
+-- 		 AI_DESCEND IN AUTHORIZATION.DESCEND%TYPE,
+-- 		 AI_EFFECTIVE_DATE IN STRING,
+-- 		 AI_EXPIRATION_DATE IN STRING,
+-- 		 a_modified_by OUT STRING,
+-- 		 a_modified_date OUT STRING,
+--                  a_authorization_id OUT STRING
+-- 		)
+-- IS
+-- V_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- V_FOR_USER PERSON.KERBEROS_NAME%TYPE;
+-- V_SERVER_USER PERSON.KERBEROS_NAME%TYPE;
+-- V_QUALIFIER_ID QUALIFIER.QUALIFIER_ID%TYPE;
+-- V_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- V_QUALIFIER_NAME QUALIFIER.QUALIFIER_NAME%TYPE;
+-- V_QUALIFIER_TYPE QUALIFIER.QUALIFIER_TYPE%TYPE;
+-- V_FUNCTION_ID FUNCTION.FUNCTION_ID%TYPE;
+-- V_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- V_FUNCTION_CATEGORY FUNCTION.FUNCTION_CATEGORY%TYPE;
+-- v_status integer;
+-- v_error_no roles_msg.err_no%TYPE;
+-- v_error_msg roles_msg.err_msg%TYPE;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- A_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- A_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- A_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- A_DO_FUNCTION AUTHORIZATION.DO_FUNCTION%TYPE;
+-- A_GRANT_AND_VIEW AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- A_DESCEND AUTHORIZATION.DESCEND%TYPE;
+-- A_EFFECTIVE_DATE varchar2(255);
+-- A_EXPIRATION_DATE varchar2(255);
+-- v_server_has_auth varchar2(1);
+-- v_proxy_has_auth varchar2(1);
+-- 
+-- BEGIN
+--   v_for_user := upper(ai_for_user);
+--   if (ai_server_user is not null) then
+--     v_server_user := upper(ai_server_user);
+--   else
+--     v_server_user := upper(user);
+--   end if;
+--   a_kerberos_name := upper(ai_kerberos_name);
+--   a_function_name := upper(ai_function_name);
+--   a_qualifier_code := upper(ai_qualifier_code);
+--   a_do_function := upper(ai_do_function);
+--   a_grant_and_view := upper(ai_grant_and_view);
+--   a_descend := upper(ai_descend);
+--   if ai_effective_date is not null then
+--     a_effective_date := ai_effective_date;
+--   else
+--     a_effective_date := to_char(sysdate, 'mmddyyyy');
+--   end if;
+--   if ai_expiration_date is not null then
+--     a_expiration_date := ai_expiration_date;
+--   else
+--     a_expiration_date := '        ';
+--   end if;
+-- 
+--   /* Adjust grant_and_view.  User sees 'Y' <=> database contains 'GD' */
+--   --if (a_grant_and_view = 'Y ' or a_grant_and_view = 'GD') then
+--   if (a_grant_and_view = 'Y ' or a_grant_and_view = 'Y'
+--       or a_grant_and_view = 'GD' or a_grant_and_view = 'G') then
+--     a_grant_and_view := 'GD';
+--   else
+--     a_grant_and_view := 'N ';
+--   end if;
+-- 
+--   /* Make sure DESCEND is valid -- 'Y' or 'N' */
+--   if a_descend <> 'Y' and a_descend <> 'N' then
+--      raise_application_error(-20009,
+--        'Descend must be ''Y'' or ''N''.');
+--   end if;
+-- 
+--   v_status := 1;  /* Make sure function_name is in function_table */
+--   select function_id, function_name, function_category, qualifier_type
+--     into v_function_id, v_function_name, v_function_category, v_qualifier_type
+--     from function
+--     where function_name = a_function_name;
+-- 
+--   v_status := 2;  /* Make sure qualifier_name is in qualifier_table */
+--   select qualifier_id, qualifier_code, qualifier_name
+--     into v_qualifier_id, v_qualifier_code, v_qualifier_name
+--     from qualifier where qualifier_code = a_qualifier_code
+--     and qualifier_type = v_qualifier_type;
+-- 
+--   v_status := 3;  /* Check existence of kerberos_name */
+--   select kerberos_name into v_kerberos_name
+--     from person where kerberos_name = a_kerberos_name;
+-- 
+--   -- Check special case: If qualifier_type is DEPT, then the
+--   -- qualifier must start with D_.
+--   if (v_qualifier_type = 'DEPT'
+--       and substr(v_qualifier_code, 1, 2) <> 'D_') then
+--      raise_application_error(roles_msg.err_20015_no,
+--        'In auths. for this function, qualifier code must start with D_');
+--   end if;
+-- 
+--   -- Check authority of Oracle login-user to be proxy for creating auths.
+--   if (v_server_user <> user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--      if v_server_has_auth <> 'Y' then
+--        v_error_no := roles_service_constant.err_20003_no;
+--        v_error_msg := roles_service_constant.err_20003_msg;
+--        v_error_msg := replace(v_error_msg, '<server_id>',
+--                               user);
+--        v_error_msg := replace(v_error_msg, '<function_category>',
+--                               v_function_category);
+--        raise_application_error(v_error_no, v_error_msg);
+--      end if;
+--   end if;
+-- 
+--   -- Check authority of server_user to be proxy for creating authorizations
+--   if (v_server_user <> v_for_user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(v_server_user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--   else  -- No need to worry about separate server authorization
+--     v_server_has_auth := 'Y';
+--   end if;
+--   if v_server_has_auth <> 'Y' then
+--     v_error_no := roles_service_constant.err_20003_no;
+--     v_error_msg := roles_service_constant.err_20003_msg;
+--     v_error_msg := replace(v_error_msg, '<server_id>',
+--                            v_server_user);
+--     v_error_msg := replace(v_error_msg, '<function_category>',
+--                            v_function_category);
+--     raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+--   -- check ability to create authorization
+--   if auth_sf_can_create_auth(v_for_user, AI_FUNCTION_NAME, AI_QUALIFIER_CODE,
+-- 	AI_DO_FUNCTION, AI_GRANT_AND_VIEW) = 'N' then
+--      v_error_no := roles_msg.err_20014_no;
+--      v_error_msg := 'User ''' || v_for_user
+--                    || ''' is not authorized to create authorizations'
+--                    || ' for function '''
+--                    || ai_function_name || ''' and qualifier '''
+--                    || ai_qualifier_code || '''.';
+--      raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+--   insert into authorization
+-- 	values(authorization_sequence.nextval, V_FUNCTION_ID, V_QUALIFIER_ID,
+-- 		A_KERBEROS_NAME, V_QUALIFIER_CODE, V_FUNCTION_NAME,
+-- 		V_FUNCTION_CATEGORY, V_QUALIFIER_NAME, v_for_user,
+-- 		sysdate, A_DO_FUNCTION, A_GRANT_AND_VIEW, A_DESCEND,
+-- 		greatest(auth_sf_convert_str_to_date(A_EFFECTIVE_DATE),
+--                         sysdate),
+-- 		auth_sf_convert_str_to_date(A_EXPIRATION_DATE));
+--   --a_modified_by := v_for_user;
+--   select v_for_user || ':' || to_char(rdb_seq_auth_audit.currval)
+--       into a_modified_by from dual;
+--   a_modified_date := auth_sf_convert_date_to_str(sysdate);
+--   select to_char(authorization_id) into a_authorization_id
+--     from authorization where kerberos_name = a_kerberos_name
+--     and function_category = V_FUNCTION_CATEGORY
+--     and function_name = V_FUNCTION_NAME
+--     and qualifier_code = V_QUALIFIER_CODE;
+-- 
+--   EXCEPTION
+-- 	WHEN NO_DATA_FOUND THEN
+--             if v_status = 1 then
+-- 		   v_msg_no := roles_msg.err_20001_no;
+-- 		   v_msg := roles_msg.err_20001_msg;
+--             elsif v_status = 2 then
+--                    v_msg_no := roles_msg.err_20017_no;
+--                    v_msg := roles_msg.err_20017_msg;
+--             else
+-- 		   v_msg_no := roles_msg.err_20003_no;
+-- 		   v_msg := roles_msg.err_20003_msg;
+--             end if;
+--       	    raise_application_error(v_msg_no, v_msg);
+-- 	WHEN DUP_VAL_ON_INDEX THEN
+-- 	  raise_application_error(roles_msg.err_20007_no,
+--             roles_msg.err_20007_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`rolesapi_create_imprule`;
+-- PROCEDURE ROLESAPI_CREATE_IMPRULE
+-- 		( AI_FOR_USER IN STRING,
+-- 		  AI_SERVER_USER IN STRING,
+-- 		  AI_RULE_TYPE_CODE IN STRING,
+--                   AI_CONDITION_FUNCTION_OR_GROUP IN STRING,
+--                   AI_CONDITION_FUNCTION_CATEGORY IN STRING,
+-- 		  AI_CONDITION_FUNCTION_NAME IN STRING,
+-- 		  AI_CONDITION_OBJECT_TYPE IN STRING,
+-- 		  AI_CONDITION_QUAL_CODE IN STRING,
+-- 		  AI_RESULT_FUNCTION_CATEGORY IN STRING,
+-- 		  AI_RESULT_FUNCTION_NAME IN STRING,
+-- 		  AI_AUTH_PARENT_OBJ_TYPE IN STRING,
+-- 		  AI_RESULT_QUALIFIER_CODE IN STRING,
+-- 		  AI_RULE_SHORT_NAME IN STRING,
+-- 		  AI_RULE_DESCRIPTION IN STRING,
+-- 		  AI_RULE_IS_IN_EFFECT IN STRING,
+-- 		  --a_modified_by OUT STRING,
+-- 		  --a_modified_date OUT STRING,
+-- 		  a_rule_id OUT STRING
+-- 		)
+-- IS
+-- A_FOR_USER STRING(20);
+-- A_SERVER_USER STRING(20);
+-- A_RULE_TYPE_CODE STRING(20);
+-- A_CONDITION_FUNCTION_OR_GROUP STRING(20);
+-- A_CONDITION_FUNCTION_CATEGORY STRING(20);
+-- A_CONDITION_FUNCTION_NAME STRING(30);
+-- A_CONDITION_OBJECT_TYPE STRING(20);
+-- A_CONDITION_QUAL_CODE STRING(20);
+-- A_RESULT_FUNCTION_CATEGORY STRING(20);
+-- A_RESULT_FUNCTION_NAME STRING(30);
+-- A_AUTH_PARENT_OBJ_TYPE STRING(20);
+-- A_RESULT_QUALIFIER_CODE STRING(20);
+-- A_RULE_SHORT_NAME STRING(60);
+-- A_RULE_DESCRIPTION STRING(2000);
+-- A_RULE_IS_IN_EFFECT STRING(1);
+-- v_qualifier_code STRING(15);
+-- v_error_no roles_msg.err_no%TYPE;
+-- v_error_msg roles_msg.err_msg%TYPE;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- v_function_category string(4);
+-- v_function_name string(30);
+-- v_status integer;
+-- v_rule_id integer;
+-- -- couple of counters ------
+-- v_count number :=0;
+-- v_count2 number :=0;
+-- ----------------------------
+-- v_for_user string(20);
+-- v_server_user string(20);
+-- v_server_has_auth varchar2(1);
+-- v_proxy_has_auth varchar2(1);
+-- 
+-- BEGIN
+--   v_for_user := upper(ai_for_user);
+--   if (ai_server_user is not null) then
+--     v_server_user := upper(ai_server_user);
+--   else
+--     v_server_user := upper(user);
+--   end if;
+--   a_rule_type_code := ai_rule_type_code;
+--   a_condition_function_or_group := upper(ai_condition_function_or_group);
+--   a_condition_function_category := upper(ai_condition_function_category);
+--   a_condition_function_name := upper(ai_condition_function_name);
+--   a_condition_object_type := upper(ai_condition_object_type);
+--   a_condition_qual_code := upper(ai_condition_qual_code);
+--   a_result_function_category := upper(ai_result_function_category);
+--   a_result_function_name  := upper(ai_result_function_name);
+--   a_auth_parent_obj_type := upper(ai_auth_parent_obj_type);
+--   a_result_qualifier_code := upper(ai_result_qualifier_code);
+--   a_rule_short_name := trim(ai_rule_short_name);
+--   a_rule_description := trim(ai_rule_description);
+--   a_rule_is_in_effect := upper(ai_rule_is_in_effect);
+--   v_function_category  := upper(ai_result_function_category);
+-- 
+-- 
+--   -- Check authority of Oracle login-user to be proxy for creating auths.
+--   if (v_server_user <> user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--      if v_server_has_auth <> 'Y' then
+--        v_error_no := roles_service_constant.err_20003_no;
+--        v_error_msg := roles_service_constant.err_20003_msg;
+--        v_error_msg := replace(v_error_msg, '<server_id>',
+--                               user);
+--        v_error_msg := replace(v_error_msg, '<function_category>',
+--                               v_function_category);
+--        raise_application_error(v_error_no, v_error_msg);
+--      end if;
+--   end if;
+-- 
+--   -- Check authority of server_user to be proxy for creating authorizations
+--   if (v_server_user <> v_for_user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(v_server_user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--   else  -- No need to worry about separate server authorization
+--     v_server_has_auth := 'Y';
+--   end if;
+--   if v_server_has_auth <> 'Y' then
+--     v_error_no := roles_service_constant.err_20003_no;
+--     v_error_msg := roles_service_constant.err_20003_msg;
+--     v_error_msg := replace(v_error_msg, '<server_id>',
+--                            v_server_user);
+--     v_error_msg := replace(v_error_msg, '<function_category>',
+--                            v_function_category);
+--     raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+-- ----------------------------------------------------------
+-- -- check authority to create implied authorization rules
+-- ----------------------------------------------------------
+-- 
+--   if auth_sf_can_create_rule(v_for_user, ai_result_function_category
+-- 	) = 'N' then
+--      v_error_no := roles_service_constant.err_20033_no;
+--      v_error_msg := 'User ''' || v_for_user
+--                    || ''' is not authorized to create an implied authorization rule'
+--                    || ' for function category'''
+--                    || ai_result_function_category || '''.';
+--      raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+-- 
+-- /****************************************************************
+-- *  Validate the arguments.
+-- ****************************************************************/
+-- 
+-- 
+-- ----------------------------------------------------------------------
+-- -- For all rules the rule type code should be valid (a_rule_type_code).
+-- ---------------------------------------------------------------------
+-- if (a_rule_type_code not in ('1a', '1b','2a', '2b')) then
+--  v_error_no  := roles_service_constant.err_20034_no;
+--  v_error_msg := roles_service_constant.err_20034_msg;
+--  v_error_msg := replace(v_error_msg,'<rule_type_code>',a_rule_type_code);
+--  raise_application_error(v_error_no, v_error_msg);
+-- end if;
+-- 
+-- -------------------------------------------------------
+-- -- For all rules ai_rule_short_name  - must be unique
+-- -------------------------------------------------------
+-- select count(*) into v_count from implied_auth_rule iar where
+-- iar.rule_short_name=ai_rule_short_name;
+-- if (v_count > 0 ) then
+--    v_error_no := roles_service_constant.err_20037_no;
+--    v_error_msg := roles_service_constant.err_20037_msg;
+--    v_error_msg := replace(v_error_msg,'<rule_short_name>',ai_rule_short_name);
+--    raise_application_error(v_error_no, v_error_msg);
+-- end if;
+-- 
+-- ------------------------------------------------------
+-- -- For all rules ai_rule_is_in_effect should be Y or N
+-- --------------------------------------------------------
+-- --select count(*) into v_count from implied_auth_rule iar where
+-- --iar.rule_is_in_effect in ('Y','N');
+-- if (ai_rule_is_in_effect not in ('Y','N')) then
+--    v_error_no := roles_service_constant.err_20038_no;
+--    v_error_msg := roles_service_constant.err_20038_msg;
+--    v_error_msg := replace(v_error_msg,'<rule_is_in_effect>',ai_rule_is_in_effect);
+--    raise_application_error(v_error_no, v_error_msg);
+-- end if;
+-- 
+-- ---------------------------------------------------------------------------------
+-- -- For all rules condition function category should match condition function name.
+-- -- ai_condition_function_or_group, ai_condition_function_category, ai_condition_function_name
+-- -------------------------------------------------------------------------------------
+--   if (a_condition_function_or_group = 'G') then
+--    select count(*) into v_count from function_group fg
+--    where
+--    fg.function_category=a_condition_function_category
+--    and
+--    fg.function_group_name in ('*' || a_condition_function_name, a_condition_function_name);
+--   end if;
+--   if (a_condition_function_or_group = 'F') then
+--    select count(*) into v_count from function2 f2
+--    where
+--    trim(f2.function_category)=trim(a_condition_function_category)
+--    and
+--    f2.function_name in  ('*' || a_condition_function_name, a_condition_function_name);
+--   end if;
+-- 
+--   if (v_count < 1) then
+--      v_error_no := roles_service_constant.err_20035_no;
+--      v_error_msg := roles_service_constant.err_20035_msg;
+--      v_error_msg := replace(v_error_msg,'<condition_function>',a_condition_function_or_group);
+--      v_error_msg := replace(v_error_msg,'<condition_function_category>',a_condition_function_category);
+--      v_error_msg := replace(v_error_msg,'<condition_function_name>', a_condition_function_name);
+--      raise_application_error(v_error_no, v_error_msg);
+--    end if;
+-- 
+-- --------------------------------------------------------------------------------
+-- --- For all rules result_function_category should match the result_function_name
+-- --------------------------------------------------------------------------------
+-- select count(function_id) into v_count from function2  where
+-- trim(function_category) = trim(a_result_function_category)
+-- and
+-- function_name in ('*' || a_result_function_name, a_result_function_name);
+-- if (v_count < 1) then
+--  v_error_no := roles_service_constant.err_20046_no;
+--    v_error_msg := roles_service_constant.err_20046_msg;
+--    v_error_msg := replace(v_error_msg,'<function_category>',a_result_function_category);
+--    v_error_msg := replace(v_error_msg,'<function_name>',a_result_function_name);
+--    raise_application_error(v_error_no, v_error_msg);
+-- end if;
+-- 
+-- ------------------------------------------------------------------------------------------------------------------
+-- -- For all rule types if the condition function name is found (prefixed with *) in the
+-- -- external_function table, it should NOT match a function_id in the function_load_pass table with pass_number = 2.
+-- ------------------------------------------------------------------------------------------------------------------
+-- select count(*) into v_count from function_load_pass
+-- where
+-- pass_number = 2
+-- and
+-- function_id =  (select function_id from external_function where function_name = ('*' || a_condition_function_name));
+-- if (v_count > 0 ) then
+--    v_error_no := roles_service_constant.err_20048_no;
+--    v_error_msg := roles_service_constant.err_20048_msg;
+--    v_error_msg := replace(v_error_msg,'<pass_number>','2');
+--    v_error_msg := replace(v_error_msg,'<function_name>',a_condition_function_name);
+--    raise_application_error(v_error_no, v_error_msg);
+-- end if;
+-- 
+-- ------------------------------------------------------------------------------------------------------------------
+-- -- For all rule types if the result function name is found (prefixed with *) in the
+-- -- external_function table, it should NOT match a function_id in the function_load_pass table with pass_number = 1.
+-- ------------------------------------------------------------------------------------------------------------------
+-- select count(*) into v_count from function_load_pass
+-- where
+-- pass_number = 1
+-- and
+-- function_id =  (select function_id from external_function where function_name = ('*' || a_result_function_name));
+-- if (v_count > 0 ) then
+--    v_error_no := roles_service_constant.err_20049_no;
+--    v_error_msg := roles_service_constant.err_20049_msg;
+--    v_error_msg := replace(v_error_msg,'<pass_number>','1');
+--    v_error_msg := replace(v_error_msg,'<function_name>',a_result_function_name);
+--    raise_application_error(v_error_no, v_error_msg);
+-- end if;
+-- 
+-- -----------------------------------------------------------------------
+-- -- Rules 1a and 1b do not deal with qualifier codes, those must be NULL
+-- -----------------------------------------------------------------------
+-- if (a_rule_type_code in ('1a', '1b')) then
+--    if (a_condition_qual_code is not NULL) then
+--     v_error_no  := roles_service_constant.err_20043_no;
+--     v_error_msg := roles_service_constant.err_20043_msg;
+--     v_error_msg := replace (v_error_msg,'<rule_type_code>', a_rule_type_code);
+--     v_error_msg := replace(v_error_msg, '<condition_qualifier_code>', a_condition_qual_code);
+--     raise_application_error(v_error_no,v_error_msg);
+--    end if;
+--    if (a_result_qualifier_code is not NULL) then
+--     v_error_no  := roles_service_constant.err_20044_no;
+--     v_error_msg := roles_service_constant.err_20044_msg;
+--     v_error_msg := replace (v_error_msg,'<rule_type_code>', a_rule_type_code);
+--     v_error_msg := replace(v_error_msg, '<result_qualifier_code>', a_result_qualifier_code);
+--     raise_application_error(v_error_no,v_error_msg);
+--    end if;
+-- end if;
+-- --------------------------------------------------------------
+-- -- For rule 1a result qualifier type should be NULL ('').
+-- -------------------------------------------------------------
+-- if (a_rule_type_code = '1a') then
+-- if (a_auth_parent_obj_type is not NULL) then
+--     v_error_no  := roles_service_constant.err_20045_no;
+--     v_error_msg := roles_service_constant.err_20045_msg;
+--     v_error_msg := replace (v_error_msg,'<rule_type_code>', a_rule_type_code);
+--     v_error_msg := replace(v_error_msg, '<result_qualifier_type>', a_auth_parent_obj_type);
+--     raise_application_error(v_error_no,v_error_msg);
+-- end if;
+-- end if;
+-- 
+-- --------------------------------------------------------------------------------------------------------------------
+-- -- For rules 1a and 1b - parent qualifier type (object type) found in the qualifier_subtype table for a given
+-- -- condition object type (subtype) should match a qualifier type for given condition function and category.
+-- ---------------------------------------------------------------------------------------------------------------------
+-- if (a_rule_type_code in ('1a','1b')) then
+--    select count(*) into v_count from function2
+--    where
+--    trim(function_category) = trim(a_condition_function_category)
+--    and
+--    qualifier_type = (select parent_qualifier_type from qualifier_subtype where qualifier_subtype_code = a_condition_object_type)
+--    and
+--    function_name in ('*' || a_condition_function_name, a_condition_function_name);
+-- 
+--    if (v_count < 1) then
+--    select count(*) into v_count2 from function_group
+--    where
+--    trim(function_category) = trim(a_condition_function_category)
+--    and
+--    qualifier_type = (select parent_qualifier_type from qualifier_subtype where qualifier_subtype_code = a_condition_object_type)
+--    and
+--    function_group_name = a_condition_function_name;
+--    end if;
+-- 
+-- if (v_count <  1 and v_count2 < 1) then
+--    v_error_no := roles_service_constant.err_20039_no;
+--    v_error_msg := roles_service_constant.err_20039_msg;
+--    v_error_msg := replace(v_error_msg,'<condition_object_type>', a_condition_object_type);
+--    v_error_msg := replace(v_error_msg,'<condition_function_name>', a_condition_function_name);
+--    v_error_msg := replace(v_error_msg,'<condition_function_category>', a_condition_function_category);
+--    --v_error_msg := replace(v_error_msg,'<result_qualifier_type>', a_auth_parent_obj_type);
+--    --v_error_msg := replace(v_error_msg,'<result_qualifier_code>', a_result_qualifier_code);
+--    raise_application_error(v_error_no, v_error_msg);
+-- end if;
+-- 
+-- end if;
+-- 
+-- --------------------------------------------------------------------------------------------------------------------
+-- -- For rules 1a and 1b - parent qualifier type (object type) found in the qualifier_subtype table for a given
+-- -- condition object type (subtype) should match a qualifier type for given result function and category.
+-- ---------------------------------------------------------------------------------------------------------------------
+-- if (a_rule_type_code in ('1a','1b')) then
+--    select count(*) into v_count from function2
+--    where
+--    trim(function_category) = trim(a_result_function_category)
+--    and
+--    qualifier_type = (select parent_qualifier_type from qualifier_subtype where qualifier_subtype_code = a_condition_object_type)
+--    and
+--    function_name in ('*' || a_result_function_name, a_result_function_name);
+-- 
+-- if (v_count <  1 ) then
+--    v_error_no := roles_service_constant.err_20047_no;
+--    v_error_msg := roles_service_constant.err_20047_msg;
+--    v_error_msg := replace(v_error_msg,'<condition_object_type>', a_condition_object_type);
+--    v_error_msg := replace(v_error_msg,'<result_function_name>', a_result_function_name);
+--    v_error_msg := replace(v_error_msg,'<result_function_category>', a_result_function_category);
+--    --v_error_msg := replace(v_error_msg,'<result_qualifier_type>', a_auth_parent_obj_type);
+--    --v_error_msg := replace(v_error_msg,'<result_qualifier_code>', a_result_qualifier_code);
+--    raise_application_error(v_error_no, v_error_msg);
+-- end if;
+-- end if;
+-- 
+-- 
+-- -----------------------------------------------------------------------------------------
+-- --For rule 1b the result qualifier type should be parent of the condition qualifier type
+-- --Lookup table for this relation is subtype_descendent_subtype.
+-- -----------------------------------------------------------------------------------------
+-- if (a_rule_type_code = '1b') then
+--    select count(*) into v_count from subtype_descendent_subtype sds where
+--     sds.child_subtype_code = a_condition_object_type
+--    and
+--     sds.parent_subtype_code = a_auth_parent_obj_type;
+--   if (v_count < 1 ) then
+--      v_error_no := roles_service_constant.err_20041_no;
+--      v_error_msg := roles_service_constant.err_20041_msg;
+--      v_error_msg := replace (v_error_msg,'<rule_type_code>',a_rule_type_code);
+--      v_error_msg := replace(v_error_msg,'<condition_qualifier_type>',a_condition_object_type);
+--      v_error_msg := replace(v_error_msg,'<result_qualifier_type>',a_auth_parent_obj_type);
+--      raise_application_error(v_error_no,v_error_msg);
+--   end if;
+-- end if;
+-- 
+-- -------------------------------------------------------------------------------------------
+-- -- Condition qualifier validation for rules 2a and 2b
+-- -- ai_condition_object_type  (a qualifier type)
+-- -- and ai_condition_qual_code should be related via qualifier_subtype and function2 tables.
+-- --------------------------------------------------------------------------------------------
+-- if (a_rule_type_code in ('2a','2b')) then
+--  select count(qs.qualifier_subtype_code) into v_count from qualifier_subtype qs, qualifier q,
+--  function2 f2
+--  where
+--  qs.qualifier_subtype_code = a_condition_object_type
+--  and
+--  qs.parent_qualifier_type = f2.qualifier_type
+--  and
+--  f2.function_name in ('*' || a_condition_function_name, a_condition_function_name)
+--  and
+--  q.qualifier_type = qs.parent_qualifier_type
+--  and
+--  q.qualifier_code = a_condition_qual_code;
+-- 
+-- if (v_count < 1 ) then
+--  select count(qs.qualifier_subtype_code) into v_count2 from qualifier_subtype qs, qualifier q,
+--  function_group fg
+--  where
+--  qs.qualifier_subtype_code = a_condition_object_type
+--  and
+--  qs.parent_qualifier_type = fg.qualifier_type
+--  and
+--  fg.function_group_name = a_condition_function_name
+--  and
+--  q.qualifier_type = qs.parent_qualifier_type
+--  and
+--  q.qualifier_code = a_condition_qual_code;
+-- end if;
+-- 
+--  if (v_count < 1 and v_count2 < 1 ) then
+--      v_error_no := roles_service_constant.err_20036_no;
+--      v_error_msg := roles_service_constant.err_20036_msg;
+--      v_error_msg := replace(v_error_msg,'<condition_qualifier_code>',a_condition_qual_code);
+--      v_error_msg := replace(v_error_msg,'<condition_qualifier_type>',a_condition_object_type);
+--      v_error_msg := replace(v_error_msg,'<function_name>',a_condition_function_name);
+--      raise_application_error(v_error_no, v_error_msg);
+--   end if;
+--  end if;
+-- 
+-- -------------------------------------------------------------------------------------------
+-- -- Result qualifier validation for rules 2a and 2b.
+-- -- For 2a, 2b result qualifier code and PARENT of the result qualifier type should match the result function.
+-- -- That is a_auth_parent_obj_type  (a result qualifier type)
+-- -- and a_result_qualifier_code should be related via qualifier_subtype and function2 tables.
+-- --------------------------------------------------------------------------------------------
+-- if (a_rule_type_code in ('2a','2b')) then
+--  select count(qs.qualifier_subtype_code) into v_count from qualifier_subtype qs, qualifier q,
+--  function2 f2
+--  where
+--  qs.qualifier_subtype_code = a_auth_parent_obj_type
+--  and
+--  qs.parent_qualifier_type = f2.qualifier_type
+--  and
+--  f2.function_name in ('*' || a_result_function_name, a_result_function_name)
+--  and
+--  q.qualifier_type = qs.parent_qualifier_type
+--  and
+--  q.qualifier_code = a_result_qualifier_code;
+--  if (v_count < 1 ) then
+--      v_error_no := roles_service_constant.err_20032_no;
+--      v_error_msg := roles_service_constant.err_20032_msg;
+--      v_error_msg := replace(v_error_msg,'<function_name>',a_result_function_name);
+--      v_error_msg := replace(v_error_msg,'<qualifier_type>',a_auth_parent_obj_type);
+--      v_error_msg := replace(v_error_msg,'<qualifier_code>',a_result_qualifier_code);
+--      v_error_msg  := replace(v_error_msg,'<rule_type_code>',a_rule_type_code);
+--      raise_application_error(v_error_no, v_error_msg);
+--     end if;
+--  end if;
+-- 
+-- --------------------------------------------------------------------
+-- -- Before inserting the record - intersept the "10fields"  constraint
+-- -- wich forbids the duplication of rules.
+-- ---------------------------------------------------------------------
+-- select min(rule_id) into v_count from implied_auth_rule
+-- where
+--       rule_type_code = a_rule_type_code
+--       and condition_function_or_group = a_condition_function_or_group
+--       and condition_function_category = a_condition_function_category
+--       and condition_function_name = a_condition_function_name
+--       and condition_obj_type = a_condition_object_type
+--       and nvl(condition_qual_code, 'XYZ') = nvl(a_condition_qual_code, 'XYZ')
+--       and result_function_category = a_result_function_category
+--       and result_function_name = a_result_function_name
+--       and nvl(auth_parent_obj_type, 'XYZ') = nvl(a_auth_parent_obj_type, 'XYZ')
+--       and nvl(result_qualifier_code, 'XYZ') = nvl(a_result_qualifier_code, 'XYZ');
+-- if (v_count > 0) then
+--    v_error_no := roles_service_constant.err_20042_no;
+--    v_error_msg := roles_service_constant.err_20042_msg;
+--    v_error_msg := replace(v_error_msg,'<rule_id>',v_count);
+--    raise_application_error(v_error_no, v_error_msg);
+-- end if;
+-- 
+-- /******************************************************************
+-- * Insert record into implied_auth_rule
+-- * (get the id from the rdb_seq_impl_rule_id sequence).
+-- *******************************************************************/
+-- 
+--  select rdb_seq_impl_rule_id.nextval into v_rule_id from dual;
+--   a_rule_id := to_char(v_rule_id);
+--   insert into implied_auth_rule
+--   (rule_id,
+--   rule_type_code,
+--   condition_function_or_group,
+--   condition_function_category,
+--   condition_function_name,
+--   condition_obj_type,
+--   condition_qual_code,
+--   result_function_category,
+--   result_function_name,
+--   auth_parent_obj_type,
+--   result_qualifier_code,
+--   rule_short_name,
+--   rule_description,
+--   rule_is_in_effect,
+--   modified_by,
+--   modified_date
+--   )
+--   values(
+--   v_rule_id,
+--   ai_rule_type_code,
+--   a_condition_function_or_group,
+--   a_condition_function_category,
+--   a_condition_function_name,
+--   a_condition_object_type,
+--   a_condition_qual_code,
+--   a_result_function_category,
+--   a_result_function_name,
+--   a_auth_parent_obj_type,
+--   a_result_qualifier_code,
+--   a_rule_short_name,
+--   a_rule_description,
+--   a_rule_is_in_effect,
+--   v_for_user,
+--   sysdate) ;
+-- 
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`rolesapi_delete_auth`;
+-- PROCEDURE ROLESAPI_DELETE_AUTH
+-- 		(AI_SERVER_USER IN STRING,
+--                  AI_FOR_USER IN STRING,
+--                  AI_AUTHORIZATION_ID IN STRING
+-- 		)
+-- IS
+-- V_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- V_FOR_USER PERSON.KERBEROS_NAME%TYPE;
+-- V_SERVER_USER PERSON.KERBEROS_NAME%TYPE;
+-- V_AUTHORIZATION_ID AUTHORIZATION.AUTHORIZATION_ID%TYPE;
+-- V_FUNCTION_ID FUNCTION.FUNCTION_ID%TYPE;
+-- V_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- V_FUNCTION_CATEGORY FUNCTION.FUNCTION_CATEGORY%TYPE;
+-- V_QUALIFIER_TYPE QUALIFIER.QUALIFIER_TYPE%TYPE;
+-- V_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- V_DO_FUNCTION AUTHORIZATION.DO_FUNCTION%TYPE;
+-- V_GRANT_AND_VIEW AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- -- Modified 2/2/2009
+-- V_QUALIFIER_ID AUTHORIZATION.QUALIFIER_ID%TYPE;
+-- V_MODIFIED_BY AUTHORIZATION.MODIFIED_BY%TYPE;
+-- V_MODIFIED_DATE AUTHORIZATION.MODIFIED_DATE%TYPE;
+-- V_DESCEND AUTHORIZATION.DESCEND%TYPE;
+-- V_EFFECTIVE_DATE AUTHORIZATION.EFFECTIVE_DATE%TYPE;
+-- V_EXPIRATION_DATE AUTHORIZATION.EXPIRATION_DATE%TYPE;
+-- -- End of modifications 2/2/2009
+-- v_status integer;
+-- v_error_no roles_msg.err_no%TYPE;
+-- v_error_msg roles_msg.err_msg%TYPE;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- A_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- A_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- v_server_has_auth varchar2(1);
+-- v_proxy_has_auth varchar2(1);
+-- v_count number;
+-- v_counter number;
+-- 
+-- BEGIN
+--   v_for_user := upper(ai_for_user);
+--   if (ai_server_user is not null) then
+--     v_server_user := upper(ai_server_user);
+--   else
+--     v_server_user := upper(user);
+--   end if;
+-- 
+--   /* Verify that the input authorization ID matches an existing record.
+--      Get the old function_name and qualifier_code  */
+--   v_status := 1;  /* Make sure the given authorization_id is a number */
+--   select auth_sf_check_number(ai_authorization_id) into v_count from dual;
+--   if (v_count <> 1) then
+--      raise_application_error(-20010, 'Authorization_id '''
+--        || ai_authorization_id
+--        || ''') is not a valid number.');
+--   end if;
+--   v_authorization_id := to_number(ai_authorization_id);
+-- 
+--   v_status := 2;  /* Make sure authorization_id exists.  Read in the record.*/
+--   select count(*) into v_counter
+--          from authorization
+--          where authorization_id = v_authorization_id;
+--   if (v_counter < 1) then
+--      raise_application_error(-20011, 'Authoriziation_id '''
+--        || v_authorization_id
+--        || ''') is not a valid id.');
+--   end if;
+-- 
+--   v_status := 3;
+--   /* Get function_id, function_name, function_category, qualifier_type,
+--      kerberos_name, do_function, grant_and_view,... from authorization table */
+--   select function_id, function_name, function_category, qualifier_code,
+--          kerberos_name, do_function, grant_and_view,
+--          qualifier_id, modified_by, modified_date, descend, -- new
+--          effective_date, expiration_date                    -- new
+--     into v_function_id, v_function_name, v_function_category, v_qualifier_code,
+--          v_kerberos_name, v_do_function, v_grant_and_view,
+--          v_qualifier_id, v_modified_by, v_modified_date, v_descend, -- new
+--          v_effective_date, v_expiration_date -- new
+--     from authorization
+--     where authorization_id = v_authorization_id;
+-- 
+--   -- Check authority of Oracle login-user to be proxy for creating auths.
+--   if (v_server_user <> user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--      if v_server_has_auth <> 'Y' then
+--        v_error_no := roles_service_constant.err_20003_no;
+--        v_error_msg := roles_service_constant.err_20003_msg;
+--        v_error_msg := replace(v_error_msg, '<server_id>',
+--                               user);
+--        v_error_msg := replace(v_error_msg, '<function_category>',
+--                               v_function_category);
+--        raise_application_error(v_error_no, v_error_msg);
+--      end if;
+--   end if;
+-- 
+--   -- Check authority of server_user to be proxy for creating authorizations
+--   if (v_server_user <> v_for_user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(v_server_user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--   else  -- No need to worry about separate server authorization
+--     v_server_has_auth := 'Y';
+--   end if;
+--   if v_server_has_auth <> 'Y' then
+--     v_error_no := roles_service_constant.err_20003_no;
+--     v_error_msg := roles_service_constant.err_20003_msg;
+--     v_error_msg := replace(v_error_msg, '<server_id>',
+--                            v_server_user);
+--     v_error_msg := replace(v_error_msg, '<function_category>',
+--                            v_function_category);
+--     raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+--   -- check ability to create authorization
+--   if auth_sf_can_create_auth(v_for_user, V_FUNCTION_NAME, V_QUALIFIER_CODE,
+-- 	V_DO_FUNCTION, V_GRANT_AND_VIEW) = 'N' then
+--      v_error_no := roles_msg.err_20014_no;
+--      v_error_msg := 'User ''' || v_for_user
+--                    || ''' is not authorized to delete authorizations'
+--                    || ' for function '''
+--                    || v_function_name || ''' and qualifier '''
+--                    || v_qualifier_code || '''.';
+--      raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+--   -- Modified 2/2/2009
+-- 	INSERT INTO auth_audit
+-- 	(AUTH_AUDIT_ID,
+-- 	 ACTION_TYPE,
+-- 	 OLD_NEW,
+-- 	 ACTION_DATE,
+-- 	 ROLES_USERNAME,
+-- 
+-- 	 AUTHORIZATION_ID,
+-- 	 FUNCTION_ID,
+-- 	 QUALIFIER_ID,
+-- 	 KERBEROS_NAME,
+-- 	 QUALIFIER_CODE,
+-- 	 FUNCTION_NAME,
+-- 	 FUNCTION_CATEGORY,
+-- 	 MODIFIED_BY,
+-- 	 MODIFIED_DATE,
+-- 	 DO_FUNCTION,
+-- 	 GRANT_AND_VIEW,
+-- 	 DESCEND,
+-- 	 EFFECTIVE_DATE,
+-- 	 EXPIRATION_DATE,
+--          SERVER_USERNAME) -- added
+-- 
+-- 	VALUES(
+-- 	 rdb_seq_auth_audit.nextval,
+-- 	 'D',
+-- 	 '<',
+-- 	 sysdate,
+-- 	 upper(ai_for_user),
+-- 	 v_AUTHORIZATION_ID,
+-- 	 v_FUNCTION_ID,
+-- 	 v_QUALIFIER_ID,
+-- 	 v_KERBEROS_NAME,
+-- 	 v_QUALIFIER_CODE,
+-- 	 v_FUNCTION_NAME,
+-- 	 v_FUNCTION_CATEGORY,
+-- 	 v_MODIFIED_BY,
+-- 	 v_MODIFIED_DATE,
+-- 	 v_DO_FUNCTION,
+-- 	 v_GRANT_AND_VIEW,
+-- 	 v_DESCEND,
+-- 	 v_EFFECTIVE_DATE,
+-- 	 v_EXPIRATION_DATE,
+--          user 	);  -- added
+-- 
+--   -- End of modifications 2/2/2009
+-- 
+--   delete from authorization
+--     where authorization_id = AI_AUTHORIZATION_ID;
+-- 
+--   EXCEPTION
+-- 	WHEN NO_DATA_FOUND THEN
+--             if v_status = 3 then
+-- 		   v_msg_no := roles_msg.err_20001_no;
+-- 		   v_msg := roles_msg.err_20001_msg;
+--             elsif v_status = 2 then
+--                    v_msg_no := roles_msg.err_20017_no;
+--                    v_msg := roles_msg.err_20017_msg;
+--             else
+-- 		   v_msg_no := roles_msg.err_20003_no;
+-- 		   v_msg := roles_msg.err_20003_msg;
+--             end if;
+--       	    raise_application_error(v_msg_no, v_msg);
+-- 	WHEN DUP_VAL_ON_INDEX THEN
+-- 	  raise_application_error(roles_msg.err_20007_no,
+--             roles_msg.err_20007_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`rolesapi_delete_imprule`;
+-- PROCEDURE ROLESAPI_DELETE_IMPRULE
+-- 		( AI_FOR_USER IN STRING,
+-- 		  AI_SERVER_USER IN STRING,
+-- 		  AI_RULE_ID IN STRING,
+-- 		  a_rule_id OUT STRING
+-- 		)
+-- IS
+-- 
+-- 
+-- v_error_no roles_msg.err_no%TYPE;
+-- v_error_msg roles_msg.err_msg%TYPE;
+-- v_function_category string(4);
+-- v_status integer;
+-- v_count number :=0;
+-- v_for_user string(20);
+-- v_server_user string(20);
+-- v_server_has_auth varchar2(1);
+-- v_proxy_has_auth varchar2(1);
+-- 
+-- BEGIN
+--   select result_function_category into v_function_category from implied_auth_rule where rule_id=ai_rule_id;
+--   v_for_user := upper(ai_for_user);
+--   if (ai_server_user is not null) then
+--     v_server_user := upper(ai_server_user);
+--   else
+--     v_server_user := upper(user);
+--   end if;
+-- 
+--   if (v_server_user <> user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--      if v_server_has_auth <> 'Y' then
+--        v_error_no := roles_service_constant.err_20003_no;
+--        v_error_msg := roles_service_constant.err_20003_msg;
+--        v_error_msg := replace(v_error_msg, '<server_id>',
+--                               user);
+--        v_error_msg := replace(v_error_msg, '<function_category>',
+--                               v_function_category);
+--        raise_application_error(v_error_no, v_error_msg);
+--      end if;
+--   end if;
+-- 
+--   -- Check authority of server_user to be proxy for creating authorizations
+--   if (v_server_user <> v_for_user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(v_server_user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--   else  -- No need to worry about separate server authorization
+--     v_server_has_auth := 'Y';
+--   end if;
+--   if v_server_has_auth <> 'Y' then
+--     v_error_no := roles_service_constant.err_20003_no;
+--     v_error_msg := roles_service_constant.err_20003_msg;
+--     v_error_msg := replace(v_error_msg, '<server_id>',
+--                            v_server_user);
+--     v_error_msg := replace(v_error_msg, '<function_category>',
+--                            v_function_category);
+--     raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+-- /****************************************************************
+-- *  Validate the arguments and check authority to create rules
+-- ****************************************************************/
+-- 
+-- ----------------------------------------------------------
+-- -- check authority to create implied authorization rules
+-- ----------------------------------------------------------
+--   if auth_sf_can_create_rule(v_for_user, v_function_category
+-- 	) = 'N' then
+--      v_error_no := roles_service_constant.err_20033_no;
+--      v_error_msg := 'User ''' || v_for_user
+--                    || ''' is not authorized to create an implied authorization rule'
+--                    || ' for function category'''
+--                    || v_function_category || '''.';
+--      raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+-- 
+-- /*******************************************************
+-- * Delete record from the  implied_ath_rule
+-- *********************************************************/
+--   a_rule_id := ai_rule_id;
+-- 
+--   delete from  implied_auth_rule
+--   where
+--   rule_id = ai_rule_id;
+-- 
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`rolesapi_is_user_authorized`;
+-- function ROLESAPI_IS_USER_AUTHORIZED
+-- 		(ai_kerberos_name in string,
+-- 		 ai_function_name in string,
+-- 		 ai_qualifier_code in string)
+-- 	return string
+-- 	is
+-- a_kerberos_name authorization.kerberos_name%type;
+-- a_function_name authorization.function_name%type;
+-- a_qualifier_code authorization.qualifier_code%type;
+-- v_count integer;
+-- v_qualifier_id qualifier.qualifier_id%type;
+-- BEGIN
+--   a_kerberos_name := upper(ai_kerberos_name);
+--   a_function_name := upper(ai_function_name);
+--   a_qualifier_code := upper(ai_qualifier_code);
+--   /* First, see if there is an authorization that exactly matches
+--      the kerberos_name, function_name, and qualifier_code specified */
+--   select count(*) into v_count from authorization
+--     where kerberos_name = a_kerberos_name
+--     and function_name = a_function_name
+--     and qualifier_code = a_qualifier_code
+--     and do_function = 'Y'
+--     and effective_date <= sysdate
+--     and (sysdate <= expiration_date or expiration_date is NULL);
+--   IF v_count > 0 THEN
+--     RETURN 'Y';
+--   END IF;
+--   /* Next, see if there is a matching authorization with a qualifier
+--      that is a parent of the specified qualifier_code */
+--   select qualifier_id into v_qualifier_id from qualifier
+--     where qualifier_code = a_qualifier_code
+--     and qualifier_type = (select qualifier_type from function where
+--     function_name = a_function_name);
+--   select count(*) into v_count
+--     from authorization
+--     where kerberos_name = a_kerberos_name
+--     and function_name = a_function_name
+--     and do_function = 'Y'
+--     and descend = 'Y'
+--     and effective_date <= sysdate
+--     and (sysdate <= expiration_date or expiration_date is NULL)
+--     and qualifier_id in (select parent_id from qualifier_descendent
+--       where child_id = v_qualifier_id);
+--   IF v_count > 0 THEN
+--     RETURN 'Y';
+--   END IF;
+--   /* In the future, look to see if there are functions that are parents
+--      of the given function, and do the above 2 steps for the corresponding
+--      function_names.  We might also need to look to see if the person is
+--      in a group that is authorized. */
+--   RETURN 'N';
+--   EXCEPTION
+--         WHEN NO_DATA_FOUND THEN
+--             RETURN 'N';
+--         WHEN OTHERS THEN
+--             RETURN 'N';
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`rolesapi_update_auth1`;
+-- PROCEDURE ROLESAPI_UPDATE_AUTH1
+-- 		(AI_SERVER_USER IN STRING,
+--                  AI_FOR_USER IN STRING,
+--                  AI_AUTHORIZATION_ID IN STRING,
+--                  AI_FUNCTION_NAME IN FUNCTION.FUNCTION_NAME%TYPE,
+-- 		 AI_QUALIFIER_CODE IN QUALIFIER.QUALIFIER_CODE%TYPE,
+-- 		 AI_KERBEROS_NAME IN PERSON.KERBEROS_NAME%TYPE,
+-- 		 AI_DO_FUNCTION IN AUTHORIZATION.DO_FUNCTION%TYPE,
+-- 		 AI_GRANT_AND_VIEW IN AUTHORIZATION.GRANT_AND_VIEW%TYPE,
+-- 		 AI_DESCEND IN AUTHORIZATION.DESCEND%TYPE,
+-- 		 AI_EFFECTIVE_DATE IN STRING,
+-- 		 AI_EXPIRATION_DATE IN STRING,
+-- 		 a_modified_by OUT STRING,
+-- 		 a_modified_date OUT STRING
+-- 		)
+-- IS
+-- V_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- V_FOR_USER PERSON.KERBEROS_NAME%TYPE;
+-- V_SERVER_USER PERSON.KERBEROS_NAME%TYPE;
+-- V_AUTHORIZATION_ID AUTHORIZATION.AUTHORIZATION_ID%TYPE;
+-- V_QUALIFIER_ID QUALIFIER.QUALIFIER_ID%TYPE;
+-- V_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- V_OLD_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- V_QUALIFIER_NAME QUALIFIER.QUALIFIER_NAME%TYPE;
+-- V_QUALIFIER_TYPE QUALIFIER.QUALIFIER_TYPE%TYPE;
+-- V_FUNCTION_ID FUNCTION.FUNCTION_ID%TYPE;
+-- V_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- V_OLD_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- V_FUNCTION_CATEGORY FUNCTION.FUNCTION_CATEGORY%TYPE;
+-- V_OLD_CATEGORY FUNCTION.FUNCTION_CATEGORY%TYPE;
+-- 
+-- v_old_function_id authorization.function_id%type;
+-- v_old_qualifier_id authorization.qualifier_id%type;
+-- v_old_kerberos_name authorization.kerberos_name%type;
+-- v_old_function_category authorization.function_category%type;
+-- v_old_qualifier_name authorization.qualifier_name%type;
+-- v_old_descend authorization.descend%type;
+-- v_old_effective_date varchar2(20);
+-- v_old_expiration_date varchar2(20);
+-- 
+-- v_status integer;
+-- v_error_no roles_msg.err_no%TYPE;
+-- v_error_msg roles_msg.err_msg%TYPE;
+-- v_msg_no roles_msg.err_no%TYPE;
+-- v_msg roles_msg.err_msg%TYPE;
+-- A_FUNCTION_NAME FUNCTION.FUNCTION_NAME%TYPE;
+-- A_QUALIFIER_CODE QUALIFIER.QUALIFIER_CODE%TYPE;
+-- A_KERBEROS_NAME PERSON.KERBEROS_NAME%TYPE;
+-- A_DO_FUNCTION AUTHORIZATION.DO_FUNCTION%TYPE;
+-- V_OLD_DO_FUNCTION AUTHORIZATION.DO_FUNCTION%TYPE;
+-- A_GRANT_AND_VIEW AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- V_OLD_GRANT_AND_VIEW AUTHORIZATION.GRANT_AND_VIEW%TYPE;
+-- A_DESCEND AUTHORIZATION.DESCEND%TYPE;
+-- A_EFFECTIVE_DATE varchar2(255);
+-- A_EXPIRATION_DATE varchar2(255);
+-- v_server_has_auth varchar2(1);
+-- v_proxy_has_auth varchar2(1);
+-- v_count number;
+-- 
+-- BEGIN
+--   v_for_user := upper(ai_for_user);
+--   if (ai_server_user is not null) then
+--     v_server_user := upper(ai_server_user);
+--   else
+--     v_server_user := upper(user);
+--   end if;
+--   a_kerberos_name := upper(ai_kerberos_name);
+--   a_function_name := upper(ai_function_name);
+--   a_qualifier_code := upper(ai_qualifier_code);
+--   a_do_function := upper(ai_do_function);
+--   a_grant_and_view := upper(ai_grant_and_view);
+--   a_descend := upper(ai_descend);
+--   if ai_effective_date is not null then
+--     a_effective_date := ai_effective_date;
+--   else
+--     a_effective_date := to_char(trunc(sysdate), 'mmddyyyy');
+--   end if;
+--   if ai_expiration_date is not null then
+--     a_expiration_date := ai_expiration_date;
+--   else
+--     a_expiration_date := '        ';
+--   end if;
+-- 
+--   /* Adjust grant_and_view.  User sees 'Y' <=> database contains 'GD' */
+-- --  if (a_grant_and_view = 'Y ' or a_grant_and_view = 'GD') then
+--   if (a_grant_and_view = 'Y ' or a_grant_and_view = 'Y'
+--       or a_grant_and_view = 'GD' or a_grant_and_view = 'G') then
+--     a_grant_and_view := 'GD';
+--   else
+--     a_grant_and_view := 'N ';
+--   end if;
+-- 
+--   /* Check the validity of the effective_date field */
+--   select auth_sf_check_date_noslash(a_effective_date) into v_count from dual;
+--   if (v_count <> 1) then
+--      raise_application_error(-20011, 'Invalid effective date '''
+--        || ai_effective_date
+--        || ''' must be in mmddyyyy format.');
+--   end if;
+-- 
+--   /* Check the validity of the expiration_date field */
+--   if a_expiration_date <> '        ' then
+--     select auth_sf_check_date_noslash(a_expiration_date)
+--         into v_count from dual;
+--     if (v_count <> 1) then
+--        raise_application_error(-20011, 'Invalid expiration date '''
+--          || ai_expiration_date
+--          || ''' must be in mmddyyyy format.');
+--     end if;
+--   end if;
+-- 
+--   /* Verify that the input authorization ID matches an existing record.
+--      Get the old function_name and qualifier_code  */
+--   v_status := 4;  /* Make sure the given authorization_id is a number */
+--   select auth_sf_check_number(ai_authorization_id) into v_count from dual;
+--   if (v_count <> 1) then
+--      raise_application_error(-20010, 'Authorization_id '''
+--        || ai_authorization_id
+--        || ''') is not a valid number.');
+--   end if;
+--   v_authorization_id := to_number(ai_authorization_id);
+-- 
+--   v_status := 5;  /* Make sure authorization_id exists.  Read in the record.*/
+--   select function_category, function_name, qualifier_code,
+--          do_function, grant_and_view,
+--           function_id, qualifier_id, kerberos_name,
+--           qualifier_name, descend,
+--           auth_sf_convert_date_to_str(effective_date),
+--           auth_sf_convert_date_to_str(expiration_date)
+--          into v_old_category, v_old_function_name, v_old_qualifier_code,
+--           v_old_do_function, v_old_grant_and_view,
+--           v_old_function_id, v_old_qualifier_id, v_old_kerberos_name,
+--           v_old_qualifier_name, v_old_descend,
+--           v_old_effective_date, v_old_expiration_date
+--          from authorization
+--          where authorization_id = v_authorization_id;
+-- 
+--   v_status := 1;  /* Make sure new function_name is in function_table */
+--   select function_id, function_name, function_category, qualifier_type
+--     into v_function_id, v_function_name, v_function_category, v_qualifier_type
+--     from function
+--     where function_name = a_function_name;
+-- 
+--   v_status := 2;  /* Make sure new qualifier_code is in qualifier_table */
+--   select qualifier_id, qualifier_code, qualifier_name
+--     into v_qualifier_id, v_qualifier_code, v_qualifier_name
+--     from qualifier where qualifier_code = a_qualifier_code
+--     and qualifier_type = v_qualifier_type;
+-- 
+--   v_status := 3;  /* Check existence of new kerberos_name */
+--   select kerberos_name into v_kerberos_name
+--     from person where kerberos_name = a_kerberos_name;
+-- 
+--   -- Make sure DO_FUNCTION is valid
+--   if a_do_function not in ('Y', 'N') then
+--      raise_application_error(-20020, 'Do_function (''' || ai_do_function
+--        || ''') is not ''Y'' or ''N''.');
+--   end if;
+-- 
+--   -- Make sure DESCEND is valid
+--   if a_descend not in ('Y', 'N') then
+--      raise_application_error(-20021, 'DESCEND (''' || ai_descend
+--        || ''') is not ''Y'' or ''N''.');
+--   end if;
+-- 
+--   -- Check special case: If qualifier_type is DEPT, then the
+--   -- qualifier must start with D_.
+--   if (v_qualifier_type = 'DEPT'
+--       and substr(v_qualifier_code, 1, 2) <> 'D_') then
+--      raise_application_error(roles_msg.err_20015_no,
+--        'In auths. for this function, qualifier code must start with D_');
+--   end if;
+-- 
+--   -- Check authority of Oracle login-user to be proxy for creating auths.
+--   -- Do this for both the old and new function categories
+--   if (v_server_user <> user) then
+--      -- Old
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_old_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--      if v_server_has_auth <> 'Y' then
+--        v_error_no := roles_service_constant.err_20003_no;
+--        v_error_msg := roles_service_constant.err_20003_msg;
+--        v_error_msg := replace(v_error_msg, '<server_id>',
+--                               user);
+--        v_error_msg := replace(v_error_msg, '<function_category>',
+--                               v_old_category);
+--        raise_application_error(v_error_no, v_error_msg);
+--      end if;
+--      -- New
+--      if (v_old_category <> v_function_category) then
+--        SELECT ROLESAPI_IS_USER_AUTHORIZED(user,
+--                                           'RUN ROLES SERVICE PROCEDURES',
+--                                           'CAT' || trim(v_function_category))
+--           INTO v_server_has_auth
+--           FROM DUAL;
+--        if v_server_has_auth <> 'Y' then
+--          v_error_no := roles_service_constant.err_20003_no;
+--          v_error_msg := roles_service_constant.err_20003_msg;
+--          v_error_msg := replace(v_error_msg, '<server_id>',
+--                                 user);
+--          v_error_msg := replace(v_error_msg, '<function_category>',
+--                                 v_function_category);
+--          raise_application_error(v_error_no, v_error_msg);
+--        end if;
+--      end if;
+--   end if;
+-- 
+--   -- Check authority of server_user to be proxy for creating authorizations
+--   -- Do this for both the old and new function categories
+--   -- New
+--   if (v_server_user <> v_for_user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(v_server_user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--   else  -- No need to worry about separate server authorization
+--     v_server_has_auth := 'Y';
+--   end if;
+--   if v_server_has_auth <> 'Y' then
+--     v_error_no := roles_service_constant.err_20003_no;
+--     v_error_msg := roles_service_constant.err_20003_msg;
+--     v_error_msg := replace(v_error_msg, '<server_id>',
+--                            v_server_user);
+--     v_error_msg := replace(v_error_msg, '<function_category>',
+--                            v_function_category);
+--     raise_application_error(v_error_no, v_error_msg);
+--   end if;
+--   -- Old
+--   if ( (v_server_user <> v_for_user)
+--        and (v_function_category <> v_old_category) )
+--   then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(v_server_user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_old_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--     if v_server_has_auth <> 'Y' then
+--       v_error_no := roles_service_constant.err_20003_no;
+--       v_error_msg := roles_service_constant.err_20003_msg;
+--       v_error_msg := replace(v_error_msg, '<server_id>',
+--                              v_server_user);
+--       v_error_msg := replace(v_error_msg, '<function_category>',
+--                              v_old_category);
+--       raise_application_error(v_error_no, v_error_msg);
+--     end if;
+--   end if;
+-- 
+--   -- check ability of proxy user to create authorization
+--   -- Do this for both the old and new function and qualifier
+--   -- New
+--   if auth_sf_can_create_auth(v_for_user, AI_FUNCTION_NAME, AI_QUALIFIER_CODE,
+-- 	AI_DO_FUNCTION, A_GRANT_AND_VIEW) = 'N' then
+--      v_error_no := roles_msg.err_20014_no;
+--      v_error_msg := 'User ''' || v_for_user
+--                    || ''' is not authorized to update authorizations'
+--                    || ' for function '''
+--                    || ai_function_name || ''' and qualifier '''
+--                    || ai_qualifier_code || '''.';
+--      raise_application_error(v_error_no, v_error_msg);
+--   end if;
+--   -- Old
+--   if auth_sf_can_create_auth(v_for_user, V_OLD_FUNCTION_NAME,
+--         V_OLD_QUALIFIER_CODE,
+-- 	V_OLD_DO_FUNCTION,V_OLD_GRANT_AND_VIEW) = 'N' then
+--      v_error_no := roles_msg.err_20014_no;
+--      v_error_msg := 'User ''' || v_for_user
+--                    || ''' is not authorized to create authorizations'
+--                    || ' for function '''
+--                    || v_old_function_name || ''' and qualifier '''
+--                    || v_old_qualifier_code || '''.';
+--      raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+--   -- Make sure there is at least one change to be made
+--   if not (v_old_function_id = v_function_id
+--       and v_old_qualifier_id = v_qualifier_id
+--       and v_old_kerberos_name = v_kerberos_name
+--       and v_old_function_name = v_function_name
+--       and v_old_function_category = v_function_category
+--       and v_old_qualifier_name = v_qualifier_name
+--       and v_old_do_function = a_do_function
+--       and v_old_grant_and_view = a_grant_and_view
+--       and v_old_descend = a_descend
+--       and v_old_effective_date = a_effective_date
+--       and nvl(v_old_expiration_date,'        ') = a_expiration_date
+--      ) then
+--     -- Update the authorization
+--     update authorization
+--         set function_id = v_function_id,
+--             qualifier_id = v_qualifier_id,
+--             kerberos_name = v_kerberos_name,
+--             qualifier_code = v_qualifier_code,
+--             function_name = v_function_name,
+--             function_category = v_function_category,
+--             qualifier_name = v_qualifier_name,
+--             modified_by = v_for_user,
+--             modified_date = sysdate,
+--             do_function = a_do_function,
+--             grant_and_view = a_grant_and_view,
+--             descend = a_descend,
+--             effective_date = auth_sf_convert_str_to_date(A_EFFECTIVE_DATE),
+--             expiration_date =
+-- 		auth_sf_convert_str_to_date(A_EXPIRATION_DATE)
+--          where authorization_id = v_authorization_id;
+--    else
+--      raise_application_error(roles_msg.err_20002_no,
+--        'There are no changes to be made.');
+--    end if;
+-- 
+--    a_modified_by := v_for_user;
+--    a_modified_date := sysdate;
+-- 
+--   EXCEPTION
+-- 	WHEN NO_DATA_FOUND THEN
+--             if v_status = 1 then
+-- 		   v_msg_no := roles_msg.err_20001_no;
+-- 		   v_msg := 'Invalid function ''' || ai_function_name ||
+--                             ''' specified.';
+--             elsif v_status = 2 then
+--                    v_msg_no := roles_msg.err_20017_no;
+--                    v_msg := roles_msg.err_20017_msg;
+--             elsif v_status = 3 then
+-- 	           v_msg_no := roles_msg.err_20003_no;
+-- 		   v_msg := 'Invalid Kerberos_name ''' || ai_kerberos_name ||
+--                             ''' specified.';
+--             elsif v_status = 5 then
+-- 	           v_msg_no := roles_msg.err_20010_no;
+-- 	           v_msg := roles_msg.err_20010_msg;
+--             else
+-- 		   v_msg_no := -20999;
+-- 		   v_msg := 'Internal program problem. Bad v_status_code'
+--                             || ' in procedure ROLESAPI_UPDATE_AUTH1.';
+--             end if;
+--       	    raise_application_error(v_msg_no, v_msg);
+-- 	WHEN DUP_VAL_ON_INDEX THEN
+-- 	  raise_application_error(roles_msg.err_20007_no,
+--             roles_msg.err_20007_msg);
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`rolesapi_update_imprule`;
+-- PROCEDURE ROLESAPI_UPDATE_IMPRULE
+-- 		( AI_FOR_USER IN STRING,
+-- 		  AI_SERVER_USER IN STRING,
+-- 		  AI_RULE_ID IN STRING,
+-- 		  AI_RULE_SHORT_NAME IN STRING,
+-- 		  AI_RULE_DESCRIPTION IN STRING,
+-- 		  AI_RULE_IS_IN_EFFECT IN STRING,
+-- 		  a_rule_id OUT STRING
+-- 		)
+-- IS
+-- 
+-- A_RULE_SHORT_NAME STRING(60);
+-- A_RULE_DESCRIPTION STRING(2000);
+-- A_RULE_IS_IN_EFFECT STRING(1);
+-- 
+-- v_error_no roles_msg.err_no%TYPE;
+-- v_error_msg roles_msg.err_msg%TYPE;
+-- v_function_category string(4);
+-- v_status integer;
+-- v_count number :=0;
+-- v_for_user string(20);
+-- v_server_user string(20);
+-- v_server_has_auth varchar2(1);
+-- v_proxy_has_auth varchar2(1);
+-- 
+-- BEGIN
+--   select result_function_category into v_function_category from implied_auth_rule where rule_id=ai_rule_id;
+--   v_for_user := upper(ai_for_user);
+--   if (ai_server_user is not null) then
+--     v_server_user := upper(ai_server_user);
+--   else
+--     v_server_user := upper(user);
+--   end if;
+-- 
+--   a_rule_short_name := trim(ai_rule_short_name);
+--   a_rule_description := ai_rule_description;
+--   a_rule_is_in_effect := upper(ai_rule_is_in_effect);
+-- 
+-- 
+--   if (v_server_user <> user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--      if v_server_has_auth <> 'Y' then
+--        v_error_no := roles_service_constant.err_20003_no;
+--        v_error_msg := roles_service_constant.err_20003_msg;
+--        v_error_msg := replace(v_error_msg, '<server_id>',
+--                               user);
+--        v_error_msg := replace(v_error_msg, '<function_category>',
+--                               v_function_category);
+--        raise_application_error(v_error_no, v_error_msg);
+--      end if;
+--   end if;
+-- 
+--   -- Check authority of server_user to be proxy for creating authorizations
+--   if (v_server_user <> v_for_user) then
+--      SELECT ROLESAPI_IS_USER_AUTHORIZED(v_server_user,
+--                                         'RUN ROLES SERVICE PROCEDURES',
+--                                         'CAT' || trim(v_function_category))
+--         INTO v_server_has_auth
+--         FROM DUAL;
+--   else  -- No need to worry about separate server authorization
+--     v_server_has_auth := 'Y';
+--   end if;
+--   if v_server_has_auth <> 'Y' then
+--     v_error_no := roles_service_constant.err_20003_no;
+--     v_error_msg := roles_service_constant.err_20003_msg;
+--     v_error_msg := replace(v_error_msg, '<server_id>',
+--                            v_server_user);
+--     v_error_msg := replace(v_error_msg, '<function_category>',
+--                            v_function_category);
+--     raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+-- /****************************************************************
+-- *  Validate the arguments and check authority to create rules
+-- ****************************************************************/
+-- 
+-- ----------------------------------------------------------
+-- -- check authority to create implied authorization rules
+-- ----------------------------------------------------------
+--   if auth_sf_can_create_rule(v_for_user, v_function_category
+-- 	) = 'N' then
+--      v_error_no := roles_service_constant.err_20033_no;
+--      v_error_msg := 'User ''' || v_for_user
+--                    || ''' is not authorized to create an implied authorization rule'
+--                    || ' for function category'''
+--                    || v_function_category || '''.';
+--      raise_application_error(v_error_no, v_error_msg);
+--   end if;
+-- 
+-- 
+-- ----------------------------
+-- -- ai_rule_is_in_effect
+-- ----------------------------
+-- --select count(*) into v_count from implied_auth_rule iar where
+-- --iar.rule_is_in_effect in ('Y','N');
+-- if (ai_rule_is_in_effect not in ('Y','N')) then
+--    v_error_no := roles_service_constant.err_20038_no;
+--    v_error_msg := roles_service_constant.err_20038_msg;
+--    v_error_msg := replace(v_error_msg,'<rule_is_in_effect>',ai_rule_is_in_effect);
+--    raise_application_error(v_error_no, v_error_msg);
+-- end if;
+-- 
+-- 
+-- /*******************************************************
+-- * Update record in the  implied_ath_rule
+-- *********************************************************/
+--   a_rule_id := ai_rule_id;
+-- 
+--   update implied_auth_rule
+--   set
+--   rule_short_name = a_rule_short_name,
+--   rule_description = a_rule_description,
+--   rule_is_in_effect = a_rule_is_in_effect,
+--   modified_by = v_for_user,
+--   modified_date =  sysdate
+--   where
+--   rule_id = a_rule_id;
+-- 
+-- end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`rolesapi_update_user_criteria`;
+-- PROCEDURE rolesapi_update_user_criteria
+--                                 (a_server_user string,
+--                                  a_selection_id IN NUMBER,
+--  				 a_criteria_id IN NUMBER,
+--  				 a_username IN STRING,
+--  				 a_apply IN STRING,
+--  				 a_value IN STRING)
+-- IS
+--  v_count number := 0;
+--  v_error_no roles_msg.err_no%TYPE;
+--  v_error_msg roles_msg.err_msg%TYPE;
+-- begin
+--    -- Check authorization -- Oracle connect user must have at least 1 current
+--    -- authorization for function 'RUN ROLES SERVICE PROCEDURES' and
+--    -- any qualifier.
+--    select count(*) into v_count from authorization
+--      where kerberos_name = user
+--      and function_name = 'RUN ROLES SERVICE PROCEDURES'
+--      and do_function = 'Y'
+--      and sysdate between effective_date and nvl(expiration_date, sysdate);
+--    if v_count < 1 then
+--        v_error_no := roles_service_constant.err_20003_no;
+--        v_error_msg := roles_service_constant.err_20003_msg;
+--        v_error_msg := replace(v_error_msg, '<server_id>',
+--                               user);
+--        v_error_msg := replace(v_error_msg, '<function_category>',
+--                               '*');
+--        raise_application_error(v_error_no, v_error_msg);
+--    end if;
+--    -- Check authorization -- server_user must have at least 1 current
+--    -- authorization for function 'RUN ROLES SERVICE PROCEDURES' and
+--    -- any qualifier.
+--    select count(*) into v_count from authorization
+--      where kerberos_name = upper(a_server_user)
+--      and function_name = 'RUN ROLES SERVICE PROCEDURES'
+--      and do_function = 'Y'
+--      and sysdate between effective_date and nvl(expiration_date, sysdate);
+--    if v_count < 1 then
+--        v_error_no := roles_service_constant.err_20003_no;
+--        v_error_msg := roles_service_constant.err_20003_msg;
+--        v_error_msg := replace(v_error_msg, '<server_id>',
+--                               a_server_user);
+--        v_error_msg := replace(v_error_msg, '<function_category>',
+--                               '*');
+--        raise_application_error(v_error_no, v_error_msg);
+--    end if;
+--    update user_sel_criteria2
+--  		set apply = a_apply,
+--  		    value = a_value
+--  	where selection_id = a_selection_id and
+--  	      criteria_id = a_criteria_id and
+--  	      username = upper(a_username) and
+--               (nvl(apply, 'N') <> nvl(a_apply, 'N')
+--                or nvl(value, ' ') <> nvl(a_value, ' '));
+--    insert into user_sel_criteria2
+--        select a_selection_id, a_criteria_id, upper(a_username), a_apply,
+--                a_value
+--        from dual
+--        where not exists (select 1 from user_sel_criteria2
+--           where selection_id = a_selection_id and
+--           criteria_id = a_criteria_id and
+--           username = a_username);
+-- end;
+
+-- DROP FUNCTION IF EXISTS `rolesbb`.`squirrel_get_error_offset`;
+-- function SQUIRREL_GET_ERROR_OFFSET (query IN varchar2) return number authid current_user is      l_theCursor     integer default dbms_sql.open_cursor;      l_status        integer; begin          begin          dbms_sql.parse(  l_theCursor, query, dbms_sql.native );          exception                  when others then l_status := dbms_sql.last_error_position;          end;          dbms_sql.close_cursor( l_theCursor );          return l_status; end;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`update_parameter_value`;
+-- PROCEDURE update_parameter_value (
+--    ai_parameter   IN       VARCHAR2,
+--    ai_value       IN       VARCHAR2,
+--    ai_for_user    IN       VARCHAR2,
+--    ao_message     OUT      STRING
+-- )
+-- IS
+--    v_check_auth                    VARCHAR2 (2);
+--    v_check_auth1                   VARCHAR2 (2);
+--    not_authorized_to_be_proxy      EXCEPTION;
+--    not_author_to_maint_param_val   EXCEPTION;
+--    not_numeric_value               EXCEPTION;
+--    null_value                      EXCEPTION;
+--    parameter_value_is_the_same     EXCEPTION;
+--    parameter_not_exists            EXCEPTION;
+--    v_message                       VARCHAR2 (255);
+--    v_message_no                    INTEGER;
+--    v_length_value                  NUMBER;
+--    v_numeric                       VARCHAR2 (1);
+--    v_value                         VARCHAR2 (100);
+--    v_parameter                     VARCHAR2 (30);
+--    v_count                         NUMBER;
+-- BEGIN
+--    v_check_auth :=
+--       auth_sf_check_auth2 ('MAINTAIN PARAMETER VALUES',
+--                            'NULL',
+--                            ai_for_user,
+--                            'PROXY FOR ROLES ADMIN FUNC',
+--                            'NULL'
+--                           );
+-- 
+--    IF v_check_auth = 'X'
+--    THEN
+--       RAISE not_authorized_to_be_proxy;
+--    ELSE
+--       IF v_check_auth = 'N'
+--        THEN
+--          v_check_auth1:= auth_sf_check_auth2 ('MAINTAIN ALL PARAMETER DATA',
+--                            'NULL',
+--                            ai_for_user,
+--                            'PROXY FOR ROLES ADMIN FUNC',
+--                            'NULL'
+--                           );
+-- 
+--       IF  v_check_auth1 = 'N'
+--        THEN
+--          RAISE not_author_to_maint_param_val;
+--       END IF;
+--    END IF;
+--   END IF;
+-- --
+--    SELECT COUNT (parameter)
+--      INTO v_count
+--      FROM roles_parameters
+--     WHERE parameter = ai_parameter;
+-- 
+-- --
+--    IF v_count = 0
+--    THEN
+--       RAISE parameter_not_exists;
+--    END IF;
+-- 
+--    SELECT VALUE, parameter, is_number
+--      INTO v_value, v_parameter, v_numeric
+--      FROM roles_parameters
+--     WHERE parameter = ai_parameter;
+-- 
+--    IF ai_value IS NULL
+--    THEN
+--       RAISE null_value;
+--    END IF;
+-- 
+--    v_length_value := LENGTH (ai_value);
+-- 
+--    IF v_value = ai_value
+--    THEN
+--       RAISE parameter_value_is_the_same;
+--    END IF;
+-- 
+-- --
+--    IF v_numeric = 'Y'
+--    THEN
+--       FOR i IN 1 .. v_length_value
+--       LOOP
+--          IF SUBSTR (ai_value, i, 1) < '0' OR SUBSTR (ai_value, i, 1) > '9'
+--          THEN
+--             RAISE not_numeric_value;
+--          END IF;
+--       END LOOP;
+--    END IF;
+-- 
+--   /* All possible error conditions have been checked.  Now,
+--      update the record in the database table. */
+--    --IF v_value <> ai_value
+--    --THEN
+--       UPDATE rolesbb.rdb_t_roles_parameters
+--          SET VALUE = ai_value,
+--              update_user = ai_for_user,             -- This should be for_user
+--              update_timestamp = SYSDATE
+--        WHERE parameter = ai_parameter;
+-- 
+--       ao_message :=
+--             'Parameter Value for Parameter_code = '
+--          || ai_parameter
+--          || ' has been updated';
+--    --END IF;
+-- 
+-- EXCEPTION
+--    WHEN not_author_to_maint_param_val
+--    THEN
+--       v_message_no := -20101;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || ''''
+--          || ai_for_user
+--          || '''Not authorized to Maintain Parameter Value';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- -----
+--    WHEN not_authorized_to_be_proxy
+--    THEN
+--       v_message_no := -20102;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'database user '
+--          || ' '
+--          || USER
+--          || ' '
+--          || 'is not authorized to act as a proxy for other users.';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+--    --
+--    WHEN parameter_value_is_the_same
+--    THEN
+--       v_message_no := -20105;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'Record with Parameter Code = '''
+--          || ai_parameter
+--          || ''' has not been changed because Parameter Value field is the same';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN not_numeric_value
+--    THEN
+--       v_message_no := -20103;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'Parameter Value  '''
+--          || ai_value
+--          || ''' is not numeric.';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN null_value
+--    THEN
+--       v_message_no := -20104;
+--       ao_message :=
+--             'ORA' || v_message_no || ' ' || 'Parameter Value Cannot be Null.';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN parameter_not_exists
+--    THEN
+--       v_message_no := -20105;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'Parameter Code = '''
+--          || ai_parameter
+--          || ''' Does not exist';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN OTHERS
+--    THEN
+--       v_message := SUBSTR (SQLERRM, 1, 255);
+--       v_message_no := SQLCODE;
+--       ao_message := v_message_no || ' ' || v_message;
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`update_roles_parameters_all`;
+-- PROCEDURE update_roles_parameters_all (
+--    ai_parameter       IN       VARCHAR2,
+--    ai_value           IN       VARCHAR2,
+--    ai_description     IN       VARCHAR2,
+--    ai_default_value   IN       VARCHAR2,
+--    ai_is_number       IN       VARCHAR2,
+--    ai_for_user        IN       VARCHAR2,
+--    ao_message         OUT      STRING
+-- )
+-- IS
+--    v_check_auth                    VARCHAR2 (2);
+--    not_authorized_to_be_proxy      EXCEPTION;
+--    not_author_to_maint_all_param   EXCEPTION;
+--    not_numeric_value               EXCEPTION;
+--    null_value                      EXCEPTION;
+--    null_desc                       EXCEPTION;
+--    null_default_value              EXCEPTION;
+--    not_numeric_default_value       EXCEPTION;
+--    null_is_number                  EXCEPTION;
+--    all_fields_are_the_same         EXCEPTION;
+--    parameter_not_exists            EXCEPTION;
+--    v_message                       VARCHAR2 (255);
+--    v_message_no                    INTEGER;
+--    v_length_value                  NUMBER;
+--    v_length_default_value          NUMBER;
+--    v_numeric                       VARCHAR2 (1);
+--    v_num_default_value             VARCHAR2 (1);
+--    v_value                         VARCHAR2 (100);
+--    v_parameter                     VARCHAR2 (30);
+--    v_default_value                 VARCHAR2 (100);
+--    v_desc                          VARCHAR2 (100);
+--    v_is_number                     VARCHAR (1);
+--    v_count                         NUMBER;
+-- BEGIN
+--    v_check_auth :=
+--       auth_sf_check_auth2 ('MAINTAIN ALL PARAMETER DATA',
+--                            'NULL',
+--                            ai_for_user,
+--                            'PROXY FOR ROLES ADMIN FUNC',
+--                            'NULL'
+--                           );
+-- 
+--    IF v_check_auth = 'X'
+--    THEN
+--       RAISE not_authorized_to_be_proxy;
+--    ELSE
+--       IF v_check_auth = 'N'
+--       THEN
+--          RAISE not_author_to_maint_all_param;
+--       END IF;
+--    END IF;
+-- 
+--    --
+--    SELECT COUNT (*)
+--      INTO v_count
+--      FROM roles_parameters
+--     WHERE parameter = ai_parameter;
+-- 
+--    IF v_count = 0
+--    THEN
+--       RAISE parameter_not_exists;
+--    END IF;
+-- 
+--    SELECT parameter, value, description, DEFAULT_VALUE, is_number
+--      INTO v_parameter, v_value, v_desc, v_default_value, v_numeric
+--      FROM roles_parameters
+--     WHERE parameter = ai_parameter;
+-- 
+--    IF     v_value = ai_value
+--       AND v_desc = ai_description
+--       AND v_default_value = ai_default_value
+--       AND v_numeric = ai_is_number
+--       AND v_parameter = ai_parameter
+--    THEN
+--       RAISE all_fields_are_the_same;
+--    END IF;
+-- 
+--    IF ai_value IS NULL
+--    THEN
+--       RAISE null_value;
+--    END IF;
+-- 
+--    v_length_value := LENGTH (ai_value);
+-- 
+--    IF ai_default_value IS NULL
+--    THEN
+--       RAISE null_default_value;
+--    END IF;
+-- 
+--    v_length_default_value := LENGTH (ai_default_value);
+-- --
+--    IF ai_is_number IS NULL
+--    THEN
+--       RAISE null_is_number;
+--    END IF;
+-- 
+--    IF ai_is_number = 'Y'
+--    THEN
+--       FOR i IN 1 .. v_length_value
+--       LOOP
+-- 
+--          IF SUBSTR (ai_value, i, 1) < '0' OR SUBSTR (ai_value, i, 1) > '9'
+--          THEN
+--             RAISE not_numeric_value;
+--          END IF;
+--       END LOOP;
+--          FOR i IN 1 .. v_length_default_value
+--          LOOP
+--             IF    SUBSTR (ai_default_value, i, 1) < '0'
+--                OR SUBSTR (ai_default_value, i, 1) > '9'
+--             THEN
+--                RAISE not_numeric_default_value;
+--             END IF;
+--          END LOOP;
+--   --    ELSE
+--          IF ai_description IS NULL
+--          THEN
+--             RAISE null_desc;
+--          END IF;
+--       END IF;
+-- --   END IF;
+-- 
+--    UPDATE rolesbb.rdb_t_roles_parameters
+--       SET VALUE = ai_value,
+--           description = ai_description,
+--           DEFAULT_VALUE = ai_default_value,
+--           is_number = ai_is_number,
+--           update_user = ai_for_user,
+--           update_timestamp = SYSDATE
+--     WHERE parameter = ai_parameter;
+-- --commit;
+--    ao_message :=
+--          'ROLES_PARAMETERS record with PARAMETER = '
+--       || ai_parameter
+--       || ' has been updated';
+-- 
+-- EXCEPTION
+--    WHEN not_author_to_maint_all_param
+--    THEN
+--       v_message_no := -20101;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || ''''
+--          || ai_for_user
+--          || '''Not authorized to MAINTAIN ALL PARAMETER DATA';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- -----
+--    WHEN not_authorized_to_be_proxy
+--    THEN
+--       v_message_no := -20102;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'database user '
+--          || ' '
+--          || USER
+--          || ' '
+--          || 'is not authorized to act as a proxy for other users.';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+--    --
+--    WHEN not_numeric_value
+--    THEN
+--       v_message_no := -20103;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'Value Parameter '''
+--          || ai_value
+--          || ''' is not numeric.';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN all_fields_are_the_same
+--    THEN
+--       v_message_no := -20104;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'Record with Parameter = '''
+--          || ai_parameter
+--          || ''' has not been changed because all fileds are the same';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN null_desc
+--    THEN
+--       v_message_no := -20105;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'Value Parameter Description  Cannot be null.';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN not_numeric_default_value
+--    THEN
+--       v_message_no := -20106;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'DEFAULT Value Parameter '''
+--          || ai_default_value
+--          || ''' is not numeric.';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN null_default_value
+--    THEN
+--       v_message_no := -20107;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'Default Value Parameter Cannot be null.';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN null_is_number
+--    THEN
+--       v_message_no := -20108;
+--       ao_message :=
+--                   'ORA' || v_message_no || ' ' || 'Field  is_number is null.';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN null_value
+--    THEN
+--       v_message_no := -20109;
+--       ao_message :=
+--             'ORA' || v_message_no || ' ' || 'Parameter Value Cannot be Null.';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- --
+--    WHEN parameter_not_exists
+--    THEN
+--       v_message_no := -20110;
+--       ao_message :=
+--             'ORA'
+--          || v_message_no
+--          || ' '
+--          || 'Parameter Code = '''
+--          || ai_parameter
+--          || ''' Does not exist';
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+--    WHEN OTHERS
+--    THEN
+--       v_message := SUBSTR (SQLERRM, 1, 255);
+--       v_message_no := SQLCODE;
+--       ao_message := v_message_no || ' ' || v_message;
+--       RAISE_APPLICATION_ERROR (v_message_no, ao_message);
+-- END;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`web_sp_create_user`;
+-- PROCEDURE web_sp_create_user
+-- 		(ai_for_user IN STRING,
+--                  ai_new_username IN STRING,
+--                  ai_new_pw IN STRING,
+--                  ai_notes IN STRING,
+--                  ao_message OUT STRING,
+--                  ao_code OUT NUMBER)
+-- IS
+-- /****************************************************************************
+-- *  WEB_SP_CREATE_USER
+-- *
+-- *  This stored procedure does the following:
+-- *  - Checks to make sure ai_for_user is authorized to create
+-- *    new usernames
+-- *  - Makes sure the new username matches a kerberos username in the
+-- *    table PERSON.
+-- *  - Makes sure the new username ai_new_username does not already exist
+-- *  - Creates a new username
+-- *  - Inserts a record into the table ROLES_USERS.
+-- *
+-- *  NOTE:  You need to explicitly "GRANT CREATE USER TO user" for the
+-- *         user who owns this stored procedure.
+-- *         DBA privileges are not enough.
+-- *         (It is not enough to have "indirectly granted" the privilege
+-- *         of creating users where "user" has DBA privileges.)
+-- *  NOTE2: You must also explicitly "GRANT CONNECT TO user WITH ADMIN OPTION"
+-- *         for the user who owns this stored procedure.
+-- *
+-- *****************************************************************************/
+-- 
+-- v_username varchar2(16);
+-- v_for_user varchar2(16);
+-- v_password varchar2(200);
+-- v_cursor number;
+-- v_numrows integer;
+-- v_create_string varchar2(200);
+-- v_count number;
+-- v_count2 number;
+-- v_count3 number;
+-- v_authorized varchar2(1);
+-- BEGIN
+--   v_for_user := upper(ai_for_user);
+--   v_username := upper(ai_new_username);
+--   v_password := upper(ai_new_pw);
+--   ao_code := 0;  /* Default error code is 0 */
+-- 
+-- 
+--   /* Check for errors.
+--      Make sure the user is authorized to run this stored procedure.
+--      Make sure the for_user is authorized to create usernames.
+--      Make sure user does not already exist.  (if so, v_count > 0)
+--      Make sure the username exists as a Kerberos username in the PERSON
+--        table.
+--      Make sure username does not start with ROLE (to protect from a situation
+--        where a future Kerberos username matches an existing Roles username)
+--   */
+--   select count(*) into v_count from all_users
+--     where username = v_username;
+--   select count(*) into v_count2 from PERSON
+--     where kerberos_name = v_username;
+--   select count(*) into v_count3 from SPECIAL_USERNAME
+--     where username = v_username;
+-- 
+--   select rolesapi_is_user_authorized(v_for_user, 'MAINTAIN ROLES DB USERS', 'NULL') into v_authorized from dual;
+--   if (user <> 'ROLESBB' and user <> 'ROLEWWW9' and
+--       (v_authorized is NULL or v_authorized <> 'Y')) then
+--     ao_message := 'User ' || v_for_user || ' is not authorized to create '
+--                   || 'usernames with this interface.';
+--     ao_code := 201;
+--   elsif (v_count > 0) then
+--     ao_message := 'Username ''' || v_username
+--                   || ''' already exists in the database.';
+--     ao_code := 101;
+--   elsif (v_count2 < 1) then
+--     ao_message := 'Cannot create Username ''' || v_username
+--                   || '''. It is not a current Kerberos username.';
+--     ao_code := 103;
+--   elsif (v_count3 > 0) then
+--     ao_message := 'This interface cannot be used to create username '
+--                   || v_username || ' (special Roles user).';
+--     ao_code := 104;
+--   elsif (v_password is NULL) then  /* Password must not be null */
+--     ao_message := 'Error: NULL password given.';
+--     ao_code := 100;
+--   /*
+--      No errors found.
+--      To do the "create user" statement, we need to:
+--       (1) build a string containing the create statement,
+--       (2) use the DBMS_SQL package to open a cursor, (3) parse the
+--       "create" statement, (4) execute it, and (5) close the cursor.
+--   */
+--   else
+--     --ao_message := 'Ready to create user ''' || v_username
+--     --              || '''.';
+-- 
+--     /* First create the new user */
+--      v_create_string := 'CREATE USER ' || v_username || ' IDENTIFIED BY '
+--                        || v_password || ' DEFAULT TABLESPACE USERS '
+--                        || ' TEMPORARY TABLESPACE TEMP PROFILE DEFAULT';
+--      v_cursor := DBMS_SQL.OPEN_CURSOR;
+--      DBMS_SQL.PARSE(v_cursor, v_create_string, DBMS_SQL.NATIVE);
+--      v_numrows := DBMS_SQL.EXECUTE(v_cursor);
+--      DBMS_SQL.CLOSE_CURSOR(v_cursor);
+-- 
+--     /* Next, grant connect to the new user */
+--      v_create_string := 'GRANT CONNECT TO ' || v_username;
+--      v_cursor := DBMS_SQL.OPEN_CURSOR;
+--      DBMS_SQL.PARSE(v_cursor, v_create_string, DBMS_SQL.NATIVE);
+--      v_numrows := DBMS_SQL.EXECUTE(v_cursor);
+--      DBMS_SQL.CLOSE_CURSOR(v_cursor);
+-- 
+--     /* Finally, add a record to the table ROLES_USERS */
+--      insert into ROLES_USERS
+--         (username, action_type, action_date, action_user, notes)
+--         values (v_username, 'I', sysdate, v_for_user, ai_notes);
+--      ao_message :=  'DONE! Username ' || v_username
+--                     || ' has been successfully created.';
+--   end if;
+-- 
+-- EXCEPTION
+--     WHEN OTHERS THEN
+--       ao_message := SQLERRM;
+--       ao_code := SQLCODE;
+-- END ;
+
+-- DROP PROCEDURE IF EXISTS `rolesbb`.`web_sp_drop_user`;
+-- PROCEDURE web_sp_drop_user
+-- 		(ai_for_user IN STRING,
+--                  ai_old_username IN STRING,
+--                  ai_notes IN STRING,
+--                  ao_message OUT STRING,
+--                  ao_code OUT NUMBER)
+-- IS
+-- /****************************************************************************
+-- *  WEB_SP_DROP_USER
+-- *
+-- *  This stored procedure does the following:
+-- *  - Checks to make sure ai_for_user is authorized to create/drop
+-- *    new usernames
+-- *  - Makes sure the username matches a kerberos username in the
+-- *    table PERSON.
+-- *  - Makes sure the username ai_new_username does not already exist
+-- *  - Drops the username
+-- *  - Inserts a record into the table ROLES_USERS.
+-- *
+-- *  NOTE: You must also explicitly "GRANT DROP USER TO user"
+-- *        for the user who owns this stored procedure.
+-- *
+-- *****************************************************************************/
+-- v_username varchar2(16);
+-- v_for_user varchar2(16);
+-- v_password varchar2(200);
+-- v_cursor number;
+-- v_numrows integer;
+-- v_drop_string varchar2(200);
+-- v_count number;
+-- v_count2 number;
+-- v_count3 number;
+-- v_authorized varchar2(1);
+-- BEGIN
+--   v_for_user := upper(ai_for_user);
+--   v_username := upper(ai_old_username);
+--   ao_code := 0;  /* Default error code is 0 */
+-- 
+-- 
+--   /* Check for errors.
+--      Make sure the user is authorized to run this stored procedure.
+--      Make sure the for_user is authorized to create/drop usernames.
+--      Make sure user already exists.  (if so, v_count > 0)
+--      Make sure username does not start with ROLE (to protect from a situation
+--        where a future Kerberos username matches an existing Roles username)
+--   */
+--   select count(*) into v_count from all_users
+--     where username = v_username;
+--   /**** We must allow the deletion of old userids no longer in PERSON table **/
+--   /* To be safe, we must check this; it prevents tainted userids */
+--   /* select count(*) into v_count2 from PERSON
+--      where kerberos_name = v_username; */
+-- /*
+--   select count(*) into v_count2 from dba_objects
+--     where owner = v_username;
+-- */
+--   select count(*) into v_count3 from SPECIAL_USERNAME
+--     where username = v_username;
+-- 
+--   select rolesapi_is_user_authorized(v_for_user, 'MAINTAIN ROLES DB USERS', 'NULL') into v_authorized from dual;
+--   if (user <> 'ROLESBB' and user <> 'ROLEWWW9' and
+--       (v_authorized is NULL or v_authorized <> 'Y')) then
+--     ao_message := 'User ' || v_for_user || ' is not authorized to drop '
+--                   || 'usernames with this interface.';
+--     ao_code := 201;
+--   elsif (v_count < 1) then
+--     ao_message := 'Username ''' || v_username
+--                   || ''' cannot be dropped - does not exist.';
+--     ao_code := 101;
+--   elsif (v_count2 < 1) then
+--     ao_message := 'Cannot drop Username ''' || v_username
+--                   || '''. It is not a current Kerberos username.';
+--     ao_code := 103;
+--   elsif (v_count3 > 0 /*or v_count2 > 0*/) then
+--     ao_message := 'This interface cannot be used to drop username '
+--                   || v_username || ' (special Roles user or schema object owner).';
+--     ao_code := 104;
+--   /*
+--      No errors found.
+--      To do the "drop user" statement, we need to:
+--       (1) build a string containing the drop statement,
+--       (2) use the DBMS_SQL package to open a cursor, (3) parse the
+--       "drop" statement, (4) execute it, and (5) close the cursor.
+--   */
+--   else
+--     --ao_message := 'Ready to drop user ''' || v_username
+--     --              || '''.';
+-- 
+--     /* Drop the user */
+--      v_drop_string := 'DROP USER ' || v_username;
+--      v_cursor := DBMS_SQL.OPEN_CURSOR;
+--      DBMS_SQL.PARSE(v_cursor, v_drop_string, DBMS_SQL.NATIVE);
+--      v_numrows := DBMS_SQL.EXECUTE(v_cursor);
+--      DBMS_SQL.CLOSE_CURSOR(v_cursor);
+-- 
+--     /* Finally, add a record to the table ROLES_USERS */
+--      insert into ROLES_USERS
+--         (username, action_type, action_date, action_user, notes)
+--         values (v_username, 'D', sysdate, v_for_user, ai_notes);
+--      ao_message :=  'DONE! Username ' || v_username
+--                     || ' has been dropped.';
+--   end if;
+-- 
+-- EXCEPTION
+--     WHEN OTHERS THEN
+--       ao_message := SQLERRM;
+--       ao_code := SQLCODE;
+-- END ;
+
+
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ----------------------------------------------------------------------
+-- EOF
+

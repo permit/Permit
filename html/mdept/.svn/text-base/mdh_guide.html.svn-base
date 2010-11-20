@@ -1,0 +1,1691 @@
+<HTML>
+<HEAD>
+<TITLE>Master Department Hierarchy - Guide</TITLE>
+<!--
+ *  Copyright (C) 2005-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<body BGCOLOR="#fafafa">
+
+<TABLE WIDTH="85%">
+<TR><TD><a href="index.html">
+ <IMG width=105 height=88 SRC="../images/mdept_logo.jpeg" no border></a></TD>
+<TD align=center>
+<TD>&nbsp;
+<H1>Master Department Hierarchy<br>
+    Guide to Maintaining Departments and Links</H1></TD>
+</TR>
+</TABLE>
+<small><center>First draft - 12/20/2006 - Jim Repa
+<br>Links added to table of contents 1/4/2007
+<br>Section X added 1/5/2007
+<br>PC/org unit mismatch report added 2/27/2007
+<br>Updated "Linked objects that do not exist" 2/28/2007</center></small>
+<p />
+<hr>
+<p />
+<h3>Table of contents</h3>
+<blockquote>
+  <a href="#why_MDH">I. Why a Master Department Hierarchy?</a>
+  <br /><a href="#schema">II. Schema, configuration and data</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#schema_overview">Schema overview</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#schema_config">Configuration tables</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#schema_dlc_link">DLC and link tables</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#schema_aux">Auxiliary and derived tables</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#schema_views">Database views</a>
+  <br /><a href="#current_conf">III. Current configuration: DLC types, 
+        link types, object types</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#current_view_type">View types</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#current_dept_obj_type">Department object 
+        types</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#current_dept_link_type">Department link  
+        types</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#current_obj_type">Object   
+        types</a> (from HR, financial, student systems)
+  <br /><a href="#skill_sets">IV. Types of system maintenance and 
+        corresponding skill sets</a>
+  <br /><a href="#web_rpt">V. Web-based reports on DLCs and data links</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#web_rpt_dlcs">Hierarchy of DLCs</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#web_rpt_dlc_link">DLCs and linked 
+       objects</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#web_obj_hier">Hierarchy of HR, Financial,
+        or Student Systems hierarchy showing their links to DLCs</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#web_rpt_audit">Audit trail (history of
+        changes)</a>
+  <br /><a href="#exc_rpt">VI. Exception reports</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#exc_rpt_unlinked">Objects that are not
+        linked to any DLC</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#exc_rpt_multi_link">Objects that are 
+        linked to more than one DLC</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#exc_rpt_multi_parent">DLCs or nodes
+        with more than one parent node</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#exc_rpt_pc_mismatch">Profit centers
+        with inconsistent links in PCMIT-0 and standard PC hierarchies</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#exc_rpt_hr_mismatch">HR org units
+        with inconsistent links in 6-digit and 8-digit org unit hierarchies</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#exc_rpt_hr_pc">Profit Centers and 6-digit HR org units linked to different DLCs</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#exc_rpt_old_link">Linked objects
+        that do not exist</a>
+  <br /><a href="#maint_princ">VII. Principles and guidelines for the 
+        maintenance of department objects and links</a>
+  <br /><a href="#how_to">VIII. How to maintain department objects and 
+        links</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#how_to_link">Maintain links between DLCs 
+        and HR, financial, or student systems objects</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#how_to_add_dlc">Add a DLC 
+        (common cases)</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#how_to_change_dlc">Change an
+        existing DLC</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#how_to_change_parent">Change DLC 
+        parent/child links</a>
+  <br />&nbsp; &nbsp; &nbsp;<a href="#how_to_change_node">Maintain higher
+        level department nodes or handle unusual DLC cases</a>
+  <br /><a href="#tech_config">IX. Technical system administrator - changing 
+        config tables</a>
+  <br /><a href="#usage">X. How data from the MDH 
+        will be used by other systems</a>
+</blockquote>
+<p />
+<h3><a name="why_MDH">I. Why a Master Department Hierarchy?</a></h3>
+At MIT, and other large institutions, organizational units are represented 
+differently within different systems.  The code for a given department
+will be different in the HR system, the financial system, and the 
+Student Information system.  Departmental objects are organized 
+differently in different systems &#150; DLCs (Departments, Labs and Centers) 
+are grouped differently within the tree of HR Org Units, the 
+tree of Funds Centers, and the Student Systems tree of schools and 
+academic courses.  Furthermore, in different systems, some DLCs are 
+not represented at all or are "absorbed" by another DLC.
+<p />
+Most of the time, it is not a problem for different systems to organize
+and represent DLCs differently.  HR reports use HR's system-specific 
+representation for organizational units, and it does not matter if the 
+codes or groupings are different than those within financial or academic 
+systems.  However, there are cases where it is not sufficient to use 
+one of the "stovepipe" representations of DLCs at MIT: 
+<ul>
+  <li>Within the Warehouse, reports that combine data from different systems, 
+      <i>e.g.</i>, HR data with financial data, must use a "master" 
+      representation of DLCs
+  <li>Within the Roles Database, when authorizations are granted at the 
+      DLC level and apply to disparate types of objects, there must 
+      be a "master" representation of each DLC and a way of identifying 
+      the related objects from stovepipe systems
+  <li>Within the Environment, Health, and Safety system, whose scope 
+      spans both HR and academic areas, a "master" representation of DLCs
+      is most appropriate
+</ul>
+<p />
+To fulfill these needs, we've built a system in which the following 
+information can be maintained:
+<ol>
+  <li>A "master" hierarchy of DLCs.  To avoid confusion, the master  
+      DLC codes are different than the codes used by any of the stovepipe 
+      systems.  We use codes of the form D_xxxxxxxxx, for example D_BIOLOGY.
+      There also is a unique numeric identifier for each DLC, which will stay
+      constant even if the D_xxxxxxxxxxx code changes over time.
+  <li>One or more alternate views of the DLCs, to accommodate different 
+      contexts in which the data may be used.  (For reporting 
+      purposes vs. authorization purposes, we've found that slightly 
+      different groupings of DLCs are helpful.  The system solves 
+      multiple technical problems, and avoids trying to force a 
+      single view of MIT organizations for all purposes.)
+  <li>Links between from each DLC to related objects from the various 
+      stovepipe systems, e.g., to 8-digit HR org units, 6-digit HR org units, 
+      academic course numbers, profit centers, Funds Centers, etc..
+      For example, starting with a DLC code such as D_BIOLOGY, you can 
+      find all of the profit centers, HR Org units, academic course numbers,
+      funds centers, etc., related to the DLC, and thus, you can do
+      cross-domain reporting.  Cross-domain reports should be organized 
+      by the master DLC representations.
+</ol>
+<p />
+The Master Department Hierarchy system is the System of Record for the 
+definitions of "master" DLCs and their links to objects within other systems.
+The data must be maintained manually, but not much work is needed to 
+maintain changes, since changes in DLCs are infrequent.  The data must be
+maintained carefully, so that reports are accurate. Details on how the 
+data must be maintained are included in a later section of this document.
+<p />
+<h3><a name="schema">II. Schema, configuration and data</a></h3>
+<a name="schema_overview">The database behind the Master Department Hierarchy 
+system contains three kinds of tables:</a>
+<ul>
+  <li>Configuration tables
+  <li>DLC and link tables
+  <li>Auxiliary and derived tables
+</ul>
+There are also database views, designed for use by the Warehouse, but also 
+available for uses within the Master Department Hierarchy system itself.
+<p />
+Below, each table and view 
+within the database is described, to give an overview of
+the sort of data stored in the system.  The data in the <em>DLC and link
+tables</em> and in the <em>Auxiliary and derived tables</em> are maintained 
+via the web interface or automatically updated by the system.  The data
+in the <em>Configuration tables</em> must be maintained by the technical
+system administrator(s); there is no web UI for updating these tables.
+<p />
+<em>Configuration tables</em> change rarely.  They represent global settings 
+in the 
+database, defining types of DLCs or other department-like objects, 
+types of parent/child links between department-like objects, 
+"views" of the DLCs at MIT and rules for constructing them out of 
+department-like objects and parent/child links, and
+types of objects to which the DLCs are linked.  Configuration tables do
+not contain actual DLCs, objects, or links.  Instead they define the 
+framework on which DLCs and object links will be built.
+<p />
+<em>DLC and link tables</em> contain the actual definitions of department-like
+objects, the hierarchies into which they are organized, and the links to 
+financial, HR, and student systems objects.  Each time DLCs are created,
+deleted, reorganized, or renamed, an update must be made in these tables.
+<p />
+<em>Auxiliary and derived tables</em> include (a) audit trails showing 
+past changes to DLCs and object links, (b) tables derived from data in the
+main tables that are used to improve performance, and (c) miscellaneous
+tables containing ancillary information.  Generally, these tables 
+are updated automatically by the system.
+<p />
+The main <a name="schema_config"><em>Configuration tables</em></a> are:
+<blockquote>
+<table border>
+ <tr><th>Table name</th><th>Description</th></tr>
+ <tr><td>DEPT_NODE_TYPE</td>
+      <td>Different types of objects within a hierarchy of DLCs, such as
+          "root", "node", "DLC".  We could expand this to give different 
+          names to different levels in the hierarchy or types within a 
+          level, such as "school or area", "department", "lab", "center", etc.
+      </td></tr>
+ <tr><td>VIEW_TYPE</td>
+     <td>There can be more than one "view" of the DLCs at MIT.
+         A view_type defines the root node, the type of links allowable
+         and the type of department-like objects.  Different view types
+         might include different link types and/or department-like object
+         types.  Thus, picking a particular "view" reveals one particular
+         hierarchy of DLCs, where as another "view" might reveal a differently
+         organized hiearchy with an overlapping but differnt set of
+         department-like objects.
+     </td></tr>
+ <tr><td>OBJECT_TYPE</td>
+     <td>These are the objects within HR, financial or student systems 
+         that are linked to DLCs, including HR org units, academic course
+         numbers, profit center nodes, etc.  (Within this table, 
+         only the columns OBJECT_TYPE_CODE, OBJ_TYPE_DESC, OBJ_TYPE_HTML_NAME, 
+         and ROLES_QUALIFIER_TYPE are currently used.  The other columns 
+         may be used in the future for validating object links.)
+     </td></tr>
+ <tr><td>DEPT_LINK_TYPE<br>(aka VIEW_SUBTYPE)</td>
+     <td>There are different types of parent/child links between 
+         department-like objects, such as the link between the School of
+         Science object and Biology. Each row in this table defines 
+         one type of department parent/child link.  Some links are 
+         common to all View Types; others are limited to one View Type.
+         By having different link types, with some link types limited 
+         to certain Views, we allow different Views to 
+         organize department related objects in different ways.</td></tr>
+ <tr><td>VIEW_TO_DEPT_TYPE</td>
+     <td>This table defines which Department Node Types are visible within
+         a given View Type.</td></tr>
+ <tr><td>VIEW_TO_DEPT_LINK_TYPE<br>(aka VIEW_TYPE_TO_SUBTYPE)</td>
+     <td>This table defines which department parent/child link types 
+         are visible within a given View Type.  This table, along with 
+         the VIEW_TO_DEPT_TYPE table, defines what you see in the 
+         department hierachy when you choose a given View Type.
+         </td></tr>
+</table>
+</blockquote>
+<p />
+The main <a name="schema_dlc_link"><em>DLC and Link tables</em></a> are
+<blockquote>
+<table border>
+ <tr><th>Table name</th><th>Description</th></tr>
+ <tr><td>DEPARTMENT</td>
+     <td>This table defines the actual DLCs, as well as the 
+         Root, Schools, Areas, and other nodes used the hierarchy
+         of DLCs at MIT.  Each object in this table has a code 
+         (D_xxxxxxxx), a name, and a Department Node Type.
+         Some objects in this table, because of their Department Node
+         Type, are not visible in all Views.</td></tr>
+ <tr><td>DEPARTMENT_CHILD</td>
+     <td>This table defines parent/child links between objects in the 
+         DEPARTMENT table, for example, between the School of Science 
+         and Biology. Each record in this table has a Dept Link Type;
+         some links are not visible in all Views.</td></tr>
+ <tr><td>OBJECT_LINK</td>
+     <td>This table defines the links between each DLC and its related 
+         financial, HR, or academic objects, for example, the link 
+         between the DLC D_EECS and org unit 10000322 or the 
+         link between D_EECS and academic course 6.</td></tr>
+</table>
+</blockquote>
+<p />
+The <a name="schema_aux"><em>Auxiliary and derived tables</em></a> are
+<blockquote>
+<table border>
+ <tr><th>Table name</th><th>Description</th></tr>
+ <tr><td>DEPT_DESCENDENT</td>
+     <td>A table automatically derived from DEPT_CHILD showing not 
+         only parent/child relationships but also grandparent/child, 
+         great-grandparent/child etc..  This table makes it possible to
+         run complex reports quickly.  The table is updated daily by a 
+         cronjob in the early morning hours (in the future we may 
+         increase the frequency).</td></tr>
+ <tr><td>EXPANDED_OBJECT_LINK</td>
+     <td>A table automatically derived from OBJECT_LINK and other sources 
+         showing a more complete set of DLC-to-object links.  Note that 
+         each record in the table OBJECT_LINK should specify a DLC and
+         the highest-level appropriate object in an HR, financial, or
+         Student Systems hierarchy.  For example, if the DLC links to all 
+         profit centers under a given node in the PCMIT-0 hierarchy of
+         profit centers, then there should only be one record in 
+         OBJECT_LINK to represent this.  On the other hand, within 
+         EXPANDED_OBJECT_LINK, there may be multiple corresponding 
+         records if the given node has multiple children, e.g., if 
+         a specified node in the PCMIT-0 hierarchy has multiple child
+         profit centers.  The table is updated daily by a 
+         cronjob in the early morning hours (in the future we may 
+         increase the frequency).
+     </td></tr>
+ <tr><td>DEPARTMENT_AUDIT</td>
+     <td>This table stores the audit trail for the DEPARTMENT table.
+         A database trigger automatically inserts records into this table 
+         whenever a change is made to the DEPARTMENT table.
+     </td></tr>
+ <tr><td>DEPT_CHILD_AUDIT</td>
+     <td>This table stores the audit trail for the DEPT_CHILD table.
+         A database trigger automatically inserts records into this table 
+         whenever a change is made to the DEPT_CHILD table, <i>i.e.</i>, 
+         whenever parent/child links between department objects are added, 
+         deleted, or changed.
+     </td></tr>
+ <tr><td>OBJECT_LINK_AUDIT</td>
+     <td>This table stores the audit trail for the OBJECT_LINK table.
+         A database trigger automatically inserts records into this table 
+         whenever a change is made to the OBJECT_LINK table, <i>i.e.</i>, 
+         whenever there are changes to links between a DLC and 
+         HR, financial, or student systems objects.
+     </td></tr>
+ <tr><td>MORE_DEPT_INFO</td>
+     <td>This table was intended to store additional information about
+         DLCs, possibly information that doesn't apply to all DLCs.
+         It may be that there will be information about DLCs that should 
+         be stored somewhere, but is not stored along with HR, financial
+         or student systems data.  This table could be used for that
+         purpose. It has not yet been put into production.
+     </td></tr>
+</table>
+</blockquote>
+<p />
+<a name="schema_views">In addition to database tables, the database behind 
+the Master Department 
+Hierarchy also includes the following <em>database views</em>.</a>
+<blockquote>
+<table border>
+ <tr><th>View name</th><th>Description</th></tr>
+<tr><td>WH_DLC_HIERARCHY</td>
+    <td>This view makes it easy to find all of the department objects 
+        and parent/child relationships within a given View Type.
+        It was built to be used by the Warehouse.</td></tr>
+<tr><td>WH_EXPANDED_OBJECT_LINK</td>
+    <td>This view is similar to the table EXPANDED_OBJECT_LINK but 
+        it allows you to pick a View Type and only see links
+        that are applicable.  It handles the situation where 
+        detailed DLCs in one View Type "roll up" to a consolidated 
+        DLC in another View Type, showing the appropriate DLC-to-object
+        links in both cases.  It was built for Warehouse use.</td></tr>
+</table>
+</blockquote>
+<p />
+<h3><a name="current_conf">III. Current configuration: DLC types, link types, 
+object types</a></h3>
+<p />
+The previous section described the tables and views in the Master Department
+Hierarchy database that could be configured lots of different ways to 
+accommodate data at MIT or other institutions.
+<p />
+Now, we will describe the current configuration of the system, as of
+December, 2006.  It is important to understand the current configuration
+in order to maintain data in the system.  (In the future, DLC types, 
+department link types, View Types, and object types may change;  if that
+happens, then instructions for how to maintain the system will also have
+to be modified.)
+<p />
+<a name="current_view_type">To report on DLCs or their links to other objects, 
+we start with a View Type.</a>
+There are two View Types (not counting the "Test" View Type used for testing
+and demonstration purposes):
+<blockquote>
+<table border>
+  <tr><th>View Type</th><th>Description</th>
+  <tr><td>B.&nbsp;Standard&nbsp;DLC&nbsp;Hierarchy</td>
+      <td>This is the hierarchy that should be used for reporting purposes.
+          It is structured similarly to the 8-digit HR org unit hierarchy
+          and the PCMIT-0 hierarchy.
+      </td></tr>
+  <tr><td>A.&nbsp;Compact&nbsp;DLC&nbsp;Hierarchy</td>
+      <td>This is the hierarchy used by the Roles Database for 
+          controlling the authority of Primary Authorizers.  It also 
+          is used by the EHS system.  It is flatter than the Standard
+          DLC Hiearchy, <i>i.e.</i>, it has fewer levels between the 
+          root level and the DLCs.  It also has these differences from 
+          the Standard DLC Hierarchy:
+          <ol>
+            <li>It has a node for D_ASO (Administrative Systems Organization),
+                and some child DLCs.  This differs from the Standard Hieararchy
+                where D_ASO does not exist and the child units are 
+                attached to the Engineering node instead.
+            <li>It splits LNS (Lab for Nuclear Science) into D_BATES
+                and D_LNS_NO_BATES.  (In the Standard Hierarchy, D_BATES does
+                not exist, and objects linked to D_BATES are instead linked
+                to D_LNS.)
+            <li>It splits D_ROTC into 3 child DLCs.
+          </ol>
+      </td></tr>
+</table>
+</blockquote>
+<p />
+<a name="current_dept_obj_type">Department objects have the following 
+types:</a>
+<blockquote>
+<table border>
+  <tr><th>Dept. object<br>Type code</th><th>Name</th>
+      <th>Description</th><th>Is DLC?</th></tr>
+  <tr><td>1</td><td>Root</td><td>The root of the tree</td><td>No</td></tr>
+  <tr><td>2</td><td>Department, lab, or center</td>
+           <td>Actual DLCs</td><td>Yes</td></tr>
+  <tr><td>3</td><td>Node</td>
+      <td>Schools, areas, and other nodes in the tree between 
+          the root and DLCs</td>
+      <td>No</td></tr>
+  <tr><td>4</td><td>Limited DLC (EHS, Sp. Grp.)</td>
+      <td>DLCs in the context of the Compact View. Within the Standard View,
+          they are either not seen, or are nodes with DLCs as children.</td>
+      <td>Only within Compact View</td></tr>
+  <tr><td>5</td><td>Limited DLC (HR)</td>
+      <td>DLCs in the context of the Standard View. Within the Compact View,
+          they are either not seen, or are nodes with DLCs as children.</td>
+      <td>Only within Standard View</td></tr>
+</table>
+</blockquote>
+<p />
+<a name="current_dept_link_type">The links between Department objects all 
+have a Department Link Type.</a>
+(These are kept in the table VIEW_SUBTYPE, a somewhat confusing table name.)
+The most common department link type, 1, is "common" because it is the
+most frequently seen link type, and because it is common to all View Types.
+Other department link types apply to only one View Type;  they allow us 
+to organize department objects differently within different View Types.
+<p />
+The Department Link Types are shown below.  
+<blockquote>
+<table border>
+  <tr><th>Dept Link<br>Type Code</th><th>Name</th>
+      <th>Applies to View Types</th></tr>
+  <tr><td>1</td><td>Common</td><td>All</td></tr>
+  <tr><td><font color=gray>2</font></td><td><font color=gray>Link with HQ under area</font></td>
+      <td><font color=gray>Not used</font></td></tr>
+  <tr><td><font color=gray>3</font></td><td><font color=gray>Link with HQ a sibling of area</font></td><td><font color=gray>Not used</font></td></tr>
+  <tr><td>4</td><td>Standard link only</td><td>B. Standard View</td></tr>
+  <tr><td>5</td><td>Compact link only</td><td>A. Compact View</td></tr>
+</table>
+</blockquote>
+<p />
+<a name="current_obj_type">Departments are linked to objects of the 
+following types:</a>
+<blockquote>
+<table border>
+  <tr><th>Object<br>Type<br>Code</th><th>Name</th>
+      <th>Related<br>Roles DB<br>Qualifier Type</th>
+      <th>Used in current<br>WH reports?</th>
+      <th>Notes</th></tr>
+  <tr><td>ORGU</td><td>Old Org. Unit</td><td>ORGU</td>
+      <td>&nbsp;</td>
+      <td>6-digit org units</td></tr>
+  <tr><td>ORG2</td><td>New Org. Unit</td><td>ORG2</td>
+      <td>Yes</td><td>8-digit org units</td></tr>
+  <tr><td>LORG</td><td>LDS Org. Unit</td><td>LORG</td>
+      <td>&nbsp;</td><td>Labor distribution org units</td></tr>
+  <tr><td>SIS </td><td>Student Systems Unit</td><td>SISO</td>
+      <td>&nbsp;</td><td>Course numbers</td></tr>
+  <tr><td>BAG </td><td>NIMBUS B.A.G.</td><td>BAGS</td>
+      <td>&nbsp;</td><td>Budget authorization groups</td></tr>
+  <tr><td>PBUD</td><td>PBUD node</td><td>PBUD</td>
+      <td>&nbsp;</td><td>Intended for SAPBud. Not currently maintained</td>
+      </tr>
+  <tr><td>PMIT</td><td>PCMIT-0 Profit Center</td><td>PMIT</td>
+      <td>Yes</td><td>PCMIT-0 hierarchy of Profit Centers; 
+                      useful for reporting.</td></tr>
+  <tr><td>PC</td><td>Standard Profit Center</td><td>COST</td>
+      <td>&nbsp;</td><td>Standard profit center hierarchy; still used
+                      for granting reporting authorizations in Roles DB.</td>
+      </tr>
+  <tr><td>FC</td><td>Standard Funds Center</td><td>FUND</td>
+      <td>&nbsp;</td><td>Funds Centers are used for controlling 
+                         spending, invoice approval, travel approval,
+                         and are an alternative way of granting reporting
+                         authorizations.  However, they are generally not
+                         used for financial reporting.</td></tr>
+  <tr><td>SPGP</td><td>Spending Group</td><td>SPGP</td>
+      <td>&nbsp;</td><td>Spending Groups are used for authorizations
+                         for approval of requisitions, and also are 
+                         another way of grouping Funds Centers for 
+                         granting other types of authorizations.
+                         </td></tr>
+</table>
+</blockquote>
+<p />
+<h3><a name="skill_sets">IV. Types of system maintenance and corresponding 
+    skill sets</a></h3>
+<p />
+There need to be three different types of central maintainers and custodians
+of the Master Department Hierarchy system.  There will not 
+be very much maintenance work for
+data in the MDH, but it is very important that people with appropriate 
+skills act as custodians for the system.
+<blockquote><table border>
+  <tr><th>MDH role</th><td>Description</th></tr>
+  <tr><td>Month-to-month maintainer</td>
+      <td>1 or 2 people who enter most of the changes to DLCs and links,
+          and review exception reports.  (The Data Administrators could 
+          also undertake this role.  If the Month-to-month maintainers
+          are different than the Data Administrators, then they will need 
+          to defer to the Data Administrators for complex issues.)</td></tr>
+  <tr><td>Data administrators</td>
+      <td>DRS data administrators who understand the way the system works 
+          and interfaces
+          with Warehouse, Roles DB, etc..  It may be that separate
+          Month-to-month maintainers are not needed, and all of the 
+          the DLC and link changes (on average, a few changes per month) 
+          can fall under these people.</td></tr>
+  <tr><td>System administrator</td>
+      <td>Technical person/people who understand the subleties the system; 
+          these people will make config file and documentation changes if
+          we add or change object types, link types, or MDH hierarchy 
+          views</td></tr>
+</table></blockquote>
+<p />
+<h3><a name="web_rpt">V. Web-based reports on DLCs and data links</a></h3>
+<p />
+<ol type="A">
+ <li><a name="web_rpt_dlcs">Report on DLCs within the hierarchy for a 
+     given View Type</a>
+     <p />
+     Sometimes, it may be useful to just see the hierarchy of DLCs without 
+     additional information about links to other objects.
+     <p />
+     To view a hierarchy of DLCs within a given View Type
+     <ul>
+      <li>Start at the home page for the Master Department Hierarchy
+          <a href="http://rolesweb.mit.edu/mdept" 
+           target=new>http://rolesweb.mit.edu/mdept</a>
+      <li>Click "View hierarchy of DLCs" 
+          (or <a href="view_mdept_tree.html" target=new>go there directly</a>)
+      <li>Select the desired View Type.  If you're not sure what View Type
+          you want, select "B. Standard DLC Hierarchy".
+      <li> For the "Display format", choose "Hierarchy and detailed table"
+      <li>For "How much data to display", select 
+          "Hierarchy of DLCs only <i>(fast)</i>"
+      <li>Finally, click the button "Run report"
+     </ul>
+     <p />
+     You will see a hierarchical display of DLCs within the selected View Type.
+     Each line includes a DLC Code (D_xxxxxxxxx), the long name for the object,
+     and the Master Department Hierarchy's internal org unit number 
+     in parentheses.
+ <li><a name="web_rpt_dlc_link">Report on DLCs along with their linked 
+     objects</a>
+     <p />
+     You can get a birds-eye view of DLCs along with their links to HR, 
+     financial, and Student Systems objects under a given View Type.
+     The resulting display will have two parts: (i) a hierarchy of 
+     DLCs within the given view type and (ii) a table showing links 
+     between each DLC and other objects.  Clicking no the DLC code 
+     within part (i) of the report will bring you to the 
+     data about that DLC in part (ii) of the report.  
+     In part (ii), if a 
+     linked object no longer exists in the applicable HR, financial, or
+     student system, then the name of the object will be shown in red as 
+     <font color=red>"not found"</font>.
+     <p />
+     Note that this report only shows objects <em>directly</em> linked to
+     DLCs, not those that are linked indirectly because of parent/child
+     relationships within the HR, financial, or student system hierarchy.
+     For example, if D_EECS is linked directly to the profit center node 
+     PCMIT-0024, you will only see PCMIT-0024 on the report, not the 
+     profit centers that are children of PCMIT-0024.  (If you want to view
+     the child profit centers, see the next report described in this
+     document.)
+     <p />
+     To view this two-part report for a given View Type
+     <ul>
+      <li>Start at the home page for the Master Department Hierarchy
+          <a href="http://rolesweb.mit.edu/mdept" 
+           target=new>http://rolesweb.mit.edu/mdept</a>
+      <li>Click "View hierarchy of DLCs" 
+          (or <a href="view_mdept_tree.html" target=new>go there directly</a>)
+      <li>Select the desired View Type.  If you're not sure what View Type
+          you want, select "B. Standard DLC Hierarchy".
+      <li> For the "Display format", choose "Hierarchy and detailed table"
+      <li>For "How much data to display", select 
+          "Hierarchy of DLCs plus detailed table with object names"
+      <li>Finally, click the button "Run report"
+     </ul>
+     <p />
+     There is another option for running this report for producing 
+     a table that can be downloaded into an Excel spreadsheet.  
+     Follow the instructions above, but for
+     "Display format", rather than selecting "Hierarchy and detailed table",
+     select "Simple table exportable to Excel" instead.
+     <p />
+ <li><a name="web_obj_hier">Report on an HR, Financial, or Student Systems 
+     hierarchy of objects showing their links to DLCs</a>
+     <p />
+     The previous report was organized by Master DLCs.  Often, it is
+     more useful to see a report centered on a given HR, financial, or 
+     student systems hierarchy, but showing how these objects have links 
+     (or do not have links) to master DLCs.  This report combines data 
+     from the Master Department Hierarchy tables and qualifier hierarchy
+     data from the Roles Database.
+     <p />
+     To view such a report,
+     <ul>
+      <li>Start at the home page for the Master Department Hierarchy
+          <a href="http://rolesweb.mit.edu/mdept" 
+           target=new>http://rolesweb.mit.edu/mdept</a>
+      <li>Click "View hierarchies of qualifiers in the Roles DB with MDEPT 
+          links" 
+          (or <a href="view_qual_tree.html" target=new>go there directly</a>)
+      <li>Under "Pick a qualifier type", pick the type of object you want 
+          to view in its HR, financial, or student systems hierarchy.  If
+          you pick FUND (Funds Centers), the resulting display will only 
+          show Funds Centers, not the detailed Funds under each Funds Center.
+          If you pick COST (Standard Profit Center Hierarchy) or PMIT
+          (PCMIT-0 nodes and Profit Centers), the resulting display will
+          not show any detail below the Profit Center level
+      <li>Use the "Number of levels" setting to specify how many levels deep
+          you want to go in the display.  In most cases, we recommend 
+          that you sellect "All".  However, if you have selected "FUND", 
+          select 4 levels or less;  otherwise, it will take several 
+          minutes to paint the screen.
+      <li>For "Show MDEPT links from what view?", you have the option 
+          of choosing a particular View Type, such as the Standard DLC
+          Hierarchy, or you can see links associated with all Views Types.
+          If you are concentrating on the way the Master Department Hierarchy
+          affects reporting in the Warehouse, choose "B. Standard Hierarchy".
+          If you are concentrating on the way it affects meta-authorizations 
+          in the Roles Database or assigning of people to DLCs within the 
+          EHS system, choose "A. Compact Hierarchy".  If you want to see 
+          everything at once, select "All".
+      <li>For "Format option", leave the default setting in place, 
+          "Show Dept_code on the left side of page".
+      <li>Usually, you should leave the field "Qualifier code" blank.
+          If you want to start at a particular point in a particular
+          qualifier hierarchy and you know the exact qualifier code, 
+          you can enter it here
+      <li>Finally, click the button "Run report"
+     </ul>
+     <p />
+     Here are some notes on what you will see:
+     <ul>
+      <li>You will see a hierarchy of the objects of the type that you 
+          selected.  On the left part of the screen, you will see the 
+          D_xxxxxxxxxx code(s) associated with a given node or DLC.
+      <li>Leaf-level objects should have a D_xxxxxxxx code.  Nodes often 
+          are at too high a level to be assignable to a DLC, so they will 
+          often not have a D_xxxxxxxx code.
+      <li>If an object has more than one D_xxxxxxxx shown on the left, 
+          this may or may not be a problem, depending on the object type
+          and the View Type selected.  See the section of this
+          document on Exception Reports for a description of 
+          problematic situations that must be fixed.
+      <li>You can click on the D_xxxxxxxx code for an object to just 
+          view the part of the tree starting at that object
+      <li>When viewing a hierarchy that does not start at the root,
+          you will see a link with two dots (<a href=""><code>..</code></a>).
+          If you click this link, you will see a different kind of display,
+          showing the path or paths between the root of the tree and the
+          object just below the two dots. This can be useful if you are 
+          in the middle of a large report and you want to figure out 
+          where the object sits within schools or areas at MIT. 
+      <li>If you selected COST or FUND as the qualifier type, you will 
+          find that leaf-level Profit Centers or Funds Centers usually 
+          are shown as "links", but if you click them, you only see 
+          one row on the resulting report.  For COST and FUND displays
+          only, the clickable leaf-level objects indicate that they
+          are Profit Centers or Funds Centers that have child cost 
+          collectors or funds, but the report does not allow you to   
+          see them.  For COST and FUND displays, if the leaf-level
+          Profit Center or Funds Center is not shown as a clickable-link, then
+          it is a "dead-end" Profit Center or Funds Center without any 
+          child objects.
+     </ul>
+     <p />
+ <li><a name="web_rpt_audit">Audit trail report, for the history of changes 
+     to DLCs and links</a>
+     <p />
+     The report currently shows all changes made to DLCs, parent/child links
+     between department objects, and links between DLCs and other objects
+     from 9/27/06 to the present. In the future, we may modify the report
+     to allow for selecting date ranges, or for sorting in different ways.
+     <p />
+     This report can help you to diagnose problems, by showing who changed
+     what and when.
+     <p />
+     To run the report
+     <ul>
+      <li>Start at the home page for the Master Department Hierarchy
+          <a href="http://rolesweb.mit.edu/mdept" 
+           target=new>http://rolesweb.mit.edu/mdept</a>
+      <li>Click "Show history of changes"
+          (or <a href="https://rolesweb.mit.edu/cgi-bin/mdept/mdept_exception.cgi?report_num=6" target=new>go there directly</a>)
+     </ul>
+     <p />
+     The action shown will be "Add", "Delete", or "Update".  You'll see
+     one row for each "Add" or "Delete" action and two (old and new) for
+     each "Update" action.
+     <p />
+     For each action, there is a "Type of change", which can be a change to
+     (i) a department-department parent/child link, (ii) a department object
+     definition, or (iii) an object link (link between a DLC and an HR, 
+     financial, or student systems object).  
+     <p />
+     Each record indicates who made the change, when they made the change,
+     and the pertinent fields for database records that were added, deleted
+     or updated.
+     </ul>
+</ol>
+<p />
+<h3><a name="exc_rpt">VI. Exception reports</a></h3>
+<p />
+There are several web-based exception reports for the Master Department
+Hierarchy system.  These exception reports display potential or actual 
+problems with data in the system.
+<p />
+The reports should be viewed periodically (weekly?) to check for 
+potential data problems.  Some of the reports should also be viewed 
+one day after changes have been made to DLCs or links, to identify 
+mistakes that may have been made.
+<p />
+Each exception report is described below:
+<ol type="A">
+ <li><a name="exc_rpt_unlinked">Objects that are not linked to any DLC</a>
+   <p />
+   <ul>
+     <li><em>What does the report show?</em>
+         <br />
+         The report shows HR, Financial, and Student Systems objects that 
+         are not linked to any DLC.  This generally indicates that objects
+         have been added or reorganized and have not yet been assigned to 
+         a DLC in the Master Department Hierarchy.
+         <p />
+     <li><em>How can I run the report?</em>
+         <br />
+         From the MDH <a href="index.html" target=new>main web page</a>,
+         under the "Exception reports" bullet, click 
+         <a href="https://rolesweb.mit.edu/cgi-bin/mdept/mdept_exception.cgi?report_num=4" 
+          target=new>Objects that are not linked to any DLC</a>.
+         <p />
+     <li><em>What will I see?</em>
+         <br />
+         You will see a table of objects, if any, that are not linked to
+         any DLC.  Click on the qualifier code of any of these objects 
+         to see its position in its particular hierarchy &#150; this can help 
+         you to understand where the object sits in the hierarchy and to 
+         decide whether to directly attach the object to a DLC or to attach
+         the object's parent (or grandparent) to a DLC.
+         <p /> You will see another small table at the end of the web 
+         display showing a summary of the number of objects of each type
+         that are not linked to any DLC.  Click on the object type to 
+         move to the first problematic object of that type in the top
+         table of this web display.
+     <li><em>How should I respond to listed items?</em>
+         <br />
+         Either the object or its parent should be linked to a DLC.
+         This is most important for qualifier types related to Warehouse
+         reporting (PMIT and ORG2 at the present time).  For qualifier types
+         not related to Warehouse reporting, unlinked objects may prevent 
+         a Primary Authorizer for a DLC related to the object from assigning
+         the object in an Authorization.
+         <p />
+         See the section on adding links to DLCs for instructions on 
+         properly assigning objects to DLCs.
+   </ul>
+ <li><a name="exc_rpt_multi_link">Objects linked to multiple DLCs within 
+     the same View Type</a>
+   <p />
+   <ul>
+     <li><em>What does the report show?</em>
+         <br />
+         The report shows HR, Financial, and Student Systems objects that 
+         are linked to more than one DLC within the same View Type.
+         If the object has a qualifier type that is involved in Warehouse
+         reporting, then this must be fixed; otherwise, reports might 
+         "double-count" the same object.  If the qualifier type is FUND
+         or SPGP, then this is not necessarily a problem;  for Authorization
+         purposes, multiple DLC links do not cause a problem.  However, it
+         might be an indication of a mistake, so it should be investigated.
+         <p />
+     <li><em>How can I run the report?</em>
+         <br />
+         From the MDH <a href="index.html" target=new>main web page</a>,
+         under the "Exception reports" bullet, click 
+         <a href="https://rolesweb.mit.edu/cgi-bin/mdept/mdept_exception.cgi?report_num=2" 
+          target=new>Objects linked to multiple DLCs</a> within the same View
+          Type.
+         <p />
+     <li><em>What will I see?</em>
+         <br />
+         If there are any objects linked to more than one DLC within the 
+         same View Type, you will see a table of them.  Often, an object 
+         is not directly linked to more than one DLC, but rather, it has 
+         parents within the HR, financial or student systems hierarchy that 
+         cause it to be linked to the DLCs.  On each line, you will see
+         the problematic object type and object code and the View Type
+         in which the problem occurs.  You will also see the directly-linked 
+         object codes and the DLCs to which they are linked that together
+         result in two different DLCs.  Click on the object code, and
+         you'll see the path or paths between the problematic object and
+         the root of the tree, and by looking at the DLC links for the 
+         given object and its parents, you can get a good view of the
+         reason for the problem.
+         <p /> 
+     <li><em>How should I respond to listed items?</em>
+         <br />
+         For Funds Centers and Spending Groups, there may not be a problem.
+         <p />
+         For HR org units or Profit Centers within the PCMIT-0 hierarchy, 
+         or any other object used for Warehouse cross-domain reporting,
+         it is important to make changes to links so that the object is 
+         only linked to one DLC.  Carefully analyze how the links are
+         set up in order to cause the multiple-DLC links.  Maybe an object 
+         is linked at too high a level in a financial, HR, or student systems 
+         hierarchy, and the DLC links must be done at a lower level.  Maybe
+         there was just a mistake that needs to be corrected.  Maybe 
+         a financial, HR, or student systems hierarchy was reorganized,
+         and it is possible that a mistake was made in that reorganization 
+         that caused the problem.  The goal is to have each leaf-level
+         object linked to one and only one DLC.  See more instructions 
+         in the sections on maintaining DLC to object links.
+   </ul>
+ <li><a name="exc_rpt_multi_parent">DLCs or nodes with multiple parent nodes 
+     within the same View Type</a>
+   <p />
+   <ul>
+     <li><em>What does the report show?</em>
+         <br />
+         The report shows department objects within the Master 
+         Department Hierarchy that have more than one parent within a 
+         single View Type.  A DLC or node within the hierarchy should
+         only have one parent node visible in a single View Type.
+         <p />
+     <li><em>How can I run the report?</em>
+         <br />
+         From the MDH <a href="index.html" target=new>main web page</a>,
+         under the "Exception reports" bullet, click 
+         <a href="https://rolesweb.mit.edu/cgi-bin/mdept/mdept_exception.cgi?report_num=1" 
+          target=new>DLCs or nodes with multiple parent nodes</a> 
+         within the same View Type.
+         <p />
+     <li><em>What will I see?</em>
+         <br />
+         If there are any department objects with more than one parent
+         within the same View Type, you will see a table of them, showing
+         both parents.
+         <p /> 
+     <li><em>How should I respond to listed items?</em>
+         <br />
+         Look at the entire hierarchy of department objects for the 
+         problematic View Type(s).  Determine which parent/child link 
+         for the problematic department object should be removed or 
+         changed.  Remove the parent/child link or change 
+         the link type to eliminate the problem.
+   </ul>
+   <p />
+ <li><a name="exc_rpt_pc_mismatch">Profit Centers linked to different DLCs 
+     via the PCMIT-0 and Standard profit center hierarchies</a>
+   <p />
+   <ul>
+     <li><em>What does the report show?</em>
+         <br />
+         The report shows inconsistencies in the way that Profit Centers 
+         are linked to DLCs.  There are two Profit Center hierarchies 
+         currently supported in the Master Department Hierarchy, the
+         Standard Profit Center Hierarchy and the PCMIT-0 hierarchy.
+         In the MDH, usually profit centers are not linked directly
+         to DLCs, but instead higher-order objects, <i>i.e.</i>, 
+         PCMIT-0 nodes or standard PC nodes, are linked to DLCs.
+         If this results in a single Profit Center being linked to different
+         DLCs in the two PC hierarchies, this is an error that will be
+         shown on the report.  
+         <p />
+     <li><em>How can I run the report?</em>
+         <br />
+         From the MDH <a href="index.html" target=new>main web page</a>,
+         under the "Exception reports" bullet, click 
+         <a href="https://rolesweb.mit.edu/cgi-bin/mdept/mdept_exception.cgi?report_num=3" 
+          target=new>Profit Centers linked to different DLCs</a> 
+         via the PCMIT-0 and Standard profit center hierarchies.
+         <p />
+     <li><em>What will I see?</em>
+         <br />
+         If there are any reported Profit Centers with mismatched 
+         department links, the report will show them, along with 
+         the two different DLCs and the object (either the profit center
+         or its parent) that is directly linked to the DLC.  
+         In some cases, the discrepancy is that the PC is linked via 
+         one hierarchy but missing a link via the other one.
+         You can 
+         click on a link to display all of the parents and related DLCs
+         for the PC in either of the PC hierarchies, which will help you
+         identify the source of the problem.
+         <p /> 
+     <li><em>How should I respond to listed items?</em>
+         <br />
+         Determine which of the DLCs is the correct one.  Look at the
+         parents of the profit center that is incorrectly linked.  
+         In most cases, the problematic link will have been made at a 
+         level higher than the PC level.  This link will have to be 
+         removed or changed to point to the correct DLC.  It is possible
+         that the parent of the profit center has other children in another
+         DLC;  if that is the case, then the links to DLCs must be made at 
+         the profit center level and not the parent node level.  However,
+         if the parent node only has profit center children in one DLC,
+         then the link to the DLC should be made at the parent level.
+   </ul>
+   <p />
+ <li><a name="exc_rpt_hr_mismatch">HR org units linked to different DLCs via 
+     the 8-digit and 6-digit org unit hierarchies</a>
+   <p />
+   <ul>
+     <li><em>What does the report show?</em>
+         <br />
+         Most HR org units have both a 6-digit and 8-digit org unit number.
+         The two kinds of org units are maintained in two separate hierarchies.
+         (Currently, the 6-digit org unit hierarchy is derived from the 
+         8-digit org unit hierarchy.)  If the 6-digit org unit is mapped
+         to one DLC and the matching 8-digit org unit is mapped to a different
+         DLC, the discrepancy will show up on this report.
+         <p />
+     <li><em>How can I run the report?</em>
+         <br />
+         From the MDH <a href="index.html" target=new>main web page</a>,
+         under the "Exception reports" bullet, click 
+         <a href="https://rolesweb.mit.edu/cgi-bin/mdept/mdept_exception.cgi?report_num=5" 
+          target=new>HR org units linked to different DLCs</a> 
+         via the 8-digit and 6-digit org unit hierarchies.
+         <p />
+     <li><em>What will I see?</em>
+         <br />
+         If there are any cases where there are discrepancies, you will 
+         see each problematic org unit listed in the report, with both 
+         6-digit and 8-digit org unit numbers, the unit (possibly a parent
+         unit) that is directly linked to DLC, and the two mismatched 
+         DLCs.  Sometimes there is no DLC mapping in one of the 
+         two hierarchies.  You can click on links to see parents of 6-digit and
+         8-digit org units, along with their mapped DLCs, and thus understand
+         the source of the problem.  
+         <p /> 
+     <li><em>How should I respond to listed items?</em>
+         <br />
+         Determine which of the DLCs is the correct one.  Look at the
+         parents of the 6- or 8-digit org unit that is incorrectly linked.  
+         It is possible that the problematic link was have made at a 
+         level higher in the hierarchy.  Adjust the links as needed to 
+         correct the problem.
+   </ul>
+   <p />
+ <li><a name="exc_rpt_hr_pc">Profit Centers and 6-digit HR org units linked to different DLCs</a>
+   <p />
+   <ul>
+     <li><em>What does the report show?</em>
+         <br />
+         Generally, Profit Centers have corresponding 6-digit org units
+         in the old HR org unit hierarchy.  Each Profit Center should 
+         map to the same DLC as its corresponding 6-digit HR org unit.
+         If the Profit Center is mapped
+         to one DLC and the matching 6-digit org unit is mapped to a different
+         DLC, the discrepancy will show up on this report.  This report
+         looks at the PCMIT-0 hierarchy (PMIT) for its DLC mappings for 
+         Profit Centers.  (See also the report of DLC mapping discrepancies
+         between Profit Centers under the standard PC hierarchy and PCMIT-0.)
+         <p />
+     <li><em>How can I run the report?</em>
+         <br />
+         From the MDH <a href="index.html" target=new>main web page</a>,
+         under the "Exception reports" bullet, click 
+         <a href="https://rolesweb.mit.edu/cgi-bin/mdept/mdept_exception.cgi?report_num=7" 
+          target=new>Profit Centers and 6-digit HR org units linked to different DLCs</a>
+         <p />
+     <li><em>What will I see?</em>
+         <br />
+         If there are any cases where there are discrepancies, you will 
+         see each problematic org unit/Profit Center listed in the report, 
+         the unit (possibly a parent
+         unit) that is directly linked to DLC, and the two mismatched 
+         DLCs.  The report will show any cases where both Profit Center 
+         and 6-digit HR org unit are mapped to different DLCs; it will not
+         necessarily show instances where there is no DLC link at all.
+         (Another exception report is designed to show unlinked objects.)
+         You can click on URL links to see parents of 6-digit 
+         org units and Profit Centers, along with their mapped DLCs, and 
+         thus understand the source of the problem.  
+         <p /> 
+     <li><em>How should I respond to listed items?</em>
+         <br />
+         Determine which of the DLCs is the correct one.  Look at the
+         parents of the Profit Center and 6-digit org unit that is 
+         incorrectly linked.  It is possible that the problematic link was 
+         have made at a level higher in the hierarchy.  Adjust the links 
+         as needed to correct the problem.
+   </ul>
+   <p />
+ <li><a name="exc_rpt_old_link">Linked objects that no longer exist</a>
+   <p />
+   <ul>
+     <li><em>What does the report show?</em>
+         <br />
+         The report shows HR, financial, or Student Systems objects that 
+         have been linked to DLCs, but which do not exist in the Roles DB 
+         qualifier tables.  These objects could have been entered erroneously
+         in the first place, or possibly they were once valid but no 
+         longer exist in the HR, financial, or Student Systems source data.
+         <p />
+     <li><em>How can I run the report?</em>
+         <br />
+         From the MDH <a href="index.html" target=new>main web page</a>,
+         under the "Exception reports" bullet, click 
+         <a href="https://rolesweb.mit.edu/cgi-bin/mdept/mdept_exception.cgi?report_num=8" 
+          target=new>Erroneous of obsolete objects linked to a DLC</a>.
+         <p />
+     <li><em>What will I see?</em>
+         <br />
+         If there are objects linked to DLCs that do not match current 
+         HR, financial, or student systems objects, they will be shown
+         on this report along with the DLCs to which they are linked.
+         <p /> 
+     <li><em>How should I respond to linked objects flagged "not found"?</em>
+         <br />
+         A missing link might be a clue that some HR, financial, or
+         student systems objects were reorganized.  Note the DLC
+         where the object was linked, and note whether or not there 
+         are other objects of the same type linked to the DLC.  If
+         there are no other objects of the same type linked to the DLC,
+         investigate to see if there are objects that should be linked.
+         <p />
+         When you have finished investigating, 
+         delete the link to the non-existent object.
+   </ul>
+   
+</ol>
+<p />
+<h3><a name="maint_princ">VII. Principles and guidelines for the maintenance 
+    of department objects and links</a></h3>
+<p />
+The person or people who maintain department objects and their links
+to other objects should be aware of the reasons for maintaining the 
+data, and some overall principles and guidelines.  This section will 
+describe some overall principles and guidelines.  Following the 
+overall principles, another section will 
+give detailed instructions for using the web interface to actually 
+maintain the data.
+<p />
+Here are principles and guidelines:
+<ol>
+ <li>When are department objects or links to other objects 
+     added, deleted, or modified?
+     <p />
+     Changes need to be made to department objects or links to other
+     objects when one of these situations occurs:
+     <ol type="a">
+       <li>A new DLC is created
+       <li>An existing DLC is dropped or merged with another one
+       <li>Something about a DLC changes, <i>e.g.</i>, it is renamed
+           or moved to another area
+       <li>HR, financial, or student systems objects at the DLC level
+           (that should be linked to DLCs) are added or deleted
+       <li>A reorganization occurs that changes multiple DLCs or multiple
+           DLC-level (linked) HR, financial or student systems objects
+     </ol>
+     <p />
+     The maintainer(s) of DLCs and object links should make changes to
+     data in response to 
+     <ul>
+       <li>Notification from those responsible for changes to DLCs
+           and changes in financial, HR, and student systems objects
+           at the institute
+       <li>Problems discovered via the various error reports, 
+           which indicate that there are unlinked objects or other
+           problems
+     </ul>
+     <p />
+     As our processes and communications mechanisms 
+     are established and fine-tuned, the maintainer(s) of 
+     DLCs and object links within the Master Department Hierarchy 
+     should receive notification about new DLCs or changed DLCs, 
+     as well as changes to HR, financial, or student systems objects 
+     at the DLC-level.
+     <p />
+     The exception reports provide a way of verifying that DLCs have been
+     added or linked to objects in response to organizational changes 
+     at MIT. Newly-found unlinked objects may be an indication that 
+     HR, financial, or student systems objects have been added or
+     reorganized, and may also indicate that there is a need to 
+     add or reorganized DLCs within the Master Department Hierarchy.
+     <p />
+ <li>What end goals are served by the hierarchies of department objects
+     and their links to other objects?
+     <p />
+     The system has four end goals: (a) support cross-domain reporting
+     in the Warehouse (using the Standard view type) where care
+     must be taken to avoid double-counting (b) support 
+     the Roles Database, determining which
+     objects may be assigned in an Authorization by a 
+     Primary Authorizer for a given departmen, (c) support
+     Authorization reports in the Roles Database, where double-counting 
+     is not a problem, and (d) serve as a source for DLC objects for 
+     EHS, where objects and links must accommodate both HR and 
+     Student Systems units.
+     <p />
+     There are specific guidelines related to each of these 4 end goals:
+     <ol type="a">
+       <li>To support cross-domain reporting in the Warehouse, note which
+           object types are involved in this type of reporting, currently
+           profit centers and 8-digit HR org units.  Within the MDH 
+           "standard" view type, 
+           each object of these
+           types must be linked to one and only one DLC, either directly
+           or through links to parent objects.  Missing links or 
+           double-linked objects will cause reporting problems.
+           <p />
+           Some objects that are either Defunct (mapped to D_DEFUNCT) 
+           or do not map to any DLCs (mapped to D_UNDEF).  Having the 
+           pseudo-DLC D_UNDEF allows known non-departmental objects to 
+           be excluded from exception reports.
+           <p />
+           It is also important to that DLCs be organized 
+           into an appropriate hierarchy so that 
+           data can be "rolled up" to schools, areas, or other groupings.
+       <li>To support authorization-granting by Primary Authorizers
+           in the Roles Database, we want HR and financial objects
+           that may be assigned in authorizations by Primary Authorizers 
+           to be assigned to their DLC.  For object types such as Funds 
+           Centers or Spending Groups, which are not used in Warehouse
+           "roll-up" reports, it may be allowable for an object to be
+           linked to multiple-DLCs.
+           <p />
+           Sometimes we map objects to department objects higher than the 
+           DLC level, e.g., D_DSL or D_ASO.  There are Primary Authorizers
+           in the Roles Database for these higher-level departmental 
+           objects.  When data are extracted by the Warehouse, links 
+           <em>are ignored</em> if the links are made 
+           to objects at a level higher than a DLC within the Standard
+           view.  These higher-level links are only used by the Roles  
+           Database. 
+           <p /><i>Note: As of this writing, the Roles DB does not 
+           yet use the Master Department Hierarchy, and instead, it 
+           has its own DLC-to-object links, but this will change soon.</i>
+       <li>Some reports on the Roles web pages organize authorizations 
+           by Master Department Hierarchy DLC units (D_xxxxxxxxx).  It is
+           helpful for departmental and central administrators to 
+           see the department codes related to various authorizations.
+           Thus, even when objects of a certain object type (such as 
+           Student Systems course numbers) are not related to 
+           authorizations granted by Primary Authorizers, it is still 
+           useful to link them to DLCs for Roles DB reporting purposes.
+           As long as the object type is not involved in Warehouse 
+           reports, an object linked to multiple DLCs is not necessarily 
+           a problem.
+           <p />
+       <li>The EHS system gets its DLCs from the Master Department Hierarchy 
+           as well as links to HR org units and Student Systems course numbers.
+           If an academic or research DLC, or any DLC that has 
+           Room Sets and PIs under EHS, is deleted or merged with another DLC,
+           the change in the Master Department Hierarchy must be coordinated
+           with the maintainers of the EHS system.
+           <p />
+           It is important to keep the DLC-to-HR and the DLC-to-course-number
+           links uptodate, since EHS reports assign a default DLC 
+           to unregistered 
+           people based on these mappings.  (However, for people who have 
+           taken the EHS Training Needs Assessment and officially registered
+           for a PI and DLC, the default DLC is no longer used in the system.)
+           <p /><i>Note: As of this writing, the EHS system uses 
+           DLC and link information from the Roles DB, which does not 
+           yet use the Master Department Hierarchy, and instead, it 
+           has its own DLC-to-object links, but this will change soon.</i>
+     </ol>
+ <li>What steps should be taken following the maintenance of department 
+     objects or links to verify that the data have been maintained 
+     appropriately?
+     <p />
+     Much of the data used in MDH reports is recalculated periodically
+     based on the data from outside sources plus DLC and link definitions
+     maintained via the web interface.  Thus, the reports are not accurate
+     between the time you have entered changes to the system and the time 
+     that backend cronjobs recalculate data in derived tables used for
+     reports.
+     <p />
+     Before and 
+     after making DLC changes or link changes, you should look at 
+     the DLC reports, reports on HR, financial, and student systems 
+     hierarchies with DLC links, and exception reports 
+     to make sure your changes 
+     have not created any problems.  However, you must wait until the 
+     cronjobs have caught up and recalculated the data used for the 
+     reports.  As of this writing, the cronjobs are only run once per
+     24 hours in the early morning hours.  We plan to make improvements
+     and increase the frequency of the cronjobs that update
+     the data in the derived tables.
+     <p />
+</ol>
+
+<h3><a name="how_to">VIII. How to maintain department objects and 
+    links</a></h3>
+<ol type="A">
+ <li><a name="how_to_link">Add or delete a link between a DLC and an HR, 
+     financial, or student systems object</a>
+     <p />
+     You will know that a link between a DLC and an HR, financial, or student
+     systems object should be added or deleted when either (a) you have
+     been been notified via Email or (b)
+     the Master Department Hierarchy exception reports have indicated that
+     you should link or delink an object from a DLC.  Here is how to
+     proceed.
+    <ol type="1">
+      <li>Determine the appropriate level in the HR, financial, or 
+          student systems hierarchy at which to link the given object.
+          Often reports or requests will refer to a Profit Center, for 
+          example, but in most cases the linking should be made to 
+          a node that is a parent of the Profit Center.
+          <p />
+          The only way to determine the proper level at which to link the
+          object is to look at the appropriate hierarchy (e.g., the 
+          PCMIT-1 or PC hierarchy) and see whether the parent node 
+          or even grandparent node has
+          only child objects for a single DLC;  if this is the case, 
+          then link the higher-level object to the DLC.
+          <p />
+      <li>Determine the correct DLC to which to link the HR, financial, or
+          student systems object.
+          <p />
+          Usually, you will know the DLC D_xxxxxxxx code and this will be 
+          easy.
+          <p />
+          However, note these two exception cases:
+          <ul>
+            <li>Sometimes, DLCs look different in different MDH View Types.
+                For example, in the MDH's Compact View Type, 
+                D_BATES and D_LNS_NOT_BATES exist as children of D_LNS
+                and in the Standard View Type, only D_LNS exists.  If you 
+                link objects to these DLCs, make sure you link them to the 
+                detailed DLCs (D_BATES or D_LNS_NOT_BATES).  The links will 
+                work properly in the Compact view, and the links will be 
+                automatically rolled up to the appropriate DLC in the 
+                Standard view (D_LNS in this case).
+            <li>Some department objects such as D_ASO, D_DUE, or D_DSL,
+                which have child DLCs, are treated as quasi-DLCs in the
+                Roles Database and thus have Primary Authorizers.  In these 
+                cases, it is helpful to link some Funds Center, Spending
+                Group, Profit Center, and other objects to the higher
+                level departments.  Doing so allows for Primary Authorizers
+                for the higher-level...
+
+          </ul>
+          <p />
+      <li>If necessary, convert the format of the code of the object
+          to the format needed in the 
+          Master Department Hierarchy.  For most object types, there is
+          no conversion necessary.  You only need to do the format
+          conversion for Profit Centers and Profit Center nodes
+          in the standard profit center hierarchy.
+          <blockquote>
+           <table border>
+            <tr><th>Object type</th><th>Format in the Roles DB</th>
+                <th>Format in MDH</th></tr>
+            <tr><td>Standard profit center node</td><td>0HPCnnn...</td>
+                <td>0Pnnn...</td>
+            <tr><td>Profit center</td><td>PCnnnnnn</td>
+                <td>Pnnnnnn</td>
+            </table>
+          </blockquote>
+      <li>Go to the MDH web page for editing object links
+         <p />
+         <ul>
+           <li>Start at the home page for the Master Department Hierarchy
+               <a href="http://rolesweb.mit.edu/mdept" 
+               target=new>http://rolesweb.mit.edu/mdept</a>
+           <li>Click "Enter a single DLC or its object links" 
+               (or <a href="edit_a_dlc.html" target=new>go there directly</a>)
+           <li>Enter the D_xxxxxxxx code for the DLC to which the 
+               object is or will be linked, and click the button
+               "Edit Object Links"
+           <li>You will see a table of linked objects for the selected DLC.
+               <ul>
+                  <li>If you are adding a linked object, find a row where the 
+                      Linked Object Code is blank.  Select the appropriate
+                      Linked Object Type, and in the Linked Object Code field
+                      type in the HR, financial, or student systems object
+                      code.  Do not fill in the Linked Object Name field.
+                  <li>If you are deleting a linked object, select the 
+                      object code and delete it from the text field
+               </ul>
+           <li>After clicking the Update button, you will see a refreshed
+               view of the table of linked objects, which should include
+               the changes you just made.  Each object should have a 
+               "Linked Object Name" filled in for you.  If you entered 
+               an erroneous object code, or if you selected the wrong
+               "Linked Object Type", the system will display "Not found"
+               instead of the object name.  If this happens, correct 
+               the "Linked Object Type" or the "Linked Object Name" field
+               and click the "Update Object Links" button again. 
+         </ul>
+         <p />
+      <li>Wait until the system has renewed its data tables 
+          (currently overnight; more frequently in the future), and 
+          check the exception reports to make sure your changes haven't
+          caused any errors.
+    </ol>
+     <p />
+ <li><a name="how_to_add_dlc">Add a DLC (most common cases)</a>
+     <p />
+     You will generally be informed via Email when a DLC needs to be added.
+     In all but rare cases, a DLC will appear in both the Standard and 
+     Compact views of the master department hierarchy.  We will discuss the
+     common case here; if you are dealing with a rare DLC that only 
+     appears in one of the View Types, then see the section 
+     "Maintain department nodes or handle unusual DLC exception cases".
+     Also see that section if you are dealing with objects at a level 
+     higher than the DLC level.
+     <p />
+     <ol>
+      <li>Go to the MDH web page for editing a single DLC
+         <p />
+         <ul>
+           <li>Start at the home page for the Master Department Hierarchy
+               <a href="http://rolesweb.mit.edu/mdept" 
+               target=new>http://rolesweb.mit.edu/mdept</a>
+           <li>Click "Enter a single DLC or its object links" 
+               (or <a href="edit_a_dlc.html" target=new>go there directly</a>)
+           <li>Do not enter the D_xxxxxxxx code yet.  Just click
+               the button "Add a New DLC".
+           <li>You will see a web form for entering information about 
+               the new DLC.  Enter the following data:
+               <ul>
+                  <li>DLC code - enter the D_xxxxx code, up to 15 characters.
+                      This should be all uppercase.
+                  <li>Short name - this is a mixed-case abbreviated name 
+                      for the DLC, up to 25 characters
+                  <li>Long name - this is a official name of the DLC, 
+                      mixed-case, up to 70 characters
+                  <li>DLC/Node Type - choose "Department, Lab, or Center",
+                      which will make this DLC active in all MDH views
+                  <li>Sort Order - ignore this for now; it is not yet
+                      implemented in the system
+                  <li>Parent DLC Code - on this line, enter the D_xxxxxxxxx
+                      code of the school or area to which the new DLC 
+                      will be attached.  For common DLCs, there is only 
+                      one parent.  Choose a Parent Link Type of "1", 
+                      which will be effective in all View Types.
+               </ul>
+           <li>Click the Commit New DLC button.  The new DLC should be
+               added, and you should see the "Update a DLC or Node"
+               web page.
+         </ul>
+         <p />
+      <li>Click the MDH icon in the upper left corner of the screen 
+               to go to the main MDH web page, and then cilck "View hierarchy
+               of DLCs".  Examine both the Compact and Standard hierarchies
+               to verify that the new DLC has been added correctly.
+         <p />
+      <li>Usually after you have added a new DLC, you will also want 
+               to add object links.  See the section "Add or delete a 
+               link between a DLC and an HR, financial, or student 
+               systems object"
+         <p />
+     </ol>
+
+ <li><a name="how_to_change_dlc">Change characteristics of an existing DLC or       other departmental object</a>
+     <p />
+     You can change the D_xxxxxxx code, short name, long name, DLC/Node type,
+     or Parent DLC Code of an existing DLC.  
+     <p />
+     Be aware that
+     <ul>
+       <li>You can change the short name or long name without needing 
+           to coordinate the change with other systems
+       <li>If you change the DLC Code (D_xxxxxxxx), you will need to coordinate
+           the change with the Roles Database and with the EHS system.  These
+           systems will see a changed DLC Code as a separate delete and 
+           add transactions unless you do a prior coordination with the
+           other systems' administrators.
+       <li>You can change the parent DLC Code if appropriate.  If you also 
+           want to add another parent DLC Code or change the parent link type,
+           see the notes under "Change parent/child links between 
+           DLCs or other department objects"
+       <li>If you want to add or delete links between a DLC and HR, financial,
+           or student systems objects, see the section on adding or
+           deleting links.
+     </ul>
+     <p />
+     To make the changes, do the following:
+         <ol>
+           <li>Start at the home page for the Master Department Hierarchy
+               <a href="http://rolesweb.mit.edu/mdept" 
+               target=new>http://rolesweb.mit.edu/mdept</a>
+           <li>Click "Enter a single DLC or its object links" 
+               (or <a href="edit_a_dlc.html" target=new>go there directly</a>)
+           <li>Enter the D_xxxxxxxx code for the DLC you want to modify.
+           <li>Click the button "Edit Existing DLC"
+           <li>You will see a web form with various data fields for the 
+               DLC.  Change the data on the screen where appropriate
+           <li>Click the button "Update Existing DLC" button.  Check
+               to make sure there are no error messages after you have
+               committed the changes.
+         </ol>
+         <p />
+
+ <li><a name="how_to_change_parent">Change parent/child links between DLCs or 
+     other department objects</a>
+     <p />
+     A DLC or higher-level department node can be moved under a different 
+     parent (school, area, or other parent).  A DLC or higher-level node 
+     can also be set up with multiple parent links so that it appears under 
+     different parents in the Standard and Compact views.
+     <p />
+     To modify parent/child links between department objects, use the
+     same web page as the one described in the section 
+     "Change characteristics of a DLC or other departmental object".
+     Change one or more fields for Parent DLC Code and Parent Link Type, 
+     then click the button "Update Existing DLC".  If you are adding or
+     changing a link, always make the modification from the child DLC or
+     department object.
+     <p />
+     Note the following caveats and recommendations:
+     <ul>
+       <li>If you want the parent/child link to apply to all views, then
+           choose link type 1.  Choose link type 4 if you want the link to
+           only apply to the Compact view, and choose 5 if you want it to 
+           apply to the Standard view.  Avoid link types 2 and 3 -- they 
+           are not currently supported.
+       <li>If you want different parent/child links in the Standard and 
+           Compact views, then define one link type 4 and another link type
+           5.  This is the only valid way to define two separate parent 
+           links for the same child object.
+       <li>You should avoid any combination of parent/child links between 
+           multiple objects that would result in a loop, i.e., result in any 
+           object becoming its own grandparent, great-grandparent, etc..
+           The system should display an error message if you try to do this.
+       <li>If you are modifying parent/child links for higher-level department 
+           objects or creating multiple parent links for the same object, 
+           it is important to understand the difference between the Standard
+           and Compact views (described earlier in this document), and to 
+           display the entire MDH for both View Types to make sure you are
+           linking objects appropriately.
+     </ul>
+     <p />
+ <li><a name="how_to_change_node">Maintain higher-level department nodes or 
+     handle unusual DLC cases</a>
+     <p />
+     Schools, areas, and other department objects at a level higher than 
+     DLCs change less frequently than DLCs.  You maintain higher-level
+     objects with the same web interface that you use for maintaining DLCs.
+     <p />
+     If there is an Institute reorganization it may be appropriate to 
+     create or modify higher-level objects.  Generally, the Standard view
+     is similar to the PCMIT-0 hierarchy or the 8-digit HR org unit hierarchy,
+     thought the PCMIT-0 and HR org unit hierarchies will have some 
+     objects that are not included in either of the views (Standard or Compact)
+     of the Master Department Hierarchy.
+     <p />
+     Note the following guidelines for setting the DLC/Node Type of an 
+     object:
+     <ul>
+       <li>There is only one Root node (though theoretically, there could be
+           different Root nodes for different views).   
+           You will probably never need to
+           make any changes to the Root.
+       <li>In most cases, objects between the root and DLCs have a DLC/Node
+           Type of "Node".
+       <li>A Department, Lab or Center should be at the leaf level.
+       <li>An object of type "Limited DLC (EHS, Sp. Grp.)" should be at
+           a leaf level in the Compact view (though it might have
+           children in the Standard view).
+       <li>An object of type "Limited DLC (HR)" should be at
+           a leaf level in the Standard view (though it might have
+           children in the Compact view)
+       <li>Make sure the object type and link types work together 
+           to produce the desired hierarchies of objects in both the
+           Compact and Standard views.  Check these views whenever you 
+           make link changes.  (Changes to DLC and department object links
+           are instantly reflected to the Standard and Compact hierarchies,
+           and unlike data on some reports, do not have to wait for 
+           periodic back-end processes.)
+     </ul>
+     <p />
+</ol>
+
+
+<h3><a name="tech_config">IX. Technical system administrator - changing config 
+    tables</a></h3>
+ <p />
+   The technical system administrator can add or change the set of
+   views, DLC types, link types, and related data by using sqlplus or
+   a similar tool to connect directly to the database and do 
+   Oracle INSERT, DELETE, and UPDATE statements to modify data in the 
+   configuration tables.
+ <p />
+ Note the mini database schema below.  The VIEW_TYPE table defines
+ View Types.  The DEPT_NODE_TYPE table defines DLC/Node types, 
+ which are associated with View Types via the table VIEW_TO_DEPT_TYPE.
+ The table VIEW_SUBTYPE (which would have been more appropriately named 
+ DEPT_LINK_TYPE) defines the types of links between department objects.
+ Different department link types are associated with a View Type via the
+ table VIEW_TYPE_TO_SUBTYPE (which wuold have been more appropriately 
+ named VIEW_TO_DEPT_LINK_TYPE).
+ <pre><code>
+
+                  +------------+
+                  |            |
+          ........| VIEW_TYPE  |........
+          .       |            |       .
+          .       +------------+       .
+          .                            .
+          .                            .
+    +------------+              +---------------+
+    |            |              |               |
+    | VIEW_TO_   |              | VIEW_TYPE_    |
+    |  DEPT_TYPE |              |  TO_SUBTYPE   |
+    +------------+              +---------------+
+          .                            .
+          .                            .
+          .                            .
+    +------------+              +---------------+
+    |            |              |DEPT_LINK_TYPE |
+    | DEPT_NODE_ |              |(aka           |
+    |   TYPE     |              | VIEW_SUBTYPE) |
+    +------------+              +---------------+
+
+ </code> </pre>
+The table OBJECT_TYPE defines the different HR, financial, and student systems
+objects that can be linked to DLCs.  There are some data template and
+validation fields built into this table that are currently ignored by the 
+Master Department Hierarchy system -- in the future they may be 
+put into production.
+<p />
+<h3><a name="usage">X. How data from the MDH will be used by 
+    other systems</a></h3>
+<ol type="A">
+  <li>Warehouse
+      <p />
+      Within the Warehouse, some "detail" tables for HR and financial data
+      will include a dlc_key column.  The dlc_key column is used to 
+      connect with a record within the Warehouse table of master DLCs.  
+      Thus, a given financial or HR record can be tied to a 
+      master DLC (D_xxxxxxxxx).
+      <p />
+      It will be possible to run a report that joins tables from two 
+      different sources, <i>e.g.</i>, a table of HR data and a different 
+      table of financial data.  The rows in the two tables can be joined
+      via the dlc_key column.  Without the dlc_key, there would be no way to
+      join the two tables together.
+      <p />
+      Reports would be organized by the DLC names or DLC codes (D_xxxxxxxx)
+      within the Warehouse table of master DLCs.  This table also includes 
+      multiple "parent" columns, e.g., schools, areas and other groupings,
+      which will allow cross-domain data to be "rolled up" to bigger
+      organizational groups.  The grouping used in reports on cross-domain 
+      data should be based on the MDH Standard hierarchy, which is designed
+      to accommodate cross-domain data.  The data in the Master Department 
+      Hierarchy imported into the Warehouse will not facilitate
+      cross-domain reporting at the sub-department level.  
+      The grouping of data in cross-domain reports should not be based
+      on the HR-specific (8-digit or 8-digit) org units, and it should not
+      be based on financial units.  HR-specific or financial-specific 
+      unit codes can certainly be shown on the cross-domain reports, 
+      but they should not be used for grouping or summarizing data 
+      within the reports. 
+      <p />
+      There are limits to cross-domain reporting.
+      A master DLC may map to multiple HR objects and to multiple
+      Profit Centers (or other financial objects). For example, 
+      it is possible that a single DLC maps to 2 HR org units and 3 financial
+      units, where there is clean way to map the objects unless they 
+      are rolled up to the master DLC level. This does not create a 
+      problem, however, since cross-domain reports should always
+      group or summarize data by master DLC, so we have a usable
+      way to combine data from different sources. 
+      <p />
+      The Warehouse will extract data from the MDH view WH_DLC_HIERARCHY to 
+      build the Warehouse table of DLCs (along with codes, names, and parents 
+      for rolling up data).  When the Warehouse adds the dlc_key field to
+      HR and financial detail tables, it will need to associate each HR or 
+      financial object with a MDH DLC.  It will do this by extracting data 
+      from the view WH_EXPANDED_OBJECT_LINK.  Data from both views within 
+      the Master Department Hierarchy will be extracted by the Warehouse daily.
+      <p />
+      In general, end-user reports should be based on data extracted from 
+      the <em>Standard</em> view type for DLCs and linked objects within the 
+      MDH.  In the Warehouse, commonly-used end-user views should present only
+      data derived from the MDH <em>Standard</em> view.
+      <p />
+  <li>Roles Database
+      <p />
+      For the past several years, a precursor to the Master Department
+      Hierarchy has existed within the Roles Database.  There was an
+      unofficial master hierarchy of DLCs along with links to 
+      Funds Centers, Profit Centers, HR Org Units, academic course numbers, 
+      etc., maintained for the purpose of evaluating authorizations 
+      that applied to objects from multiple domains.
+      <p />
+      As of this writing (January, 2007), the "legacy" master department 
+      hierarchy and link data in the Roles Database is still being maintained
+      manually in parallel with the data in the new MDH system.  The 
+      old and new data are not exactly in sync with each other.
+      <p />
+      The old master department data in the Roles Database has been maintained 
+      manually within the hierarchy of DEPT qualifiers.  This hierarchy 
+      includes D_xxxxxxxxx objects in a hierarchy similar to the new MDH
+      <em>Compact</em> view.  Linked as children of each D_xxxxxxxxx object
+      are HR, financial, and student systems objects.  They are identified
+      by the pattern of their codes, e.g., profit centers contain "PC", 
+      Funds Centers contain "FC", spending groups contain "SG", etc.  In 
+      some cases, to avoid ambiguity, an additional prefix has been 
+      added to qualifier codes, <i>e.g.</i>, the prefix "SIS_" has been 
+      added to some Student Systems course numbers.  The Roles DB 
+      derives "shadow tables" 
+      from the data found in the DEPT qualifier 
+      hierarchy (including the Roles DB table PRIMARY_AUTH_DESCENDENT) 
+      to tie DLC codes (D_xxxxxxxxxx) to individual HR, financial, and 
+      student systems qualifiers.  The shadow tables  
+      facilitate the control of authorization creation by 
+      departmental Primary Authorizers, limiting the qualifiers they 
+      can choose in authorizations to those related to their DLC.
+      The shadow tables also facilitate reports on authorizations and 
+      qualifiers organized by master DLCs.
+      <p />
+      We plan to eliminate the need to maintain master DLC data in two
+      different systems. 
+      In 2007, we will make system changes in the Roles Database so that 
+      it will use the MDH system as the source for its master department 
+      and link data.  After these system changes have been made, the 
+      hierarchy of DLCs defined by Roles DB qualifier_type DEPT will be
+      extracted from the <em>Compact</em> view, and kept in sync via 
+      nightly data feeds.  The Roles DB will also extract information 
+      about DLC links to HR, financial, and student system objects from 
+      the MDH each night.  
+      <p />
+      In the first phase, the nightly extracts will 
+      put data into existing structures within the Roles DB tables, 
+      including the DEPT hierarchy which includes not only DLC codes
+      (D_xxxxxxxxx) but also linked objects.  This is somewhat of a kluge, 
+      but it has been working reliably for several years.  A later phase 
+      may be planned to update the Roles DB shadow tables directly 
+      from the MDH data without the klugey non-DLC objects currently 
+      stored as children of DLCs within the Roles DB DEPT qualifier hierarchy.
+      <p />
+      Before even the first phase can be completed, we will have to 
+      identify places where the MDH and the old Roles DB DEPT hierarchy
+      data have diverged, and plan for bringing the data in the Roles DB 
+      into synchronization without breaking any existing Primary Authorizer
+      authorizations.  We will also need to put the processes in place for
+      continued maintenance of data in the MDH to accommodate both the
+      Warehouse needs and the needs of the Roles DB.
+  <li>EHS System
+      <p />
+      Starting in 2002, the EHS system needed a source of master 
+      department information.  Since the EHS system has data that spans
+      HR, student systems and financial data, the best source of 
+      master DLC data was the Roles DB master DLC data available at the
+      time.  The training component of the EHS system has also needed to 
+      link people to a default DLC based on (a) HR org units for employees
+      and (b) course number for students.  Thus, it used the 
+      data linking master DLCs to HR org units and student systems course
+      numbers.
+      <p />
+      Since the new MDH system was not in existence in 2002, the EHSWEB 
+      system extracted data from the Roles DB.  This is still the case 
+      today.
+      <p />
+      The EHSWEB system can continue to take its data from the Roles DB 
+      even after the Roles DB begins to take its nightly feed from the MDH,
+      since we plan on keeping the Roles DB klugey structures in place for
+      at least the first phase.  There will need to be a small amount of 
+      data checking and coordination at the time that we synchronize the
+      Roles DB with the MDH data in the coming months to make sure that 
+      these changes do not cause problems downstream in the EHS system.
+      <p />
+      In a later phase, the EHSWEB system and SAP EHS components should 
+      be modified to take their master department data either from the 
+      Warehouse or from the MDH itself rather than from the Roles DB.
+      It may be helpful to define a third MDH view, beyond the current 
+      <em>Standard</em> and <em>Compact</em> views, to accommodate any 
+      special future requirements for EHS. 
+      A small amount of work needs to be done in one of the 
+      nightly data feed programs on the EHSWEB system 
+      (a day or two, depending on who does the work) to take 
+      master department and link data from the Warehouse or MDH rather
+      than the Roles DB.  
+      <p />
+      There is a nightly feed program running on the Roles DB that sends
+      master department data and also DLC-level authorization data to the
+      SAP EHS component.  This data feed program should continue to run
+      in the future on the Roles Database.
+</ol>
+<p />
+<p />
+
+</BODY>
+</HTML>

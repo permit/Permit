@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.Category" table="category">
+    <id name="category" type="string">
+      <column name="FUNCTION_CATEGORY" sql-type="char(4)"/>
+      <generator class="assigned"/>
+    </id>
+    <property column="FUNCTION_CATEGORY_DESC" length="15" name="description"/>
+    <property column="AUTHS_ARE_SENSITIVE" length="1" name="authSensitive"/>
+    <set inverse="true" lazy="true" name="functions">
+      <key column="FUNCTION_CATEGORY"/>
+      <one-to-many class="edu.mit.isda.permitservice.dataobjects.Function"/>
+    </set>
+  </class>
+</hibernate-mapping>

@@ -1,0 +1,62 @@
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+	<!-- base href="http://rolesweb-test.mit.edu/" -->
+
+	<title>Roles DB Selection Sets and Criteria</title>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</head>
+<body bgcolor="#fafafa">
+	<table width="85%">
+		<tbody>
+		<tr>
+			<td>
+				<a href="webroles.html">
+				<img src="rolesmall.GIF" no="" border=""></a>
+			</td>
+			<td align="center">
+				<h1>Roles DB Selection Sets and Criteria</h1>
+			</td>
+		</tr>
+		</tbody>
+	</table>
+	<p>
+		Use this web tool to display data in Roles DB tables used for controlling
+		some aspects of the UI, specifically the "filtering" of authorizations,
+		functions, qualifiers, and people displayed via the old PowerBuilder-based UI or
+ 		the new web-based UI.
+	</p>
+	<p>
+		Old tables:
+	</p>
+	<ul>
+		<li>Show <a href="/cgi-bin/select_criteria2.cgi?web_page=1">All selection sets from old tables</a>
+		</li>
+		<li><a href="/cgi-bin/select_criteria2.cgi?web_page=2">Start with a selection set</a> and drill down to more details
+		</li>
+	</ul>
+	<p>
+		New tables:
+	</p>
+	<ul>
+		<li>Show <a href="/cgi-bin/select_criteria2.cgi?web_page=11">All selection sets from new tables</a>
+		</li>
+		<li><a href="/cgi-bin/select_criteria2.cgi?web_page=12">Start with a selection set</a> and drill down to more details
+		</li>
+	</ul>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <!-- 
+    Created by the Middlegen Hibernate plugin 2.1
+
+    http://boss.bekk.no/boss/middlegen/
+    http://www.hibernate.org/
+-->
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.QualRoot" table="qualifier">
+    <id column="QUALIFIER_ID" name="id" type="java.lang.Long">
+      <generator class="hilo"/>
+    </id>
+    <property column="QUALIFIER_CODE" length="15" name="code" not-null="true" type="java.lang.String"/>
+    <property column="QUALIFIER_NAME" length="50" name="name" type="java.lang.String"/>
+    <property column="QUALIFIER_TYPE" length="50" name="type" type="java.lang.String"/>
+    <property column="HAS_CHILD" name="hasChild" type="yes_no"/>
+  </class>
+  <sql-query name="GET_QUALIFIER_FOR_ROOT">	
+        <return alias="qual" class="edu.mit.isda.permitservice.dataobjects.QualRoot"/>	
+            SELECT QUALIFIER_ID, QUALIFIER_CODE, QUALIFIER_NAME, QUALIFIER_TYPE, HAS_CHILD FROM qualifier WHERE QUALIFIER_ID=?
+</sql-query>
+</hibernate-mapping>

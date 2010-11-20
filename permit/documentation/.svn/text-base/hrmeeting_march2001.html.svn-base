@@ -1,0 +1,40 @@
+<HTML><HEAD><TITLE>Web pages viewed at HR meeting, March 2001</TITLE></HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H3>Web pages viewed at HR meeting, March 2001</H3></td>
+</tr></table><BR>
+<P>
+<small>
+This web page was created for the convenience of people who saw the demo
+of the perMIT system department hierarchy at the 1 PM meeting in N42, Thursday,
+March 8, 2001.  It will be kept on the server for a few months and then
+deleted. - <i>Jim Repa</i>
+</small>
+<hr>
+<ol>
+<li><a href="/dlc_summary.html">
+    Table of departments and links to other objects</a>
+<p>
+<li>Hierarchies of various types, showing <b>department links</b> for those 
+objects that are linked to the department hierarchy
+<ul>
+<li><a href="/cgi-bin/qualauth.pl?&qualtype=BAGS&showdeptname=Y&levels=20">NIMBUS Budget Authorization Groups</a>
+<li><a href="/cgi-bin/qualauth.pl?&qualtype=ORGU&showdeptname=Y&levels=20">Personnel Org. Units</a>
+<ul>
+<li>Personnel Org. Units <a href="/cgi-bin/qualauth.pl?&qualtype=ORGU&category=WRHS&showdeptname=Y&levels=20&detail=2">
+with authorizations</a> 
+(You may not be authorized to display this.)
+</ul>
+<li><a href="/cgi-bin/qualauth.pl?&qualtype=LORG&showdeptname=Y&levels=20">Labor Distribution Organizations</a>
+<li><a href="/cgi-bin/qualauth.pl?&qualtype=COST&showdeptname=Y&noleaf=1&levels=20">Profit Centers</a>
+<li><a href="/cgi-bin/qualauth.pl?&qualtype=SPGP&showdeptname=Y&levels=20">Spending Groups</a>
+</ul>
+</ol>
+<p>
+<HR>
+<A href="webroles.html"><small>To main Roles web interface page</small>
+</A>
+
+   
+

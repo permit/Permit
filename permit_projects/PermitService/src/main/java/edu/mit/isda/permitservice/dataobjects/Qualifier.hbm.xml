@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <!-- 
+    Created by the Middlegen Hibernate plugin 2.1
+
+    http://boss.bekk.no/boss/middlegen/
+    http://www.hibernate.org/
+-->
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.Qualifier" table="qualifier">
+    <id column="QUALIFIER_ID" name="id" type="java.lang.Long">
+      <generator class="hilo"/>
+    </id>
+    <property column="QUALIFIER_CODE" length="15" name="code" not-null="true" type="java.lang.String"/>
+    <property column="QUALIFIER_NAME" length="50" name="name" type="java.lang.String"/>
+    <property column="HAS_CHILD" name="hasChild" type="yes_no"/>
+    <property column="QUALIFIER_LEVEL" length="4" name="level" type="java.lang.Integer"/>
+    <!-- Associations -->
+    <!-- bi-directional many-to-one association to QualifierType -->
+    <many-to-one class="edu.mit.isda.permitservice.dataobjects.QualifierType" name="type" not-null="true">
+      <column name="QUALIFIER_TYPE"/>
+    </many-to-one>
+    <!-- bi-directional many-to-many association to QualifierChild -->
+    <set lazy="true" name="children" table="qualifier_child">
+      <key column="parent_id"/>
+      <many-to-many class="edu.mit.isda.permitservice.dataobjects.Qualifier" column="child_id"/>
+    </set>
+    <!-- bi-directional many-to-many association to QualifierChild -->
+    <set lazy="true" name="parents" table="qualifier_child">
+      <key column="child_id"/>
+      <many-to-many class="edu.mit.isda.permitservice.dataobjects.Qualifier" column="parent_id"/>
+    </set>
+  </class>
+  <sql-query name="QUALIFIER_LIST_FOR_CRITERIA_LIST">	
+            <return alias="qual" class="edu.mit.isda.permitservice.dataobjects.Qualifier"/>	
+            SELECT QUALIFIER_CODE, QUALIFIER_ID, QUALIFIER_NAME, HAS_CHILD, QUALIFIER_LEVEL, q.QUALIFIER_TYPE
+          FROM qualifier q, function f
+          WHERE f.QUALIFIER_TYPE = q.QUALIFIER_TYPE
+          AND f.FUNCTION_NAME = ?
+          AND QUALIFIER_LEVEL = 1
+         
+         
+         </sql-query>
+  <sql-query name="QUALIFIER_ROOT_LIST">	
+            <return alias="qual" class="edu.mit.isda.permitservice.dataobjects.Qualifier"/>	
+            SELECT QUALIFIER_CODE, QUALIFIER_ID, QUALIFIER_NAME, HAS_CHILD, QUALIFIER_LEVEL, QUALIFIER_TYPE
+          FROM qualifier
+          WHERE QUALIFIER_TYPE = ?
+           AND QUALIFIER_LEVEL = 1
+        
+         
+         </sql-query>
+</hibernate-mapping>

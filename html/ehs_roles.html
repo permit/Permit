@@ -1,0 +1,221 @@
+<HTML>
+<HEAD>
+<TITLE>EHS-related Roles recorded in the perMIT system</TITLE>
+<!--
+ *  Copyright (C) 2007-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H2>EHS-related Roles recorded in the perMIT system</H2>
+</td></tr></table>
+<p>
+<h3>I. What are EHS-related roles?</h3>
+People at MIT can have one or more roles related to the Environmental 
+Health and Safety Management System, a comprehensive set of processes and 
+computer-based applications that is being phased into production over the 
+next few years. The roles include 
+<b>organizational</b> roles, i.e., roles that give a person specific 
+responsibilities within a School or Area, a DLC, or a laboratory or 
+other Room Set.  There are also roles that give people specific authority 
+to perform various business functions within EHS-related computer systems.
+Some of these roles are held by individuals who work within the DLCs, and 
+others are held by people in central offices, such as the EHS Office or 
+Information Systems. 
+The perMIT system is the system of record for these DLC-wide or system-wide 
+roles.
+See <a href="#section_iii">section III</a> for definitions.
+<p>
+The actual roles (or <b>authorizations</b>, as they are called in the Roles 
+Database) are being maintained jointly by representatives from the 
+EHS Office and the Business Liaison Team.  In the future, maintenance of 
+some of these roles may, optionally, be distributed to representatives 
+within the DLCs.
+<p>
+(In addition to the roles maintained in the perMIT system, there are some 
+roles for Room Sets, e.g., ROOM&nbsp;SET&nbsp;SUPERVISOR 
+and EHS&nbsp;REPRESENTATIVE, for which the 
+system of record is the Labs Database.  
+See <a href="#section_iv">section IV</a>.)
+<p>
+<h3>II. View EHS roles on the web</h3>
+<p>
+The EHS roles are stored as perMIT system
+<b>authorizations</b>, where the <b>function</b> indicates the person's role
+and the <b>qualifier</b> indicates the DLC or group of DLCs where the
+person has this role.  (We use the Roles technical term
+<b>authorization</b> even when people are not strictly
+authorized to do anything within a computer-based system.)
+The <b>functions</b> are defined in section III of this document.
+<p>
+<small>Currently, the authority to view these authorizations via the 
+web is available only to people with an explicit "VIEW AUTH BY CATEGORY" 
+authorization for category "EHS".  The rules may change to give default 
+authority to more people at MIT, similar to the default viewing authority that 
+exists for financial authorizations.  If you think you should be
+authorized to view this information but you are not, see the rules for
+who is allowed to view authorizations described in the memo
+<a href="/metaauth_help.html">
+perMIT system Meta-authorizations</a>.</small>
+<p>
+Click the link below to view EHS-related roles from the Roles
+Database. (The report does <i>not</i> include the roles specific to Room Sets,
+which must be viewed in the Labs Database.)
+<ul>
+  <li><a
+  href="/cgi-bin/qualauth2b.pl?category=EHS&qualtype=DEPT&show_all=1&detail=2&rolesflag=N&group_option=2&expand_auth=Y&levels=20">
+  View EHS-related roles</a>
+</ul>
+<p>
+<a name="section_iii">
+<h3>III. Definition of Functions used in EHS roles</h3>
+</a>
+<p>
+The following Functions are used in the perMIT system for definining
+EHS-related roles.
+<p>
+<blockquote>
+<table border>
+  <tr><th>Function name</th><th>Definition</th></tr>
+  <tr><td colspan=2 bgcolor="#E0E0E0" align=center>
+    Roles related to organizational responsibility within the DLCs</td></tr>
+  <tr><td>DEPARTMENTAL EHS COORDINATOR</td>
+      <td>A person within a DLC with a set of responsibilities related 
+          to the DLC's reporting and compliance with MIT's EHS policies.
+          (In the future, this role will automatically give the person 
+          specific reporting privileges in computer-based systems.</td>
+  </tr>
+  <tr><td>CHEMICAL HYGIENE OFFICER</td>
+      <td>A person within a DLC responsible for compliance with 
+          MIT's policies related to chemical hygiene</td>
+  </tr>
+  <tr><td>CHEMICAL HYGIENE PLAN REVIEWER</td>
+      <td>(not implemented yet)</td>
+  </tr>
+  <tr><td>TRANSPORTATION PROJECT CONTACT</td>
+      <td>?</td>
+  </tr>
+  <tr><td colspan=2 bgcolor="#E0E0E0" align=center>
+    Roles related to support for DLCs within the EHS Office</td></tr>
+  <tr><td>EHS OFFICE LEAD CONTACT</td>
+      <td>The main contact person within the EHS Office responsible for
+          EHS support for a DLC.  (Lead contacts automatically have 
+          the authority to view Room Set information for all DLCs.)</td>
+  </tr>
+  <tr><td>EHS OFFICE CONTACT TEAM MEMBER</td>
+      <td>A team member within the EHS Office who assists the Lead Contact 
+          in supporting a DLC</td>
+  </tr>
+  <tr><td colspan=2 bgcolor="#E0E0E0" align=center>
+    Specific authorizations related to the Labs Database</td></tr>
+  <tr><td>MAINTAIN ROOM SET INFO</td>
+      <td>The authority to create, update, or delete information on 
+          Room Sets within one or more DLCs.</td>
+  </tr>
+  <tr><td>VIEW ROOM SET INFO</td>
+      <td>The authority to view information on 
+          Room Sets within one or more DLCs, not including the authority
+          to view directory-suppressed home phone numbers for contact
+          people.  This authority allows the person to report on applicable 
+          Room Sets both via the Data Warehouse (data to be available 
+          by the end of Feb., 2003) and the web interface to the
+          Labs Database (available now).</td>
+  </tr>
+  <tr><td>VIEW ROOM SET INFO AND PHONE</td>
+      <td>Same as "VIEW ROOM SET INFO" but also includes the authority to 
+          view directory-suppressed home phone numbers for contact people
+          related to Room Sets for specified DLCs.</td>
+  </tr>
+  <tr><td>MAINTAIN EHS HAZARD TYPES</td>
+      <td>Authority to maintain the generic checklist of hazard types 
+          used for Room Sets in all DLCs.  This authority should only 
+          be granted to a few central EHS or IS people. (Under development.)
+      </td>
+  </tr>
+  <tr><td>MAINTAIN EHS FUNCTIONS</td>
+      <td>Authority to maintain the generic list of Functions (e.g., 
+          SECONDARY ROOM SET SUPERVISOR, SECONDARY EHS REP)
+          used for assigning roles for Room Sets within the Labs Database.
+          This authority should only 
+          be granted to a few central EHS or IS people. (Not yet implemented.)
+      </td>
+  </tr>
+  <tr><td colspan=2 bgcolor="#E0E0E0" align=center>
+    Specific authorizations related to training records</td></tr>
+  <tr><td>VIEW EHS TRAINING REPORT</td>
+      <td>Authority to view web-based reports on people's training, for
+          people who have specified their association with a DLC.
+          Note that this applies to reporting via EHSWEB, but not 
+          yet to reporting via the Traincasters site, which is not 
+          yet receiving authorition information from the perMIT system.</td>
+  </tr>
+  <tr><td>MAINTAIN EXTRA PI</td>
+      <td>Authority to add to or delete from the check list of PIs or
+          supervisors on the Training Registration pages, where trainees
+          record their supervisor(s).  The list shown is a union of 
+          PIs and supervisors from OSP and financial data plus additional 
+          supervisors directly maintained within the EHSWEB system.  
+          Only a few central EHS or IS people should be granted this
+          authority.</td>
+  </tr>
+</table>
+</blockquote>
+<p>
+<a name="section_iv">
+<h3>IV. Definition of Functions used in the Labs Database</h3>
+</a>
+<p>
+Roles related to the following Functions are not stored in the perMIT system, 
+but they are included here because they are related to EHS.  They apply to 
+Room Sets, and are recorded in Labs Database, which is the system of record
+for Room Sets.
+<p>
+<blockquote>
+<table border>
+  <tr><th>Function name</th><th>Definition</th></tr>
+  <tr><td colspan=2 bgcolor="#E0E0E0" align=center>
+    Roles related to Room Sets</td></tr>
+  <tr><td>ROOM SET SUPERVISOR</td>
+      <td>The person with primary responsibility for activities and people
+          within a lab or other Room Set. This is often the PI.</td>
+  </tr>
+  <tr><td>SECONDARY ROOM SET SUPERVISOR</td>
+      <td>A person who share responsibilities 
+          for Room Set activities and people with 
+          the primary ROOM SET SUPERVISOR.  Most Room Sets do not have 
+          a secondary supervisor, but a few Room Sets have one or more 
+          of them.</td>
+  </tr>
+  <tr><td>EHS REPRESENTATIVE</td>
+      <td>The person with primary responsibility for compliance with EHS 
+          policies and guidelines within the Room Set.  This is often 
+          a post doc.</td>
+  </tr>
+  <tr><td>SECONDARY EHS REP</td>
+      <td>The person who shares responsibility for compliance with EHS 
+          policies and guidelines with the primary EHS REPRESENTATIVE.
+          Most Room Sets do not have a secondary EHS Rep, but a few 
+          have one or more of them.</td>
+  </tr>
+</table>
+</blockquote>
+<p>
+<hr>
+<p>
+<small>Last modified by Jim Repa on 2/11/2003</small>
+</BODY>
+</HTML>
+ 

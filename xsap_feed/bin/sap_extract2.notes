@@ -1,0 +1,23 @@
+Notes on sap_extract2.pl
+------------------------
+
+It may be necessary to reduce the amount of memory used by sap_extract2.pl 
+in the future.  On 11/14/2002, it ran out of memory, but by adding the 
+statement 'undef %qid_to_code;' (at a point in the code after the hash 
+was no longer needed), enough additional memory was made available to 
+allow the program to run to completion.
+
+Some ways of possibly reducing memory consumption:
+ - @qualtype array is not needed. (Done)
+
+ - @qualcode_num array is not needed. (Done)
+
+ - Change the order of undef statements.  Undef arrays and hashes earlier
+   (i.e., put "push(@auth_line, @auth_temp)" after
+    "undef %qid_to_code") (Done)
+
+ - Try adding "undef @auth_line" before "@auth_line = @auth_temp". 
+
+If that isn't enough, then try the following:
+ - Use temporary files for holding @auth_line and @auth_temp 
+   arrays.

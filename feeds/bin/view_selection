@@ -1,0 +1,141 @@
+#!/usr/bin/perl
+###########################################################################
+#
+#  Perl script to selection criteria information from the Roles DB.
+#
+#
+#  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+###########################################################################
+#
+#  Get username and password.
+#
+print "Enter database name for sqlplus connection\n";
+chop($db = <STDIN>);
+print "Enter username for sqlplus connection\n";
+chop($user = <STDIN>);
+print "Enter password for user '$user' at $db\n";
+system ("stty -echo\n");
+chop($pw = <STDIN>);
+print "\n";
+system ("stty echo\n");
+$userpw = $user . '/' . $pw;
+#print "userpw = '$userpw'\n";
+
+#
+#  Make sure we are set up to use Oraperl.
+#
+use Oraperl;
+if (!(defined(&ora_login))) {die "Use oraperl, not perl\n";}
+
+#
+#  Open connection to oracle
+#
+$lda = &ora_login($db, $userpw, '')
+	|| die $ora_errstr;
+@stmt = ("select selection_id, selection_name, screen_id from selection_set"
+         . " order by selection_id");
+$csr = &ora_open($lda, "@stmt")
+	|| die $ora_errstr;
+
+
+$nfields = &ora_fetch($csr);
+print "Query will return $nfields fields\n\n";
+
+#
+#  Get a list of selection sets
+#
+@sid = ();
+@sname = ();
+@sscreen = ();
+$i = 0;
+while ((($ssid, $ssname, $screen) = &ora_fetch($csr))) {
+	# mark any NULL fields found
+	grep(defined || 
+          ($_ = '<NULL>'), $ssid, $ssname, $screen);
+        push(@sid, $ssid);
+        push(@sname, $ssname);
+        push(@sscreen, $screen);
+}
+do ora_close($csr) || die "can't close cursor";
+
+#
+#  Print list of selection_sets.
+#
+ list_selections();
+
+#
+#  Let user display criteria associated with a selection set.
+#
+$nn = 1;
+while ($nn > 0) {
+  $nn = -1;
+  until ($nn >=0 && $nn <= $n && $nn =~ /^\d+$/) {
+    print "To display a procedure, enter 1 to $n,\n"
+          . " enter 999 to redisplay procedure list, or 0 to stop\n";
+    chop($nn = <STDIN>);   # Make the user pick a number from 0 to 28.
+    if ($nn == 999) {
+      list_selections();
+      $nn = -1;
+    }
+  }
+  if ($nn == 0) {last;}
+  $picked_sid = $sid[$nn-1];
+  $picked_name = $sname[$nn-1];
+  @stmt = ("select criteria.criteria_id, criteria_name, apply, value,"
+           . " next_scrn_selection_id,"
+           . " no_change, sequence, sql_fragment"
+           . " from criteria, criteria_instance"
+           . " where criteria.criteria_id = criteria_instance.criteria_id"
+           . " and username = 'SYSTEM'"
+           . " and selection_id = $picked_sid"
+           . " order by sequence");
+  $csr = &ora_open($lda, "@stmt")
+	|| die $ora_errstr;
+  $i = 0;
+  print "*** ($picked_sid) $picked_name ***\n";
+  while ((($cid, $cname, $capply, $cvalue, $cnext, 
+           $cnc, $cseq, $csql) = &ora_fetch($csr))) {
+     # mark any NULL fields found
+     grep(defined || 
+           ($_ = '<NULL>'), $cid, $cname, $capply, $cvalue, $cnext, 
+                            $cnc, $cseq, $csql);
+     printf "%5d '%s' \n"
+            . "       Apply=%1s N.C.=%1s Next=%3d Value='%s'\n"
+            . "       SQL-fragment='%s'\n",
+       $cid, $cname, $capply, $cnc,
+       $cnext, $cvalue,
+       $csql;
+  }
+  do ora_close($csr) || die "can't close cursor";
+}
+
+#
+#  Logoff and exit.
+#
+do ora_logoff($lda) || die "can't log off Oracle";
+exit();
+
+#############################################################################
+#
+#  Print list of selection sets.
+#
+#############################################################################
+sub list_selections {
+  $n = @sid;  # How many stored procedures?
+  for ($i = 0; $i < $n; $i++) {
+    printf "%5d (%3d) %-50.50s %3d\n", $i+1, $sid[$i], $sname[$i], 
+    $sscreen[$i];
+  }
+}

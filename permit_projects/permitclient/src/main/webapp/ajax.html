@@ -1,0 +1,110 @@
+<html>
+    <head>
+        <meta http-equiv=”Pragma” content=”no-cache”/>
+        <meta http-equiv=”Expires” content=”0"/>
+        <meta http-equiv="Cache-Control" content="post-check=1,pre-check=2"/>
+        <meta http-equiv="Cache-Control" content="no-cache, must-revalidate"/>
+        <title>AJAX Test</title>
+		<!--
+ 		*  Copyright (C) 2008-2010 Massachusetts Institute of Technology
+ 		*  For contact and other information see: http://mit.edu/permit/
+ 		*
+ 		*  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ 		*  Public License as published by the Free Software Foundation; either version 2 of the License.
+ 		*
+ 		*  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ 		*  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ 		*  License for more details.
+ 		*
+ 		*  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ 		*  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ 		*
+		-->
+
+        <!-- These paths use .. so that they still work behind a path mapping proxy. The fully qualified version is more cut and paste friendly. -->
+        <script type='text/javascript' src='/permitclient/dwr/interface/Roles.js'></script>
+        <script type='text/javascript' src='/permitclient/dwr/engine.js'></script>
+        <script type='text/javascript' src='/permitclient/dwr/util.js'></script>
+
+        <script type="text/javascript" language="javascript">
+            var http_request = false;
+            var result = new String();
+            function makeRequest(url, parameters) {
+                http_request = false;
+                if (window.XMLHttpRequest) { // Mozilla, Safari,...
+                    http_request = new XMLHttpRequest();
+                if (http_request.overrideMimeType) {
+                    // set type accordingly to anticipated content type
+                    //http_request.overrideMimeType('text/xml');
+                    http_request.overrideMimeType('text/html');
+                }
+                } else if (window.ActiveXObject) { // IE
+                    try {
+                        http_request = new ActiveXObject("Msxml2.XMLHTTP");
+                    } catch (e) {
+                        try {
+                            http_request = new ActiveXObject("Microsoft.XMLHTTP");
+                        } catch (e) {}
+                    }
+                }
+                if (!http_request) {
+                    alert('Cannot create XMLHTTP instance');
+                    return false;
+                }
+                http_request.onreadystatechange = alertContents;
+                http_request.open('GET', url + parameters, true);
+                http_request.send(null);
+            }
+
+            function alertContents() {
+                document.getElementById('myspan').innerHTML = "<img src='loading.gif'><b>Loading, please wait...</b>";   
+       
+                if (http_request.readyState == 4) {
+                    if (http_request.status == 200) {
+                        //alert(http_request.responseText);
+                        result = http_request.responseText;
+                        document.getElementById('myspan').innerHTML = result;            
+                    } else {
+                        alert('There was a problem with the request.');
+                    }
+                }
+            }
+   
+            function get(obj) {
+                var getstr = "?";
+                var time = new Date();
+                getstr += "kerberos_name=" + document.myform.kerberos_name.value + "&";
+                getstr += "function_name=" + document.myform.function_name.value + "&";
+                getstr += "qualifier_code=" + document.myform.qualifier_code.value + "&";
+                getstr += "effective_date=" + document.myform.effective_date.value + "&";
+                getstr += "expiration_date=" + document.myform.expiration_date.value + "&";
+                getstr += "time=" + time.getTime();
+                makeRequest('ajaxResponse.jsp', getstr);
+            }
+        </script>
+      </head>
+      <body>      
+        <h1>Permit Web Service createAuthorization Test Page</h1>
+        <form action="index.jsp" method="POST">
+            <table>
+                <td ALIGN=LEFT TYPE=TEXT ><a href="index.jsp"><span class='boldText'>Return to Master Test Page</span></a></td>
+            </table>
+        </form>        
+        
+        <form action="javascript:get(document.getElementById('myform'));" name="myform" id="myform">
+            <table>
+                <tr><td>User:</td><td><input type='text' name='kerberos_name'></td></tr>
+                <tr><td>Function Name:</td><td><input type='text' name='function_name'></td></tr>
+                <tr><td>Qualifier Code:</td><td><input type='text' name='qualifier_code'></td></tr>
+                <tr><td>Effective Date:</td><td><input type='text' name='effective_date'></td></tr>
+                <tr><td>Expiration Date:</td><td><input type='text' name='expiration_date'></td></tr>
+                <tr><td><input type="button" name="button" value="Submit" onclick="javascript:get(this.parentNode);"></td>
+                <td colspan='2'><input name="reset" type="reset"></td></tr>
+            </table>
+        </form>
+       
+        <br><br>
+        Server-Response:<br>
+        <span name="myspan" id="myspan"></span>
+    </body>
+</html>

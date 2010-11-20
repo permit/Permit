@@ -1,0 +1,99 @@
+<HTML>
+<HEAD>
+<TITLE>View Master Department Hierarchy</TITLE>
+<!--
+ *  Copyright (C) 2005-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<body BGCOLOR="#fafafa">
+
+<TABLE WIDTH="85%">
+<TR><TD><a href="index.html">
+ <IMG width=105 height=88 SRC="../images/mdept_logo.jpeg" no border></a></TD>
+<TD align=center>
+<H1>View Master Department Hierarchy</H1></TD>
+</TR>
+</TABLE>
+
+<form method="get" name="view_hierarchy" 
+ action="../cgi-bin/mdept/dlc_tree1.cgi">
+<table>
+<tr>
+    <th align=right>Pick a view:
+    </th>
+    <td>
+        <select name="view_type">
+          <option>A. Compact DLC Hierarchy</option>
+          <option selected>B. Standard DLC Hierarchy</option>
+          <option>T. Test</option>
+        </select>
+    </td>
+</tr>
+<tr><td colspan=2>&nbsp;</td></tr>
+<tr>
+    <th align=right valign=center>Display format:
+    </th>
+    <td valign=top>
+          <INPUT TYPE="radio" NAME="format_option" VALUE="" CHECKED> 
+              Hierarchy and detailed table
+          <br>
+          <INPUT TYPE="radio" NAME="format_option" VALUE="SIMPLE_TABLE"> 
+              Simple table exportable to Excel
+    </td>
+</tr>
+<tr><td colspan=2>&nbsp;</td></tr>
+<tr>
+    <th align=right valign=center>How much data to display:
+    </th>
+    <td valign=top>
+          <INPUT TYPE="radio" NAME="include_option" VALUE="TREE_ONLY"> 
+              Hierarchy of DLCs only <i>(fast)</i>
+          <br>
+          <INPUT TYPE="radio" NAME="include_option" 
+           VALUE="TREE_TABLE_AND_OBJ_NAMES" CHECKED> 
+              Hierarchy of DLCs plus detailed table with object names
+
+    </td>
+</tr>
+</table>
+<p>
+<input type="submit" name="Run report" value="Run report">
+</form>
+<P><HR></P>
+The Master Department Hierarchy is a new system for tracking and 
+integrating HR org units, Financial Funds Centers and Profit Centers, 
+Student Systems organizations, and other "department-like objects" in
+various systems at MIT.  The system allows for more than one tree of DLCs,
+offering different views for different purposes.
+<p>
+You can view the "work in progress" on MIT's Master Department Hierarchy
+by picking one of the views ("A" is recommended) and clicking the 
+button "Run report".  If you choose the "detailed" formatting option, 
+you will get a 2-part display:
+ <ol>
+   <li>A hierarchical representation of DLCs
+   <li>A table showing details on each DLC, including long-name, short-name,
+       and a list of links to other "department-like objects" in HR,
+       financial systems, and Student Systems.
+ </ol>
+From the detailed display, click on one of the alphanumeric department codes (e.g., D_AUDIT), and 
+you will be taken to the detail for that DLC in the table in the 2nd part
+of the display.
+<p>
+If you choose the "simple table" option, you will be able to export the results
+to an Excel spreadsheet.
+<hr>
+</BODY>
+</HTML>

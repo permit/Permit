@@ -1,0 +1,110 @@
+<HTML>
+<HEAD>
+<TITLE>View a Qualifier Tree in the Roles DB with MDEPT links</TITLE>
+<!--
+ *  Copyright (C) 2005-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<body BGCOLOR="#fafafa">
+
+<TABLE WIDTH="85%">
+<TR><TD><a href="index.html">
+ <IMG width=105 height=88 SRC="../images/mdept_logo.jpeg" no border></a></TD>
+<TD align=center>
+<TD>&nbsp;
+<H2>View a Qualifier Tree in the Roles DB with MDEPT links</H2></TD>
+</TR>
+</TABLE>
+<hr>
+
+<form method="get" name="view_hierarchy" 
+ action="../cgi-bin/mdept/view_qual_tree.cgi">
+<table>
+<tr>
+    <th align=right>Pick a qualifier type:
+    </th>
+    <td>
+        <select name="qualtype">
+          <option>BAGS - NIMBUS Budget Authorization Groups</option>
+          <option>COST - Standard Profit Center Hierarchy</option>
+          <option>FUND - Funds Centers</option>
+          <option>LORG - LDS org units</option>
+          <option>ORGU - old 6-digit HR org units</option>
+          <option>ORG2 - new 8-digit HR org units</option>
+          <option>PBM1 - PBM hierarchy: Program Budget Management
+          <option>PMIT - PCMIT-0 nodes and Profit Centers</option>
+          <option>SISO - SIS Admissions Orgs</option>
+          <option>SPGP - Spending Groups</option>
+        </select>
+    </td>
+</tr>
+<tr><td colspan=2>&nbsp;</td></tr>
+<tr>
+    <th align=right valign=center>Number of levels:
+    </th>
+    <td valign=top>
+        <select name="levels">
+          <option>1</option>
+          <option>2</option>
+          <option selected>3</option>
+          <option>4</option>
+          <option>5</option>
+          <option>6</option>
+          <option>7</option>
+          <option>all</option>
+        </select>
+    </td>
+</tr>
+<tr><td colspan=2>&nbsp;</td></tr>
+<tr>
+    <th align=right valign=center>Show MDEPT links<br>from what view(s)?
+    </th>
+    <td valign=top>
+        <select name="mdept_view">
+          <option selected>All</option>
+          <option>A. Compact DLC Hierarchy</option>
+          <option>B. Standard Hierarchy</option>
+        </select>
+    </td>
+</tr>
+<tr><td colspan=2>&nbsp;</td></tr>
+<tr>
+    <th align=right valign=center>Format option:
+    </th>
+    <td valign=top>
+          <INPUT TYPE="radio" NAME="code_position" VALUE="LEFT" CHECKED> 
+              Show Dept_code on the left side of page
+          <br>
+          <INPUT TYPE="radio" NAME="code_position" VALUE="RIGHT"> 
+              Show Dept_code to the right of qualifier name
+
+    </td>
+</tr>
+<tr><td colspan=2>&nbsp;</td></tr>
+<tr>
+    <th align=right valign=center>Qualifier code<br>(optional):
+    </th>
+    <td valign=top>
+          <INPUT TYPE="text" NAME="qualcode"> 
+    </td>
+</tr>
+<tr><td colspan=2>&nbsp;</td></tr>
+</table>
+<p>
+<input type="submit" value="Run report">
+</form>
+<P><hr>
+</BODY>
+</HTML>

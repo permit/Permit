@@ -1,0 +1,50 @@
+
+
+1. Check directories to see if program files are uptodate
+  - bin
+     README
+     (OK) count_bytes.pl*
+     extract/
+     (SAME) pdorg/
+     (OK) repa_feed/
+     (SAME) roles_feed/
+     (OK) roles_feed2.pl*
+     (OK) run_procedure.pl*
+     (OK) table_count*
+     (OK) test_procedure.pl*
+     (OK) top*
+     (OK) tp*
+     (OK) view_selection*
+     (OK) view_sp*
+     (OK) x*
+     (OK) zgrep.pl*
+     
+  - bin/extract (OK)
+  - (OK) bin/pdorg
+  - (OK) bin/repa_feed
+  - bin/roles_feed
+
+  - cronjobs
+  - data
+  - lib
+  - log
+  - misc
+  - xsap_feed
+
+
+2. Make sure the various feed programs are uptodate and running 
+   properly.
+   a. xsap_feed
+      These are already running against the production (old) Roles DB
+   b. bin/roles_feed  -- Evening and morning jobs
+      i. Locate the jobs that send data to other systems.  
+         Make sure we've got the newest versions on cloverleaf.
+         Get them working against the old Roles production DB, and  
+         stop running them on cinnamon.
+      ii. For the jobs that feed data into the Roles DB, 
+          make sure that we've got the newest versions on cloverleaf.
+          Get them working against the old Roles production DB.  
+          Stop running them on cinnamon.
+
+3. Do some spot checks to make sure that Oracle 9 does not break any 
+   of the nightly feed programs.

@@ -1,0 +1,19 @@
+This is the changelog for the Standardista Table Sorting javascript module.
+
+## v1.2 (2006-04-18) ##
+
+NEW	Tables are automatically striped onload if they have the class
+	"autostripe" as well as "sortable".
+NEW	The sorting links now have a title attribute which tells the user to
+	"click to sort".
+NEW	JS files now have the MIT license actually in them.
+
+## v1.1 (2006-04-02) ##
+
+BUGFIX	Columns are now sorted using the topmost cell which actually 
+	contains data.
+NEW	Columns containing numbers in scientific notation can now be sorted.
+
+## v1.0 (2006-02-26) ##
+
+Initial Version

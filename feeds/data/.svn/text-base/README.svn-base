@@ -1,0 +1,33 @@
+#  README (perMIT Data subdirectory
+#
+#  Copyright (C) 2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+The data subdirectory is a place holder for intermediate results created during the feeds from external 
+data sources (warehouse) and cronjobs. 
+
+It may also contain non-temporary files such as:
+roles_person_extra.dat
+
+The roles_person_extra.dat file is used to create 'users' which do not exist in the warehouse, or normal 
+identity manage system. Often these are application accounts or test accounts used to access perMIT itself. 
+
+The format of the roles_person_extra.dat file is:
+
+ID number:last name:first name:account identifier:email contact::O:A:
+
+Example:
+999999999:SERVER:PAULSPROTOTYPES:PBH$DEV:PBH@MIT.EDU::O:A:
+
+

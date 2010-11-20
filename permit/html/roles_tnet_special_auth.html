@@ -1,0 +1,50 @@
+<HTML>
+<HEAD>
+<TITLE>Phone preference authorizations by network ID</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H2>Phone preference authorizations by network ID</H2></td>
+</tr></table><BR>
+<P>
+<small>
+Authorizations to maintain telephone preferences by Network ID should be 
+added using a special web-based tool.  You will generally want to add a 
+qualifier (for a network ID) at the same time that you add an authorization 
+for this network ID.  The special web-based tool allows you to do these
+two actions at the same time.
+<p />
+To be authorized to create authorizations using this interface, you will 
+need (1) a CREATE AUTHORIZATIONS authorization for category TNET and 
+(2) a MAINTAIN QUALIFIERS authorization for qualifier type TNET.  Also,
+to view the authorizations, you will need a VIEW AUTH BY CATEGORY authorization
+for category TNET.)
+</small>
+<p />
+<hr>
+<p />
+<ul>
+  <li><a href=/cgi-bin/qualauth.pl?cat_qt=TNET/NETI+Authorizations+in+TNET+category+by+Network+ID&detail=2&sort=&group_option=2" target=new>View telecom-related authorizations by network ID</a>
+  <p />
+  <li><a href="/cgi-bin/roles_tnet_special_auth.cgi">Create new telecom-related authorizations by network ID</a>
+</ul>
+<P>
+<hr>
+</body>
+</html>

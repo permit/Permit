@@ -1,0 +1,15 @@
+K 10
+svn:ignore
+V 186
+MDEPT_VIEWS.sql
+ROLES_STORED_PROC.sql
+ROLES_VIEW.sql
+changed_views.txt
+dept_storedprocs
+mdept_nodata.sql
+mdept_stored_procs.sql
+mysql_stored_procs
+rolesbb_nodata.txt
+ws_stored_procs.sql
+
+END

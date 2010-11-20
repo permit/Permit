@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.PersonRaw" table="person">
+    <id column="KERBEROS_NAME" length="8" name="kerberosName">
+      <generator class="assigned"/>
+    </id>
+    <property column="MIT_ID" length="10" name="mitId" not-null="true"/>
+    <property column="FIRST_NAME" length="30" name="firstName"/>
+    <property column="LAST_NAME" length="30" name="lastName"/>
+    <property column="EMAIL_ADDR" length="60" name="emailAddress"/>
+    <property column="type" name="type"/>
+  </class>
+  <sql-query name="QUICK_PERSON">	
+        <return class="edu.mit.isda.permitservice.dataobjects.PersonRaw"/>	
+	 select kerberos_name, mit_id, first_name, last_name, email_addr, CASE primary_person_type WHEN 'E' THEN 'Employee' WHEN 'S' THEN 'Student' WHEN 'O' THEN 'Other' END as type
+         from person 
+         where last_name like ? 
+         AND kerberos_name like ? 
+         AND (kerberos_name like ? OR last_name like ? OR mit_id = ? )
+         AND primary_person_type in (?,?,?)
+         order by last_name, first_name, kerberos_name
+         </sql-query>
+  <sql-query name="QUICK_PERSON_KERBSORT">	
+        <return class="edu.mit.isda.permitservice.dataobjects.PersonRaw"/>	
+	 select kerberos_name, mit_id, first_name, last_name, email_addr, CASE primary_person_type WHEN 'E' THEN 'Employee' WHEN 'S' THEN 'Student' WHEN 'O' THEN 'Other' END as type
+         from person 
+         where last_name like ? 
+         AND kerberos_name like ? 
+         AND (kerberos_name like ? OR last_name like ? OR mit_id = ?)
+         AND primary_person_type in (?,?,?)
+         order by kerberos_name
+         </sql-query>
+  <sql-query name="QUICK_PERSON_TYPESORT">	 
+        <return class="edu.mit.isda.permitservice.dataobjects.PersonRaw"/>	
+	 select kerberos_name, mit_id, first_name, last_name, email_addr, CASE primary_person_type WHEN 'E' THEN 'Employee' WHEN 'S' THEN 'Student' WHEN 'O' THEN 'Other' END as type
+         from person 
+         where last_name like ? 
+         AND kerberos_name like ? 
+         AND (kerberos_name like ? OR last_name like ? OR mit_id = ?)
+         AND primary_person_type in (?,?,?)
+         order by primary_person_type, last_name, first_name
+         </sql-query>
+</hibernate-mapping>

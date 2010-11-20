@@ -1,0 +1,116 @@
+<HTML>
+<HEAD>
+<TITLE>Show authorizations within qualifier tree</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H3>Show authorizations within a branch of a qualifier tree</H3></td>
+</tr></table><BR>
+<P>
+<small>
+This web page allows you to view a branch of a qualifier hierarchy along
+with all of the authorizations in a given category associated with 
+qualifiers in that branch
+of the tree.  For example, you could view the FC_CAES branch of the 
+custom fund center hierarchy along with all of the people authorized to 
+Spend or Commit Funds on the fund centers and funds under FC_CAES. (Warning:
+You will not see authorizations on related fund centers, such as FC100132,
+that are not strictly part of the FC_CAES branch of the tree.)
+To use this facility, you need 
+<a href=
+"/metaauth_help.html#viewing+authorizations">
+viewing authorizations</a> to see authorizations within the Category you
+select.
+</small>
+<HR>
+<P>
+Select a Category/Qualifier type combination.  If you know the qualifier code
+for the branch of the tree you want to view, enter it;  otherwise leave it 
+blank and the display will start at the root of the tree.
+(Qualifier codes must start with the  
+<a href="qualcode_prefix.html">appropriate prefix</a>.)
+Choose a format option and a sort option.
+Then click the SUBMIT button.
+<P>
+<FORM METHOD="GET" ACTION="/cgi-bin/qualauth.pl">
+<table>
+<tr><td>
+<strong>Category/Qualifier-type:</strong>
+</td>
+<td><select name = "cat_qt">
+<option>SAP/COST (SAP reporting auths. within Cost Object hierarchy)
+<option selected>SAP/FUND (SAP spend/commit and reporting auths. within Fund
+hierarchy)
+<option>SAP/SPGP (SAP approval auths. within Spending Group hierarchy)
+<option>SAP/BUDG (SAP budget auths. by Budget Plan Version)
+<option>ADMN/ORG2 (Departmental telephone directory contacts)
+<option>ADMN/DEPT (Miscellaneous administrative roles by DLC)
+<option>ADMN,META/DEPT (Primary Authorizer + misc. administrative roles by DLC)
+<option>BUDG/PBUD (SAPBUD budget auths. by Budget Group)
+<option>EHS/DEPT (Environmental Health & Safety roles by DLC)
+<option>EHS/EHST (EHS training reporting authorizations by trigger type)
+<option>GRAD/AORG (Grad. Admissions auths. by Academic Org. Unit)
+<option>GAID/AORG (Grad. Aid auths. by Academic Org. Unit)
+<option>HR/ORG2 (New HR roles by DLC)
+<option>LABD/LORG (LDS auths. by LDS Org. Unit)
+<option>META/DEPT (Primary Authorizer auths. by DLC)
+<option>NIMB/BAGS (NIMBUS budget auths. by Budget Area Group)
+<option>PAYR/PCCS (Payroll auths. in PC, CO-supervisor hierarchy)
+<option>PAYR/PDED (Payroll auths. in the Payroll Deduction Type hierarchy)
+<option>PAYR/PMIT (Payroll auths. within the PCMIT-0 hierarchy)
+<option>PAYR/PYTG (Payroll auths. within the Time Group hierarchy)
+<option>PAYR/ORG2 (Payroll auths. within the HR Org Unit hierarchy)
+<option>PRTL/PRTA (Portal auths. within the hierarchy of portal areas)
+<option>TNET/COST (Auths for Telephone and Network data in the Cost Object hierarchy)
+<option>TNET/NETI (Auths for Telephone and Network data by MIT network ID)
+<option>TNET/PHON (Auths for Telephone and Network data by MIT phone number)
+<option>TSTN/TSLV (Auths for Touchstone in Touchstone-levels hierarchy)
+<option>WRHS/DEPT (Warehouse auths. - department head reporting)
+<option>XSIS/SISO (Student Information auths.)
+</select>
+</td></tr>
+<tr><td>
+<strong>Qualifier code</strong> (optional):
+</td><td>
+<INPUT TYPE=TEXT NAME=rootcode>&nbsp;&nbsp;
+<small>(Leave this blank to start at the root of the qualifier tree)</small>
+</td></tr>
+<tr><td valign=top>
+<strong>Format options:</strong>
+<br><small>for authorization<br>information</small></td>
+<td><INPUT TYPE="radio" NAME="detail" VALUE="0">
+Show Kerberos name and Function only
+<br><INPUT TYPE="radio" NAME="detail" VALUE="2" CHECKED>
+Add first and last name
+<br><INPUT TYPE="radio" NAME="detail" VALUE="1">
+Add grant-flag and modified-date
+</td></tr>
+<tr><td><strong>Sort by:</strong></td>
+<td><INPUT TYPE="radio" NAME="sort" VALUE="" CHECKED> Qualifier code (number)
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="sort" VALUE="name"> Qualifier name
+</td></tr>
+</table>
+<INPUT TYPE="hidden" NAME="group_option" VALUE="2">
+<center>
+<INPUT TYPE="SUBMIT" VALUE="Submit">
+</center>
+<a href="auth_branch1a.html">More options for advanced users</a>
+</FORM>
+<hr>

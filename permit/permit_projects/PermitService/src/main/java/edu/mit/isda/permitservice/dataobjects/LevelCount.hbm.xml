@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <!-- 
+    Created by the Middlegen Hibernate plugin 2.1
+
+    http://boss.bekk.no/boss/middlegen/
+    http://www.hibernate.org/
+-->
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.LevelCount" table="qualifier">
+    <id column="PARAMETER" name="parameter" type="java.lang.String"/>
+    <property column="VALUE" name="value" not-null="true" type="java.lang.String"/>
+  </class>
+  <sql-query name="GET_LEVEL_FOR_QUAL_TYPE">	
+        <return alias="qual" class="edu.mit.isda.permitservice.dataobjects.LevelCount"/>	
+             select parameter, value from roles_parameters 
+             where parameter = ? 
+             union select parameter, value from roles_parameters where parameter = 'ZLEVELS_OTHER' 
+             and not exists (select parameter from roles_parameters where parameter = ?)
+</sql-query>
+</hibernate-mapping>

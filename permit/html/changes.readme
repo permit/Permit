@@ -1,0 +1,62 @@
+Notes on changes made to HTML and CGI files.
+--------------------------------------------
+
+03/07/01.
+  * qualauth.pl replaced with newer version (previously called qualauth2a.pl).
+    - dept_summary2.pl modified to point to qualauth.pl instead of
+                       qualauth2a.pl
+    - auth_branch1.html modified to point to qualauth.pl instead of
+                        qualauth2a.pl
+    - auth_branch1a.html modified to point to qualauth.pl instead of
+                         qualauth2a.pl
+    - qualbranch1.html modified to point to qualauth.pl instead of
+                        qualauth2a.pl
+    - qualbranch1a.html modified to point to qualauth.pl instead of
+                         qualauth2a.pl
+
+  * A small bug was found and fixed in qualauth.pl (how many levels to
+    display out of a "parents-of" display when we click on a "big" branch)
+
+  * webroles.html
+    - Link to auth_branch1.html rather than auth_branch.html.
+    - Link to qual_branch1.html rather than quallist1.html
+    - Link to dlc_auth.html rather than dept_auth.html
+
+  * more_auth.html
+    - Remove the link for showing users missing a "CAN USE SAP" authorization
+    - Add link to "missing CAN SPEND OR COMMIT FUNDS authorization" report.
+
+  * dept_auth.html
+    - Add a note saying that there is a better choice (dlc_auth.html).
+
+  * roleparent.html 
+    - Change link to qualauth.pl rather than roleparent.pl.
+
+03/09/01.
+  * Changed rolecc_info.pl so it points to the new qualifier hierarchy
+    scripts.  (rolecc_info2.pl tested and put into production.)
+
+To be done later:
+  * Change scripts that point to the old qualifier hierarchy stuff to
+    point to the newer script (qualauth.pl):
+    - roleauth2.pl (3152 hits)
+    - my-auth.cgi (7169 hits)
+    - auth-detail.pl (926 hits)
+    - lookupname.pl (4216 hits)
+    - lookupname3.pl
+    - (pdorg_compare.pl - unneeded $url_stem)
+    - rolequal1a.pl (70 hits)
+    - sap-reports.pl (236 hits)
+    - sap-reports1.pl
+    - Replace roleparent.pl with qualauth.pl
+      auth-detail.pl, lookupname.pl, lookupname3.pl, (pdorg_compare.pl -
+      unneeded $url_stem), rolequal1a.pl, sap-reports.pl, sap-reports1.pl
+    - Replace rolequal1.pl with qualauth.pl
+      audit_trail.pl, my-auth.cgi, qualauth.pl, req_auth.pl, roleauth2.pl,
+      rolequal3.pl, sap-reports.pl, sap-reports1.pl
+  * Phase out rolecat.pl?  Maybe add a link to category_status.html
+    to find all categories.  >>> In new system, put more stuff in tables
+    so that this can be automatic.  Description, status, view-status <<<
+  * See if sap-reports.pl can be replaced by sap-reports1.pl.
+    (This was tested for all 4 reports that are common to the two
+     scripts.)

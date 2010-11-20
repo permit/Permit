@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.Person" table="person">
+    <id column="KERBEROS_NAME" length="8" name="kerberosName">
+      <generator class="assigned"/>
+    </id>
+    <property column="MIT_ID" length="10" name="mitId" not-null="true"/>
+    <property column="FIRST_NAME" length="30" name="firstName"/>
+    <property column="LAST_NAME" length="30" name="lastName"/>
+    <property column="EMAIL_ADDR" length="60" name="emailAddress"/>
+    <property column="DEPT_CODE" length="12" name="deptCode"/>
+    <many-to-one class="edu.mit.isda.permitservice.dataobjects.PersonType" column="Primary_Person_Type" name="type" not-null="true"/>
+    <!-- property name="unitId" column="ORG_UNIT_ID" type="java.lang.Long" length="12"/ -->
+    <property column="ACTIVE" name="active"/>
+    <property column="STATUS_CODE" length="1" name="statusCode"/>
+    <property column="STATUS_DATE" name="statusDate"/>
+    <set cascade="none" inverse="true" lazy="true" name="authorizations">
+      <key>
+        <column name="KERBEROS_NAME"/>
+      </key>
+      <one-to-many class="edu.mit.isda.permitservice.dataobjects.Authorization"/>
+    </set>
+  </class>
+
+  <sql-query name="GETPRIMARYAUTHORIZER">	
+        <return class="edu.mit.isda.permitservice.dataobjects.Person"/>	
+	 select p.* from person p ,authorization a where a.kerberos_name=p.kerberos_name and a.qualifier_code=upper(?) and a.function_name=upper(?)
+        </sql-query>
+</hibernate-mapping>

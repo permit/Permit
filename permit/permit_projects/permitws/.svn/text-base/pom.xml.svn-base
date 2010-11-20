@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>edu.mit.isda.rolesws</groupId>
+  <artifactId>permitws</artifactId>
+  <packaging>war</packaging>
+  <version>1.0</version>
+  <name>permitws Maven Webapp</name>
+  <url>http://maven.apache.org</url>
+
+    <build>
+        <finalName>${artifactId}</finalName>
+       <resources>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/java/</directory>
+                <includes>
+                  <include>**/*.properties</include>
+                  <include>**/*.xml</include>
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+            </plugin>
+<!-- Note on using axistools-maven-pluging  G.Li 2008-07-22
+     This plugin is supposed to  generate server-config.wsdd based on
+     deployment script ua.deploy.wsdd. However, due to bugs of current version,
+     it only
+     generates default server-config.wsdd which does not contain the service
+     we want to deploy. Before the new version is avaible, one can do the
+     followings to work around:
+        a) After you have compiled your web service class and created the
+        deployment script  ua.deploy.wsdd, do
+        mvn package
+        this will creates default server-config.wsdd in
+        src/main/webapp/WEB-INF
+        b) next, copy the  service element from ua.deploy.wsdd into
+           server-config.wsdd and save it.
+        c) finally create the  war files by doing
+          either
+           c.1)
+             comment this plugin and then do
+             mvn clean package
+          or
+           c.2)
+           set value of <isServerConfig> to false and do
+             mvn clean package
+
+           If you do c.2)  error messages
+           SEVERE: Unable to deploy typemapping: {urn:uaService}uaAuthorization
+           java.lang.ClassNotFoundException: edu.mit.isda.uaws.uaAuthorization
+           ...
+           will occure. You can ignore if build is successful.
+
+-->
+<!--
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>axistools-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>admin</id>
+                        <phase>process-classes</phase>
+                        <configuration>
+                            <inputFiles>
+                                <inputFile>${basedir}/src/main/webapp/WEB-INF/ua.deploy.wsdd</inputFile>
+                            </inputFiles>
+                            <isServerConfig>true</isServerConfig>
+                            <debug>true</debug>
+                            <verbose>true</verbose>
+                        </configuration>
+                        <goals>
+                            <goal>admin</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+-->
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!--
+                        update axis' configuration file (ua.undeploy.wsdd) requires that the java
+                        files are compiled thus, perform this task in the "process-classes" phase
+                        -->
+                        <id>Update roles.undeploy.wsdd</id>
+                        <phase>process-classes</phase>
+                        <configuration>
+                            <tasks>
+                                <!-- update src/main/webapp/WEB-INF/server-config.wsdd -->
+                                <java classname="org.apache.axis.utils.Admin" fork="true" classpathref="maven.compile.classpath" dir="src/main/webapp/WEB-INF">
+                                    <arg value="server" />
+                                    <arg value="${basedir}/src/main/webapp/WEB-INF/permit.undeploy.wsdd" />
+                                </java>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+
+                    <execution>
+                        <!--
+                        update axis' configuration file (ua.deploy.wsdd) requires that the java
+                        files are compiled thus, perform this task in the "process-classes" phase
+                        -->
+                        <id>Update roles.deploy.wsdd</id>
+                        <phase>process-classes</phase>
+                        <configuration>
+                            <tasks>
+                                <!-- update src/main/webapp/WEB-INF/server-config.wsdd -->
+                                <java classname="org.apache.axis.utils.Admin" fork="true" classpathref="maven.compile.classpath" dir="src/main/webapp/WEB-INF">
+                                    <arg value="server" />
+                                    <arg value="${basedir}/src/main/webapp/WEB-INF/permit.deploy.wsdd" />
+                                </java>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <source>1.5</source>
+                    <target>1.5</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.5</source>
+                    <target>1.5</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+    <!--
+        <repository>
+            <id>repo1-cache</id>
+            <name>repo1-cache</name>
+            <url>http://isda-maven1.mit.edu/artifactory/repo1-cache</url>
+        </repository>
+
+        <repository>
+            <id>java.net-cache</id>
+            <name>java.net-cache</name>
+            <url>http://isda-maven1.mit.edu/artifactory/java.net-cache</url>
+        </repository>
+
+        <repository>
+            <id>maven2</id>
+            <name>maven2</name>
+            <url>http://repo1.maven.org/maven2</url>
+        </repository>
+   -->
+    <repository>
+            <id>PublicRepositoriesGroup</id>
+            <name>PublicRepositoriesGroup</name>
+            <url>http://maven.mit.edu/nexus/content/groups/public</url>
+        </repository>
+        <repository>
+            <id>PublicMitRepositoriesGroup</id>
+            <name>PublicMitRepositoriesGroup</name>
+            <url>http://maven.mit.edu/nexus/content/groups/PublicMitRepositoriesGroup</url>
+             </repository>
+
+
+    </repositories>
+
+   <dependencies>
+         <dependency>
+            <groupId>org.apache.axis</groupId>
+            <artifactId>axis</artifactId>
+            <version>1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.axis</groupId>
+            <artifactId>axis-ant</artifactId>
+            <version>1.4</version>
+        </dependency>
+         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-discovery</artifactId>
+            <version>0.3-2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool</artifactId>
+            <version>1.2-2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sf.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+            <version>1.1-2</version>
+        </dependency>
+
+        <dependency>
+           <groupId>org.hibernate</groupId>
+            <artifactId>hibernate</artifactId>
+            <version>3.1.3-1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>edu.mit.isda.permitservice</groupId>
+            <artifactId>PermitService</artifactId>
+            <version>1.0</version>
+        </dependency>
+     <dependency>
+      <groupId>javax.xml</groupId>
+      <artifactId>jaxrpc</artifactId>
+      <version>1.1-2</version>
+    </dependency>
+    <!--
+        <dependency>
+            <groupId>com.sun.jmx</groupId>
+            <artifactId>jmx_remote</artifactId>
+            <version>1.0.1_03</version>
+        </dependency>
+-->
+<!-- check them for different repository -->
+
+<!--
+        <dependency>
+            <groupId>com.sun.jmx</groupId>
+            <artifactId>jmxri</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+-->
+        <dependency>
+            <groupId>org.apache.log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.13-2</version>
+        </dependency>
+  <!-- end of checking list -->
+        <dependency>
+            <groupId>com.ibm.wsdl</groupId>
+            <artifactId>wsdl4j</artifactId>
+            <version>1.5.2-1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring</artifactId>
+            <version>2.0.6</version>
+        </dependency>
+             <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib-nodep</artifactId>
+            <version>2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>edu.mit.isda.permitservice</groupId>
+            <artifactId>permitservice</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml</groupId>
+            <artifactId>saaj</artifactId>
+            <version>1.2-2</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+            <version>1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>activation</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.2</version>
+            <scope>test</scope>
+        </dependency>
+
+          <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.4</version>
+            <scope>provided</scope>
+        </dependency>
+
+
+    </dependencies>
+
+   <properties>
+        <netbeans.hint.deploy.server>Tomcat55</netbeans.hint.deploy.server>
+    </properties>
+
+</project>
+

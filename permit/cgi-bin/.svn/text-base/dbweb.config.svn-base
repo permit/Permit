@@ -1,0 +1,9 @@
+Database-symbolic-name:database-name:username:pw
+prod_roles:roles:roleread:unique-example0
+rolesw:proles:rolewww9:unique-example1
+trolesw:troles:rolewww9:unique-example2
+troles:troles:roleread:unique-example3
+roles:proles:roleread:unique-example4
+newroles:new_roles:roleread:unique-example5
+mdept:roles:mdept$user:unique-example6
+mdepto:roles:mdept$owner:unique-example7

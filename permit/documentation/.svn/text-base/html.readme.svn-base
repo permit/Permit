@@ -1,0 +1,189 @@
+List of CGI scripts (last modified 3/7/2001)
+--------------------------------------------
+
+admin.html
+  Tools for system administrators.  Linked from main page (webroles.html).
+
+asterisk.html
+  A joke, linked from myauth_help.html.
+
+audit_trail.html
+  Show the history of changes to Authorizations; calls audit_trail.pl.  
+  Linked from more_auth.html.
+
+auth_branch.html  OLD
+  Hierarchy of qualifiers with authorizations.  (Previously linked from 
+  main page).
+
+auth_branch1.html
+  Test version of Hierarchy of qualifiers with authorizations.  
+  Linked from testroles.html.
+  Calls qualauth2a.pl.
+
+auth_branch1a.html
+  Similar to auth_branch1.html, but more options for advanced users.
+  Linked from auth_branch1.html.
+  Calls qualauth2a.pl.
+
+auth_creators.html
+  People who can create authorizations.  Linked from admin.html (tools
+  for system administrators).
+
+authaudit_help.html
+  Help on history trail.  Linked from output of audit_trail.pl.
+
+category_status.html
+  List of each function and its test/production status, with a link to 
+  rolefunc2.pl to show a list of functions in a given category.
+  Linked from webroles.html (Business functions by category) and 
+  roles_doc.html (Function categories and their status).
+
+change_pw.html
+  A user with a certificate can change their Roles DB password.  Calls
+  change_pw.cgi.  Linked from main page (webroles.html).
+
+cosa_report.html
+  For running Cost Object Supervisor report, for one-time only project
+  to create actual authorizations instead of depending on implied
+  authorizations.  No longer needed.
+
+cost_object_info.html
+  Tell me about a cost object. Calls rolecc_info.pl.  Linked from main page
+  (webroles.html).
+
+cost_object_info2.html  TEST
+  Tell me about a cost object. Calls rolecc_info.pl.  Linked from main page
+  (webroles.html).  Test version linked from test page.
+
+web.mit.edu/rolesdb/definitions.html
+  Definitions of SAP functions.
+  Linked from roles_doc.html (definitions of each function).
+
+dept_auth.html
+  SAP Authorizations within a "department" - old version based on auths. found
+  in the Fund Center hierarchy.  Calls sap-auth.cgi.
+  Linked from main page (webroles.html).
+
+dlc_auth.html  TEST
+  Improved SAP authorizations within a department, based on DEPT hierarchy.
+  Calls dlc-auth.cgi.
+
+dlc_auth2.html  TEST
+  Similar to dlc_auth.html, but shows auths. in all categories, not just SAP.
+  Calls dlc-auth2.cgi.
+
+dlc_auth3.html  TEST
+  Calls dlc-auth3.cgi
+
+dlc_auth3a.html  TEST
+  Calls dlc-auth3a.cgi
+
+dlc_summary.html  TEST
+  Tabular list of of DLCs.  Calls dept_summary2.pl.
+
+doc_fragment.html
+  Linked from output of req_auth.pl.
+
+hrmeeting_march2001.html
+  Page to help people from a meeting of new HR system, March 2001, to find
+  web pages displayed at the meeting.  Can be removed.
+
+index.html
+  Symbolic link to webroles.html.
+
+lookupname.html
+  Look up a person by Kerberos username or last name. Calls lookupname.pl.
+  Linked from main page (webroles.html).
+
+lookupname3.html  TEST
+  Newer version of lookupname.html.  Depends on a policy change that allows
+  all employees to automatically have the authority to report on non-sensitive
+  authorizations.  Calls lookupname3.pl.  Linked from testroles.html.
+
+metaauth_help.html
+  Describes meta authorizations.
+  Linked from audit_trail.html, auth_branch.html, auth_branch1.html,
+  auth_branch1a.html, authaudit_help.html, more_auth.html, myauth_help.html,
+  person_auth.html, person_auth2.html, pickable_cc.html, redundant_auth.html,
+  reportable_cc.html, req_auth.html, roles_doc.html, and webroles.html.
+  Also linked from output of rolecc_info.pl and req_auth.pl.
+
+missing_users.html
+  Calls rolexcep.cgi to find missing Roles usernames, i.e., users who can
+  create authorizations but don't have a Roles DB username/password.
+  Called from admin.html.
+
+more_auth.html
+  More choices, linked from main page (webroles.html).
+
+myauth_help.html
+  Help on authorization display.  Linked from output of my-auth.cgi.
+
+pa_lists.html
+  Links to two different ways of displaying Primary Authorizors.  Linked from
+  main page.
+
+person_auth.html
+  Authorizations for a person.  Linked from main page (webroles.html).
+  Calls my-auth.cgi.  Links to pickable_cc.html and reportable_cc.html.
+
+person_auth2.html  TEST
+  Alternate wording for person_auth.html.  Not linked from anywhere.
+
+pickable_cc.html
+  Show Funds on Which a User Can Spend or Commit.  Linked from
+  person_auth.html.  Calls rolequal3.pl.
+
+pick_user_display.html
+  Calls pick_user_display.pl for a given user.  Shows list of categories
+  for which user has auths., can create auths., and/or has a history of
+  having auths.  Linked from test page.
+
+qual_branch1.html
+  Test version of Hierarchy of qualifiers.  Linked from testroles.html.
+  Calls qualauth.pl.
+
+qual_branch1a.html
+  Similar to qual_branch1.html, but more options for advanced users.
+  Linked from qual_branch1.html.
+  Calls qualauth.pl.
+
+qualcode_prefix.html
+  Qualifier types and their prefixes.  Linked from
+  auth_branch.html, auth_branch1.html, auth_branch1a.html, qual_branch1.html,
+  qual_branch1a.html, quallist1.html, quallist1a.html, and qualpar.html.
+
+quallist1.html OLD
+  Hierarchy of qualifiers, linked from main page (webroles.html) and
+  myauth_help.html.
+
+quallist1a.html  TEST
+  Fund Centers color-coded to show Release Strategies.  Linked from
+  testroles.html.  Calls rolequal1a.pl.
+
+qualpar.html  TO-BE-MODIFIED
+  Show the position of a qualifier in the hierarchy.  Linked from main
+  page (webroles.html).  Calls roleparent.pl.
+
+redundant_auth.html
+  Show redundant authorizations.  Linked from more_auth.html.  Calls
+  redundant_auth.pl.
+
+reportable_cc.html
+  Show Funds/Cost Objects on which a person can report.  Linked from
+  person_auth.html.  Calls rolequal3.pl.
+
+req_auth.html
+  Who can requisition, approve, invoice, etc.? 
+  Linked from main page (webroles.html) and doc_fragment.html.
+  Linked from output of req_auth.pl.
+  Calls req_auth.pl.
+
+roles_doc.html
+  Help and documentation.  Linked from main page (webroles.html).
+
+testroles.html
+  Testing area.  Linked from main page (webroles.html).
+
+webroles.html
+  Main Roles web page.

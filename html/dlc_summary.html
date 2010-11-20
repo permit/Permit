@@ -1,0 +1,52 @@
+<HTML>
+<HEAD>
+<TITLE>Department Summary Table</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td><H3>Display Department Summary Table</H3></td></tr></table>
+<p>
+This web page allows you to view a table of Departments with their associated
+objects (Profit Center, Budget Auth. Group, Org. Unit, Student Info. Systems
+Org., etc.).  Specify your choices for which objects are shown and whether
+you want a compact or expanded format, and then click the Submit button.
+<P>
+<P>
+<FORM METHOD="GET" ACTION="/cgi-bin/dept_summary2.pl">
+<table>
+<tr><td><strong>Show which objects?</strong></td>
+<td><INPUT TYPE="radio" NAME="option" VALUE=2"> Only show PC Node, Org. Unit,
+BAG and SIS Org.
+<br>
+<INPUT TYPE="radio" NAME="option" VALUE="1" CHECKED> All objects
+</td></tr>
+<tr><td>
+<strong>Which format?</strong> 
+<td><INPUT TYPE="radio" NAME="format" VALUE=1" CHECKED> Compact
+<br>
+<INPUT TYPE="radio" NAME="format" VALUE="2"> Detailed (show object name)
+</td></tr>
+</table>
+<INPUT TYPE="hidden" NAME="fontsize" VALUE="smaller">
+<center>
+<INPUT TYPE="SUBMIT" Value="Submit">
+</center>
+</FORM>
+<HR>

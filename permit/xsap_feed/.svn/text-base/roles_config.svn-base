@@ -1,0 +1,9 @@
+##This file contains configuration information for
+##the perMIT Database Cron files
+## Avoid using underscores in the names.
+perMIT:perMITSys/password-for-perMITSys@perMIT
+perMIT-test:perMITSys/password-for-perMITSys@tperMIT
+warehouse:perMIT/password-for-perMIT@warehouse
+ftpwarehouse:roleuser/password-for-perMIT-to-ftp-from@warehouse.mit.edu
+##scptosap:permitdb@sap-test.example.com
+scptosap:permitdb@sap.example.com

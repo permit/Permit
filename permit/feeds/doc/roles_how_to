@@ -1,0 +1,342 @@
+Technical Documentation on the Roles DB
+=======================================
+#
+#  Copyright (C) 1998-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+ Modified by Jim Repa, 3/3/2000
+
+How to give a user access to the Roles DB
+-----------------------------------------
+A. Normal situation:  User has Kerberos name
+   1. Use sqlplus to connect to the Roles DB as one of the superusers and
+       create user &username identified by &password default tablespace users
+         temporary tablespace temp profile default;
+       grant connect to &username;
+   2. Then connect to Troles and do the same.  (This is not required, but
+      will be handy if you want the user to test on TRoles in the future.)
+
+B. Unusual situation: User will never have a Kerberos name
+   1. Do the same as part (A) above.
+   2. On Cinnamon, edit the file
+       /usr/users/rolesdb/data/roles_person_extra.dat
+      and add a line for the new user of the form:
+
+	MIT-ID    Last-name    Username			 O (other)
+        |         |            |                         |
+        |      	  | First-name |	E-mail-address   | A (active)
+	|	  |      |     |        |                | |
+        V      	  V    	 V     V       	V      	       	 V V
+        999999999:TESTER:ROLES:ROLETEST:ROLESDB@MIT.EDU::O:A:
+
+
+
+How to copy authorizations from the Roles DB -> SAP
+---------------------------------------------------
+ The scripts for extracting authorizations from Roles DB reside
+ in /usr/users/rolesdb/xsap_feed/bin on Cinnamon.  To access them, log on
+ as rolesdb and cd ~rolesdb/xsap_feed/bin.
+
+ Normally, the extract is handled automatically by a cron job.  If you would
+ like to run an extra extract, logon and cd to ~rolesdb/xsap_feed/bin, then
+
+   run_sap_feed.pl
+
+ This will write files of the form r2s*.nnnnnnnn (where nnnnnnnn is the
+ sequence number) into ~/xsap_feed/data/.  The sequence number for the
+ *next* run is kept in ~/xsap_feed/data/sap_feed.sequence_number.
+ 
+ * * * 
+
+ If you want to send authorizations for a special set of users to SAP, then
+ do not run run_sap_feed.pl (which runs sap_extract2.pl, compare_sap2a.pl,
+ and sapmap2.pl), but do the following:
+ 1. Run sap_extract2.pl to read the Roles DB authorization file and
+    generate the file sap1.out.yyyymmdd (where yyyymmdd is today's date)
+ 2. Run compare_sap2a.pl to compare the current sap1.out.yyyymmdd file
+    with the previous one, and produce the files
+      user1.out.nnnnnnnn (List of users with changes)
+      sap1.changes.nnnnnnnn (All Roles DB authorizations for the users in
+                             the first file, with expanded qualifiers)
+ 3. Here is the step that differs from a standard run.
+    Edit the file user1.out.nnnnnnnn to put in the list of users that
+    you want to extract for sending to SAP.  Then run
+     user_extract2.pl
+ 4. Run sapmap2.pl to create the output files that are sent to SAP for use
+    by Robie Gould's programs.  The script sapmap2.pl reads the following
+    input files:
+      sap1.out.nnnnnnnn    (Extracted and expanded SAP-related authorizations 
+                            from Roles)
+      sap_auth.mapping     (Mapping file that shows the format of authorization
+                            records to be sent to SAP)
+      sap_prof.mapping     (Mapping file that shows the format of profile 
+                            records to be sent to SAP)
+      sap_func.mapping     (Mapping file that shows the format of user-map
+                            records to be sent to SAP)
+    The program produces the following output files:
+      auth1.out.nnnnnnnn    (Authorization records to be sent to SAP)
+      prof1.out.nnnnnnnn    (Profile records to be sent to SAP)
+      umap1.out.nnnnnnnn    (User-map records to be sent to SAP)
+      umap1.delete.nnnnnnnn (List of user profiles to be deleted from SAP)
+      user1.lock.nnnnnnnn   (Users with no profiles, to be locked in SAP)
+      user1.new.nnnnnnnn    (New users with SAP profiles)
+      ... 
+ 5. Run sap_ctl_file.pl to create control file r2scont.nnnnnnnn.
+ 6. Run move_out_files2.pl.  This will rename and move the above files to
+    one of the SAP machines.
+ 7. The sequence number will not be reset.  That is OK in this case, since
+    we are doing a special run of a subset of users.  The next time the 
+    job runs, it will start over again from the last full run.
+
+How to copy authorizations from SAP -> Roles DB
+-----------------------------------------------
+ The scripts for extracting authorizations from Roles DB currently reside
+ in /usr/users/repa/sap_feed on Cinnamon.
+ 1. Receive two files from SAP:
+     s2rauth.?       Profile information from SAP
+     s2rprof.?       User->profile mapping information from SAP
+    If the names are different than those listed above, then either
+    rename the files or change the required filenames in the script
+    sap_to_roles5.pl.
+ 2. Run sap_to_roles5.pl
+    Input files:
+      s2rauth.?          Profile information from SAP
+      s2rprof.?          User->profile mapping information from SAP
+      sap_prof.mapping   Mapping file for Roles authorizations <-> SAP profiles
+      sap_func.mapping   Mapping file for Roles auth. <-> SAP user-map
+    Temporary file:
+      sap.extract1       Simplified extract from roles.data
+    Output files:
+      sap_roles.out      Output file of Roles-style authorizations
+      sap_roles.log      Diagnostic information
+ 2a.  If you're running this just for analysis reasons, then sort the
+      output file:
+        sort -o sap_roles.sort sap_roles.out
+      and run repa_sap_auth.pl (Log in as repa).  This will populate
+      the table repa.repa_sap_auth.
+ 3. To actually insert SAP authorizations into the RolesDB,
+    first run insert_auth.pl 
+    Input files:
+      sap_roles.out      See step 2 above
+    Output files:
+      sap2roles.sql      Output file of sql commands
+      sap2roles.log      Diagnostic information
+ 4. Then, run SQLPLUS.  Connect to the Roles DB (or Troles) as a "super-user".
+    Then
+      start sap2roles;
+      commit;  /* Do this if there are no errors */
+
+How to update the custom Fund Center hierarchy of the Roles DB
+--------------------------------------------------------------
+ To update the custom Fund Center hierarchy or other hierarchies that
+ are not handled automatically (including BAGS and ORGU), use the
+ web page
+   https://rolesweb.mit.edu/cgi-bin/qualmaint/RolesQM.pl
+
+ For adding a parent/child relationship, use records of the following
+ format:
+
+ ADDCHILD!FC201521!FC_ASO16!Optional comment
+ ADDCHILD!FC201523!FC_ASO12!Optional comment
+
+ Those are exclamation points (!) between fields.  The fields are:
+   ADDCHILD      (Literal, tells the program to add a parent/child link)
+   fund_or_fc    The "child" fund or fund center, including F or FC prefix
+   parent        The "parent" custom fund center group
+   name          Optional comment - ignored for ADDCHILD
+ This presumes that the "child" and "parent" qualifiers already exist.
+
+ For deleting a parent/child relationship, use records of the following
+ format:
+
+ DELCHILD!FC201521!FC_ASO16!Optional comment
+ DELCHILD!FC201523!FC_ASO12!Optional comment
+
+ Those are exclamation points (!) between fields.  The fields are:
+   DELCHILD      (Literal, tells the program to add a parent/child link)
+   fund_or_fc    The "child" fund or fund center, including F or FC prefix
+   parent        The "parent" custom fund center group
+   name          Optional comment - ignored for DELCHILD
+ This presumes that the "child" and "parent" qualifiers already exist.
+
+ To add an entirely new custom group, you would use the following format:
+
+ ADD!FC_ASO99!FC_ASO!ASO Custom FC Group 99
+
+ Fields are:
+   ADD           (Literal, tells the program to add a new custom FC group)
+   fc_code       The code for the new group, in the form FC_xxxxxx
+   parent        The "parent" fund center group
+   name          Required name for the new custom group
+ This presumes that the "child" does NOT exist, but the parent does exist.
+
+ To change a qualifier's parent in the custom hierarchy, use the following
+ format:
+ 
+ UPDATE!FC200562!PARENT!FC_SLOAN13!FC_SLOAN19        
+                        (old par.) (new par.)
+ Fields are:
+   UPDATE        (Literal, tells the program to update a qualifier)
+   fc_code       The code for the child qualifier
+   PARENT        (Literal, tells the program to update qualifier's parent)
+   old_parent    The old "parent" FC group
+   new_parent    The new "parent" FC group to be added
+ This presumes that fc_code and new_parent already exist.
+
+ To change a qualifier's name (i.e., its description, with a length of up to
+ 50 characters) in the custom hierarchy, use the following format:
+ 
+ UPDATE!FC200562!NAME!A bad old group of funds!A good new group of funds
+                      (old name)              (new name)
+ Fields are:
+   UPDATE        (Literal, tells the program to update a qualifier)
+   fc_code       The code for the qualifier
+   NAME          (Literal, tells the program to update qualifier's name)
+   old_name      The old name of the FC.  This is ignored by the program,
+                 so it can be left blank, but make sure you include the
+                 '!' delimiter
+   new_name      The new name of the FC.
+ This presumes that fc_code already exists.
+
+How to rebuild the qualifier_descendent table (for emergency use only)
+----------------------------------------------------------------------
+ Under normal circumstances, the table qualifier_descendent should 
+ automatically be  kept in synch with the qualifier and qualifier_child 
+ table by the nightly feed scripts for Warehouse -> Roles DB.  If necessary,
+ the records in this table can be rebuilt from the qualifier_child table
+ using the script gen_desc.perl.
+
+ You'll need to rebuild one qualifier type at a time, e.g., COST, FUND,
+ ORGU, etc..  
+
+ To rebuild the qualifier_descendent records for a given qualifier type,
+ do the following:
+
+ 1. Logon to cinnamon.mit.edu as username rolesdb.
+ 2. cd ~/bin/repa_feed
+ 3. Run
+      fix_desc2.pl
+    You will be prompted for the database name, a username, password,
+    and the type of qualifier you want to fix (e.g., COST, FUND, ORGU, etc.)
+ 4. The routine will find changes to the qualifier_descendent table that
+    must be made, and it will make the changes.  This may take several
+    minutes.
+
+How to add a new category (Application)
+---------------------------------------
+ Decide on a 4-character function_category.  Use upper-case letters and
+ numbers.  Decide on a 1-15-character description, mixed case.  Then,
+ do the following steps on both Roles and Troles.
+ 1. Add a record to the "category" table
+     insert into category values ('&cat', '$desc');
+    where &cat is the 4-character function_category, and
+          &desc is the 1-15-character description
+ 2. Find the next available qualifier_id number
+    available for qualifiers of type 'CATE'.
+      select max(qualifier_id)+1 from qualifier 
+        where qualifier_type = 'CATE';
+ 3. Add a qualifier of type 'CATE' to the qualifier table corresponding
+    to the new category.  
+      insert into qualifier 
+       (qualifier_id, qualifier_code, qualifier_name, qualifier_type,
+        has_child, qualifier_level, custom_hierarchy)
+       values (&newqual_id, 'CAT&cat', 'FUNCTION CATEGORY: &cat', 'CATE',
+        'N', 2, 'N');
+    where          
+      &newqual_id is the number from step 2
+      &cat        is the 4-character function_category
+ 4. Look up the qualifier_id of the 'ALL FUNCTION CATEGORIES' qualifier.
+      select qualifier_id from qualifier where qualifier_type = 'CATE'
+       and qualifier_code = 'CATALL';
+ 5. Add records to the qualifier_child and qualifier_descendent tables
+    to add the new qualifier to the hierarchy.
+      insert into qualifier_child values (&parent_id, &newqual_id);     
+      insert into qualifier_descendent values (&parent_id, &newqual_id);
+    where &parent_id is the qualifier_id from step 4.
+ 6. Remember to commit your changes before quitting from SQLPLUS.
+ 
+How to add a new qualifier type
+-------------------------------
+ To add a new qualifier type, you need to do the following:
+ 1. Add a record to the table qualifier_type, e.g.,
+    insert into qualifier_type values('SISO', 'SIS Org. Units');
+ 2. Pick the first qualifier_id number for the new qualifier type.  To
+    see the qualifier_id number ranges for existing qualifier types,
+    do
+     select qualifier_type, count(*), max(qualifier_level), 
+     min(qualifier_id), max(qualifier_id) 
+     from qualifier group by qualifier_type
+     order by min(qualifier_id);
+ 3. Create the root node for the new qualifier hierarchy, e.g., 
+     insert into qualifier 
+      (qualifier_id, qualifier_code, qualifier_name,
+       qualifier_type, has_child, qualifier_level, custom_hierarchy)
+      values
+      (850000, 'ALL_SIS', 'All SIS Departments',
+       'SISO', 'Y', '1', '');
+ 4. Insert a record into the qualifier table of type 'QTYP' for the
+    new qualifier type.  Using the web-based interface for maintaining
+    qualifiers, specify type QTYP, and use a transaction like the following:
+       ADD!QUAL_SISO!QUAL_ALL!Qualifier type: QTYP
+    (Make sure that you have the appropriate Roles 'MAINTAIN QUALIFIERS'
+     authorization for the new qualifier typetype QTYP.)
+ 5. Modify /var/https/cgi-bin/qualmaint/RolesUpdater.pm
+    to add the new qualifier type.  Find 
+      my %_KnownQualifierTypes=(
+    and add another line at the bottom of the list for 
+    the new qualifier type.
+ 6. Currently, some of the Web http files have the list of qualifier types
+    hard-coded.  This should probably be changed so that it is dynamically
+    generated by looking at the qualifier_type table.  However, for now,
+    you might need to change the files quallist.html and qualpar.html.
+    Note:  We deliberately don't include all the qualifier types, so don't
+    blindly include all of them without thinking of the audience for these
+    Web pages.  See, for example, 
+     quallist1.html
+     auth_branch.html
+     qualpar.html
+ 7. Optionally, add a new selection set for the Roles application to 
+    display the new hierarchy.
+ -. Optionally, develop feed programs to load the qualifier data into the 
+    qualifier, qualifier_child, and qualifier_descendent tables
+ -. Specify the new qualifier_type in FUNCTION definitions
+
+How to specify required or recommended application version numbers
+------------------------------------------------------------------
+ The table rolesbb.rdb_t_application_version allows you to specify
+ (a) A required minimum version number for each platform.  Users with 
+     earlier versions are forced to upgrade.
+ (b) A recommended minimum version number for each platform.  Users with
+     earlier versions see a warning message recommending that they upgrade.
+
+ The stored procedure AUTH_SP_CHECK_VERSION receives as input parameters the
+ application version number a_version (e.g., "1.00s") and the platform name 
+ a_platform ("Macintosh" or "WindowsNT").  The stored procedure finds the first
+ record in the rolesbb.rdb_t_application_version table such that
+   a_version between application_version.from_version and 
+                     application_version.to_version
+   a_platform between application_version.from_platform and 
+                     application_version.to_platform
+ It then looks at the field MESSAGE_TYPE.  If MESSAGE_TYPE = 'N', then no
+ message is displayed.  If it is 'W', then a warning message (MESSAGE_TEXT)
+ is displayed, but the application continues to run.  If MESSAGE_TYPE = 'E',
+ then MESSAGE_TEXT is displayed and the application terminates.
+
+ Update the records in the applicatoin_version table to adjust which
+ application versions are recommended or required and to specify what messages
+ are displayed.
+
+How to modify selection sets and criteria
+-----------------------------------------
+ ...
+

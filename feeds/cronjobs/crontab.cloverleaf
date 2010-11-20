@@ -1,0 +1,75 @@
+###########################################
+# Crontab File: /usr/users/rolesdb/cronjobs.cinnamon
+#
+# Edits to this file become effective by:
+#       crontab <this file>
+#
+# Note: This file is under RCS
+#
+# See README for more details.
+#
+#
+#  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+# Modified 7/2/2007 (add weekend_jobs)
+#
+###########################################
+
+###########################################
+# Run the nightly feed routines
+###########################################
+10 4 * * 0-6 $HOME/permit/feeds/cronjobs/morning_jobs_early
+# Changed from 6:30, as of 6/23/2003
+55 6 * * 0-6 $HOME/permit/feeds/cronjobs/morning_jobs_late
+0 8 * * 0-6 $HOME/permit/feeds/cronjobs/cron_run_exception_notify
+
+###########################################
+# Run the weekend jobs
+###########################################
+# Does not apply to MySQL
+45 8 * * 6 $HOME/permit/feeds/cronjobs/weekend_jobs
+
+#############################################################################
+# Run the jobs for the Master Dept. Hierarchy, to update EXPANDED_OBJECT_LINK
+# and DEPT_DESCENDENT tables.
+#############################################################################
+#Enable this job after testing mdept feeds (02/09/10) - vkonda
+#0 6 * * 0-6 $HOME/permit/feeds/cronjobs/hourly_jobs
+
+###########################################
+# RolesDB Cleanup
+###########################################
+#42 22 * * 1-5 $HOME/permit/feeds/cronjobs/cron_roles_cleanup_log
+#44 22 * * 1-5 $HOME/permit/feeds/cronjobs/cron_roles_cleanup_data
+49 22 * * 0-6 $HOME/permit/feeds/cronjobs/cron_roles_cleanup_archive
+
+###########################################
+# RolesDB Extracts: for External Systems
+###########################################
+##30 17 * * 0-6 $HOME/permit/feeds/cronjobs/evening_jobs ## LDS job phased out Jan. 2008
+#Don't run this until perMIT is primary (02/09/10) - vkonda
+#0  5 * * 0-6 $HOME/permit/feeds/cronjobs/cron_run_sapfeed
+
+30 8 * * 0-6 $HOME/permit/feeds/cronjobs/cron_pdorg_prog.sh
+
+# Sends data to SAP. Don't do this until perMIT become priamry (02/09/10) - vkonda
+#45 8 * * 0-6 $HOME/permit/feeds/cronjobs/cron_pddiff_feed.sh
+
+#(replace)0 21 * * 0-6 $HOME/permit/feeds/cronjobs/cron_ehs_extract run_ehs_role_prog.pl ehs
+# Sends data to SAP. Don't do this until perMIT become priamry (02/09/10) - vkonda
+#0 21 * * 0-6 $HOME/permit/feeds/cronjobs/ehs_evening_jobs
+
+###########################################
+# End Crontab File
+###########################################

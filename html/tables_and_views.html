@@ -1,0 +1,619 @@
+<HTML>
+<HEAD>
+<TITLE>Tables and views in the perMIT system</TITLE>
+</HEAD>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+<body BGCOLOR="#fafafa">
+<TABLE WIDTH="85%">
+<TR><TD>
+<a href="webroles.html">
+<IMG SRC="rolesmall.GIF" no border></a>
+</TD>
+<TD align=center>
+<H1>Tables and views in the perMIT system
+</table>
+<p>
+<center><i>Last modified 2/18/2009</i></center>
+<hr>
+<p />
+<h3>Tables, views, and synonyms</h3>
+<p />
+In the perMIT system, tables and views are owned by user ROLESBB.  Table 
+names have the form "RDB_T_<i>name</i>".  View names have the form 
+"RDB_V_<i>name</i>".  Each table and view has a public synonym of just the
+<i>name</i> part of the table or view name.  Most tables and views have public 
+access, i.e., the command "GRANT SELECT ON <i>table_name</i> TO PUBLIC" 
+has been executed.  An exception is the table RDB_T_SUPPRESSED_QUALNAME 
+which is not readable by the public.
+<p />
+When writing stored procedures, web scripts, or data feed scripts, 
+always refer to the public SYNONYM 
+name rather than refering directly to the table_name or view_name.  
+This leaves more flexibility for modifications 
+or upgrades in the future.  For example, we could change a public 
+synonym to refer to a view rather than a table in the future without having 
+to make changes to stored procedures or web scripts.
+<p />
+In this document, we will not show the "RDB_T_" or "RDB_V_" prefixes for
+tables or views, and will show the shortened synonym name.
+<hr />
+<p />
+<h3>Core tables</h3>
+<p />
+These are tables that directly define Authorizations, Functions, People, 
+and Qualifiers in perMIT system, along with closely-related data.  The 
+"core" tables do not include tables that were defined just for the
+PowerBuilder application, for logging changes, or for special-purpose 
+web reports.
+<p />
+<IMG SRC="images/Roles_DataModel1.jpeg" no border></a>
+<hr>
+<p>
+<table border>
+<tr><td colspan=3 bgcolor="#e0e0e0" align=center>Core tables</td></tr>
+<tr><th>Table or view</th><th>Table or view name</th><th>Description</th></tr>
+<tr><td>table</td><td>AUTHORIZATION</td>
+    <td>Each record represents an Authorization, which contains a  
+        Person (from the PERSON table), a Function (from the FUNCTION
+        table) and a Quailfier (from the QUALIFIER table) plus some 
+        flags and other information.  This table is denormalized, because 
+        of decisions made in 1997 related to our expectations for
+        performance at that time.  Note that the qualifier_type for 
+        the Function must match the qualifier_type for the Qualifier,
+        and this is enforced by the stored procedures that create and
+        update authorizations.</td></tr>
+<tr><td>table</td><td>CATEGORY</td>
+    <td>Each record represents a Function Category, or application
+        area for which Authorizations can be granted.  
+        Each Function has exactly one Function Category.  Therefore,
+        each Authorization has exactly one Function Category.</td>
+</tr>
+<tr><td>table</td><td>FUNCTION</td>
+    <td>Each record contains a Function, which is the business function 
+        that a person gains authority to do (or role that a person 
+        takes on) when an Authorization is granted.
+    </td>
+</tr>
+<tr><td>table</td><td>FUNCTION_CHILD</td>
+    <td>Some Functions have "child" Functions.  If you have an Authorization 
+        for Function X and Qualifier Q, and Function Y is a child of 
+        Function X, then you also have an implied Authorization for Function Y
+        and Qualifier Q.  Each record in the FUNCTION_CHILD table represents
+        one parent/child pair of Functions.  Usually, the parent Function 
+        and child Function must have the same Qualifier Type.  (There are
+        exceptions when the set of Qualifiers of one Qualifier Type are 
+        a subset of Quailfiers of another Qualifier Type.)
+        <p />
+        Most Functions 
+        have neither a parent Function nor a Child Function, so most 
+        Functions have no corresponding records in this table.  Note that
+        unlike the QUALIFIER_CHILD table, the FUNCTION_CHILD table has 
+        no corresponding "FUNCTION_DESCENDENT" table.  Thus, if there 
+        is a parent/child record for Function X and Function Y (making 
+        X a parent of Y), and there is a parent/child record for
+        Function Y and Function Z (making Y a parent of Z), it is <i>not</i>
+        the case that Function X is a parent of Function Z unless someone
+        manually adds a specific parent/child record for 
+        Function&nbsp;X&nbsp;/&nbsp;Function Z.</td>
+</tr>
+<tr><td>table</td><td>PERSON</td>
+    <td>Each record represents one Person.  The table contains a record
+        for all people who currently have a valid Kerberos principle at MIT,
+        plus a few special-case usernames that represent servers that 
+        also have Authorizations in the perMIT system. </td>
+</tr>
+<tr><td>table</td><td>PERSON_TYPE</td>
+    <td>Each record represents a Person Type, e.g., EMPLOYEE, STUDENT, or
+        OTHER.  Each Person has exactly one Person Type.</td>
+</tr>
+<tr><td>table</td><td>QUALIFIER</td>
+    <td>Each record represents one Qualifier, a financial, HR, academic, 
+        or other unit that makes up the third part of an Authorization.  The 
+        Qualifier "qualifies" the area in which a person is authorized 
+        to perform a given Function.</td>
+</tr>
+<tr><td>table</td><td>QUALIFIER_CHILD</td>
+     <td>The QUALIFIER_CHILD table defines the hierarchy of Qualifiers of 
+         a given Qualifier Type.  Each record represents a parent/child 
+         pair of Qualifiers within a given hierarchy of Qualifiers (and
+         therefore the parent and child Qualifiers in one record must have
+         the same Qualifier Type).  Each record represents only a <i>direct</i>
+         parent/child relationship between two (different) Qualifiers. 
+         Each Qualifier of a given Qualifier Type,
+         except for the root, has at least one parent Qualifier (and in 
+         rare instances, more than one parent Qualifier).  Many, but not 
+         all Qualifiers have one or more child Qualifiers.  Parent/child 
+         links cannot create cycles or loops.  In other words, 
+         if you follow the chain of child, grandchild, great grandchild, 
+         etc., Qualifiers under a given Qualifier, you can never 
+         get back to the original Qualifier.</td>
+</tr>
+<tr><td>table</td><td>QUALIFIER_DESCENDENT</td>
+    <td>The QUALIFIER_DESCENDENT table is derived from the QUALIFIER_CHILD
+        table.  Each record in this table represents an ancestor/descendent
+        link between two Qualifiers.  It contains one record for each link 
+        between a Qualifier and its immediate children, plus one record 
+        for each link between a Qualifier and its grandchildren, plus 
+        one record for each link between a Qualifier and its great 
+        grandchildren, etc..  Within each ancestor/descendent pair, 
+        both Qualifiers must have the same Qualifier Type.</td>
+</tr>
+<tr><td>table</td><td>QUALIFIER_TYPE</td>
+    <td>Each record defines a "type" of Qualifier, e.g., 8-digit HR org unit,
+        Fund/Funds Center, Academit org unit, etc..  Each Qualifier has
+        exactly one Qualifier Type.  There is one root Qualifier for each
+        Qualifier Type (although the root is currently <i>not</i> recorded
+        in the QUALIFIER_TYPE table).</td>
+</tr>
+<tr><td>table</td><td>SUPPRESSED_QUALNAME</td>
+    <td>This table is currently only defined on the test perMIT system,
+        and has not yet been defined on the production database.  Some
+        Qualifier Types are flagged as IS_SENSITIVE='Y' in the QUALIFIER_TYPE
+        table.  Qualifiers for these Qualifier Types have a their 
+        qualifier_name suppressed (i.e., set to "(value suppressed)" 
+        in the QUALIFIER table to prevent unauthorized users from viewing
+        them. For these Qualifiers, the actual qualifier name is recorded
+        in the table SUPPRESSED_QUALNAME, which is under tighter access
+        control.
+    </td>
+</tr>
+<tr><td colspan=3><i>The following 3 tables are used to determine
+    which functions and qualifiers can be picked by FINANCIAL and 
+    HR PRIMARY AUTHORIZERs when they create authorizations.</td></tr>
+<tr><td>table</td><td>DEPT_APPROVER_FUNCTION</td>
+    <td>Some Functions, i.e., financial approver Functions, are 
+        specific to certain DLCs.  If you are a Financial Primary Authorizer
+        within a given DLC, you should be limited to assigning the 
+        financial approver Functions related to your DLC.  The table
+        DEPT_APPROVER_FUNCTION maps function_id's to their related dept_code,
+        so that the Roles application can limit which financial approver
+        Functions can be granted according to the DLC for which a 
+        person is a Financial Primary Authorizer.  
+        <p />
+        The data in this 
+        table are derived each night from other tables by a program.
+        The program fix_dept_appr_func.pl combines data from the 
+        flat file data/pa.approver_functions with data from tables
+        PRIMARY_AUTH_DESCENDENT, QUALIFIER, and WH_COST_COLLECTOR 
+        to build a list of approver functions mapped to each DLC, and
+        use it to update the table DEPT_APPROVER_FUNCTION.</td></tr>
+<tr><td>table</td><td>PA_GROUP</td>
+    <td>This table contains one record for each type of Primary Authorizer,
+        e.g., HR and FIN.  See the section "Adding another type of Primary
+        Authorizer" within the document 
+        <a href="sys_admin_tasks.html">sys_admin_tasks.html</a>.</td>
+</tr>
+<tr><td>table</td><td>PRIMARY_AUTH_DESCENDENT</td>
+    <td>This table maps Qualifiers of various types (such as Profit Centers,
+        HR Org Units, Academic Course numbers, etc.) to DLCs (which have 
+        a qualifier_code of the form D_xxxxxxxxx, such as D_BIOLOGY).  The
+        table is used for reporting, and also to control which 
+        Qualifiers a Primary Authorizer can grant in an Authorization.</td>
+    </tr>
+</table>
+<p>
+<hr>
+<p />
+<h3>Tables used by the PowerBuilder application</h3>
+<p />
+These are tables defined specifically to support the PowerBuilder application.
+<p />
+<IMG SRC="images/Roles_DataModel2.jpeg"></a>
+<p />
+<table border>
+<tr><td colspan=3 bgcolor="#e0e0e0" align=center>PowerBuilder related tables</td></tr>
+<tr><th>Table or view</th><th>Table or view name</th><th>Description</th></tr>
+<tr><td>table</td><td>APPLICATION_VERSION</td>
+    <td>Each record represents a release version of the PowerBuilder app.</td>
+    </tr>
+<tr><td>table</td><td>CONNECT_LOG</td>
+    <td>A record is written each time a user starts the PowerBuilder app.</td>
+    </tr>
+<tr><td>table</td><td>CRITERIA</td>
+    <td>Each record defines a criterion, a filter for Authorizations
+        in the PowerBuilder application's Authorization List screen.
+        Criteria define a sort of filter (e.g., "Function_name=?", 
+        along with a fragment of a SQL Select statement that is used
+        for applying that filter to a list of records from the 
+        Authorization table.</td></tr>
+<tr><td>table</td><td>CRITERIA_INSTANCE</td>
+    <td>There is one record per selection_id, username, and criteria_id.  
+        Stores values for criteria (e.g., what goes into "?" in the 
+        criterion "Function_name=?" when user "Joe" is running the 
+        query for Selection Set "Authorizations by Category and 
+        Function")</td></tr>
+<tr><td>table</td><td>ERROR_KLUGE</td>
+    <td>Stores a record that solves a particular UI problem with the 
+        PowerBuilder application.limitation.</td></tr>
+<tr><td>table</td><td>HIDE_DEFAULT</td>
+    <td>Indicates which Selection Set is the default one for a given 
+        user.  Also indicates which Selection Sets are hidden for a given
+        user.</td></tr>
+<tr><td>table</td><td>LOG_SQL</td>
+    <td>Temporarily stores fragments of SQL Select statements used by
+        the PowerBuilder application.</td></tr>
+<tr><td>table</td><td>SCREEN</td>
+    <td>Each record represents a Screen in the PowerBuilder 
+        application.</td></tr>
+<tr><td>table</td><td>SELECTION_SET</td>
+    <td>Each Selection Set represents a "report" that generates a list
+        of Authorizations, Functions, Qualifiers, or People.  For each
+        user, a Selection Set is mapped to a list of Criteria via the 
+        table CRITERIA_INSTANCE.</td></tr>
+</table>
+<p />
+<h3>Tables used by the new web-based UI (replaces PowerBuilder app.)</h3>
+<p />
+These are tables defined specifically to support the new web-based UI that 
+will replace the PowerBuilder application.
+<p />
+<IMG SRC="http://web.mit.edu/repa/www/Roles_Data_Model_2a.jpg"></a>
+<p />
+<table border>
+<tr><td colspan=3 bgcolor="#e0e0e0" align=center>Tables specifically used by 
+   the new web-based UI</td></tr>
+<tr><th>Table or view</th><th>Table or view name</th><th>Description</th></tr>
+<tr><td>table</td><td>CRITERIA2</td>
+    <td>Each record defines a criterion, a filter for Authorizations
+        in the application's Authorization List window.
+        Criteria define a sort of filter (e.g., "Function_name=?", 
+        along with a fragment of a SQL Select statement that is used
+        for applying that filter to a list of records from the 
+        Authorization table.</td></tr>
+<tr><td>table</td><td>SELECTION_CRITERIA2</td>
+    <td>This table defines the default mapping between Selection Sets 
+        ("reports") and criteria.  It includes the default "value" for 
+        the criterion, the sort-order for displaying criteria on the 
+        screen, a Y/N value indicating whether this criterion is applied
+        by default, and a NO_CHANGE flag indicating whether or not the
+        end-user can change the value.</td></tr>
+<tr><td>table</td><td>SCREEN2</td>
+    <td>Each record represents a Screen area in the web-based UI.
+        Only the Authorizations List screen area has been implemented
+        in the new web-based Roles database application</td></tr>
+<tr><td>table</td><td>SELECTION_SET2</td>
+    <td>Each Selection Set represents a "report" that generates a list
+        of Authorizations.  Selection Sets are mapped to Criteria in
+        the tables SELECTION_CRITERIA2.</td></tr>
+<tr><td>table</td><td>USER_SEL_CRITERIA2</td>
+    <td>This table stores user-specific preferences for 
+        Criteria within a Selection Set.  For each 
+        user/selection-set/criteria triplet, we can store a 
+        value (e.g., the "?" for "Function_name=?" in this criterion),
+        and a Y/N value for whether the criterion is applied.</td></tr>
+<tr><td>table</td><td>USER_SELECTION_SET2</td>
+    <td>This table was intended to be used to control Selection Sets 
+        for individual users, shown which is the default Selection Set,
+        and which (if any) are hidden from a given user.  I don't think
+        it has been implemented in the new web-based UI, and is probably
+        no longer needed.</td></tr>
+<tr><td>table</td><td>SPECIAL_SELECTION_SET2 (SPECIAL_SEL_SET2)</td>
+    <td>This table is misnamed.  It should be named "SPECIAL_CRITERIA2".
+        Each records maps a Criterion to a widget number, where widgets
+        are UI components in the application that help an end-user pick
+        a value to be used in applying criteria when 
+        viewing a list of Authorizations.
+    </td></tr>
+</table>
+<hr />
+<p />
+<h3>Tables related to implied authorizations and rules</h3>
+<p />
+External authorizations (or "Implied Authorizations") are authorizations 
+extracted from other tables or built based on rules.  They are
+not maintained manually in the perMIT system.  Nightly (or more frequent)  
+data feed programs will extract data from other sources and generate 
+these records in the table EXTERNAL_AUTH.  The external authorizations 
+can be used for checking someone's authority to perform a function, 
+similar to regular authorizations in the AUTHORIZATION table.
+<p />
+<IMG SRC="http://web.mit.edu/repa/www/Roles_data_model_4.jpg"></a>
+<p />
+<table border>
+<tr><td colspan=3 bgcolor="#e0e0e0" align=center>Tables related to external authorizations</td></tr>
+<tr><th>Table or view</th><th>Table or view name</th><th>Description</th></tr>
+<tr><td>table</td><td>EXTERNAL_AUTH</td>
+    <td>This table is parallel to the Authorization table used 
+        for explicitly-granted
+        Authorizations.Contains two kinds of 
+        records that both fit into the same table format.  Some records are 
+        Person+Function+Qualifier records that define an attribute about 
+        a person directly derived from outside sources.  (For example,
+        "Joe is Faculty Member for Department of Biology".)  The other 
+        types of records are implied Authorizations, generated based on
+        the "attribute of a person" records in the same table plus the
+        authorization rules.</td></tr>
+<tr><td>table</td><td>EXTERNAL_FUNCTION</td>
+    <td>Parallel to the Function table; lists Functions used in 
+        implied Authorizations.</td></tr>
+<tr><td>table</td><td>IMPLIED_AUTH_RULE</td>
+    <td>Each row in this table defines a Rule that maps a template for 
+        a condition (something that matches an attribute or other information
+        of a person) to a template for a generated Authorization.
+     </td></tr>
+<tr><td>table</td><td>AUTH_RULE_TYPE</td>
+    <td>Each row represents a Rule Type.  Each rule in the 
+        IMPLIED_AUTH_RULE table has exactly one rule type.  
+        There are different types of rules - currently we've defined 4 types.
+    </td></tr>
+<tr><td>table</td><td>FUNCTION_GROUP</td>
+    <td>Each row represents a Function Group, i.e., a group which can 
+        contain one or more Functions (from either the FUNCTION table or
+        the EXTERNAL_FUNCTION table).  The "condition" part of a 
+        Rule can refer to either a Function or Function Group.
+    </td></tr>
+<tr><td>table</td><td>FUNCTION_GROUP_LINK</td>
+    <td>Each row represents a link between a Function and its parent 
+        Function_group.  This is the table that defines membership 
+        within a Function Group.
+    </td></tr>
+<tr><td>table</td><td>QUALIFIER_SUBTYPE</td>
+    <td>Each row represents a Subtype within a Qualifier_type.  
+        A Qualifier_type generally represents a hierarcny of objects; 
+        for example, the COST qualifier_type represents the 
+        financial hierarchy of profit center notes, 
+        profit centers and cost objects.  Subtypes of Qualifier_type
+        "COST" would be (i) profit center node, (ii) profit center, 
+        (iii) cost centers, (iv) internal orders, and (v) WBS elements.
+        Qualifier subtypes are useful for defining the "condition" 
+        part of a Rule.  Rules may only be 
+        applicable when the Rule-conditions specifies a narrowly defined
+        object type or subtype.
+    </td></tr>
+<tr><td>table</td><td>SUBTYPE_DESCENDENT_SUBTYPE</td>
+    <td>Rows in this table specify which qualifier_subtypes are allowed
+        as a child of another qualifier_subtype.  Knowing, for example,
+        that a cost collector may be a child of a profit center but not
+        vice versa is useful for defining and applying rules related to 
+        these object subtypes.
+    </td></tr>
+<tr><td>table</td><td>FUNCTION_LOAD_PASS</td>
+    <td>To use this table, join it with the EXTERNAL_FUNCTION table.
+        The FUNCTION_LOAD_PASS table indicates whether an EXTERNAL_FUNCTION
+        represents the function component of a "condition" or a result of 
+        a rule.  The EXTERNAL_AUTHORIZATION table stores two kinds of
+        implied authorizations: (i) those that are directly derived from
+        external data and directly converted into a person+function+qualifier 
+        format and (ii) those that are generated via rules based on the
+        external_authorizations of type (i).  External authorizations of
+        type (i) are "Pass 1" external authorizations.  Those of type (ii) are
+        "Pass 2" external authorizations.  Knowing the difference is 
+        important for the programs that extract data from external sources
+        and generate implied authorizations.
+    </td></tr>
+
+</table>
+<p />
+&nbsp;
+<p />
+<hr>
+<p />
+&nbsp;
+<p />
+<IMG SRC="images/Roles_DataModel3.jpeg"></a>
+<p />
+<table border>
+<tr><td colspan=3 bgcolor="#e0e0e0" align=center>Miscellaneous tables</td></tr>
+<tr><th>Table or view</th><th>Table or view name</th><th>Description</th></tr>
+<tr><td>table</td><td>AUTH_AUDIT</td>
+    <td>Authorization changes audit trail</td></tr>
+<tr><td>table</td><td>EXTRACT_CATEGORY</td>
+    <td>An ACL table that controls which categories of authorizations are
+        seen by a given username when using the views EXTRACT_AUTH 
+        and EXTRACT_DESC.  These views, in turn, are used 
+        by applications, such as Graduate Admissions, to periodically extract 
+        authorizations to be cached in their local database.</td></tr>
+<tr><td>table</td><td>PERSON_HISTORY</td>
+    <td>Records history of changes in the PERSON table</td></tr>
+<tr><td>table</td><td>ROLES_USERS</td>
+    <td>Records Oracle usernames in the Oracle (Roles) database that have been 
+        added or deleted via the administrators' web-based user maintenance UI
+        </td></tr>
+<tr><td>table</td><td>SPECIAL_USERNAME</td>
+    <td>Table includes usernames who are not eligible to 
+        change their (Roles) Oracle passwords using a certificate-authenticated
+        web interface.  Usernames in this table have special privileges,
+        and are not allowed to set passwords using the web-based UI.</td></tr>
+<tr><td>table</td><td>WH_COST_COLLECTOR</td>
+    <td>A copy of the Warehouse COST_COLLECTOR table stored in the 
+        Roles Oracle database instance.  This table is used by the 
+        "Tell me about a cost collector" web interface and for 
+        some other web-based reports.  The copy of
+        of the Warehouse table is refreshed each night, and it allows for
+        better performance than having a database link with the Warehouse.</td>
+    </tr>
+<tr><td>table</td><td>ROLES_PARAMETERS</td>
+    <td>This table stores various parameter name/value pairs.  Some 
+        of the parameters are used by the nightly data feed programs, 
+        e.g., the maximum number of changes allowed by a particular
+        data feed program in any given run.  (If this maximum is 
+        exceeded, the source data is presumed to be in error, and the
+        data feed program halts and waits for human intervention.)
+    </td></tr>
+<tr><td>table</td><td>FUNDS_CNTR_RELEASE_STR</td>
+    <td>This table makes up for a deficiency in MIT's installation of SAP R/3. 
+        SAP R/3 should contain
+        all financial master data, but SAP does not store a list Funds Centers 
+        with a Release Strategy of Model 1.  An earlier version of MIT's
+        implementation of financial data in SAP did include this information,
+        but it was dropped, and repeated requests for the data to be restored
+        in SAP, made over several months, were ignored.  For the good of 
+        MIT, we have added this table to the perMIT system even though 
+        the data should be stored in SAP.  The table contains a list of 
+        Funds Centers having a release strategy of Model 1.  (Funds Centers
+        with other release strategies are appropriately accommodated by
+        MIT's installation of SAP.)
+    </td></tr>
+</table>
+<hr />
+<p />
+<h3>Tables related to the Master Department Hierarchy</h3>
+<p />
+The tables listed below are part of the Master Department Hierarchy sub-system.
+They are owned by username MDEPT$OWNER, not ROLESBB.
+They define multiple variations of a "master" hierarchy of department-like 
+objects, plus links between these "master" departments and various 
+financial, HR, and student-systems objects.  Within the perMIT system,
+the DEPT hierarchy within the Qualifier and Qualifier_child tables is a 
+less versatile and elegant way of representing similar information.  
+<p />
+Either the Master Department Hierarchy tables or the less elegant 
+DEPT hierarchy data within the Qualifier and Qualifier_child tables could 
+be used for deriving the Primary_auth_descendent table.  (Currently 
+the DEPT hierarchy data from the Qualifier and Qualifier_child tables 
+are used for this purpose.)  The 
+Primary_auth_descendent table, along with the table PA_GROUP are user
+within perMIT system stored procedures to 
+control which Qualifiers can be picked by a Primary Authorizer for a given
+department when he/she is creating Authorizations.
+<p />
+<IMG SRC="http://web.mit.edu/repa/www/Roles_data_model_MDH.jpg"></a>
+<p />
+<table border>
+<tr><td colspan=3 bgcolor="#e0e0e0" align=center>Tables within the Master Department Hierarchy</td></tr>
+<tr><th>Table or view</th><th>Table or view name</th><th>Description</th></tr>
+<tr><td>table</td><td>DEPARTMENT</td><td>An object in the hierarchy of
+                 departments, labs, and centers (DLCs).  Could be an actual
+                 DLC, or could be a parent node in the tree.
+                 At MIT, examples of objects represented by rows in this
+                 table would include (1) Department of Biology, 
+                 (2) Research Lab for Electronics, (3) School of Science, 
+                 (4) Provost Area, and 
+                 (5) All of MIT (root of the tree).</td></tr>
+<tr><td>table</td><td>DEPARTMENT_CHILD</td><td>Each row represents a 
+                  parent/child link between two rows in the DEPARTMENT 
+                  table.  Links have a link_type (aka, a view_subtype)
+                  having a view_subtype_id that matches a row in the
+                  view_subtype table.
+                 </td></tr>
+<tr><td>table</td><td>MORE_DEPT_INFO</td>
+                  <td>Each row in this table maps to a single 
+                      DLC in the DEPARTMENT table and is used to
+                      store supplemental data about the DLC.</td></tr>
+<tr><td>table</td><td>VIEW_TYPE</td>
+                  <td>Each record represents a different "view" or 
+                      context-specific version of a hierarchy of DLCs. 
+                      Each view_type might represent a departmental hierarchy
+                      with more or less levels, or one that includes more 
+                      or fewer DLCs, or even links DLCs to different 
+                      parents.  The table VIEW_TO_DEPT_TYPE specifies
+                      which object types are included in a given view, and
+                      the table VIEW_TYPE_TO_SUBTYPE specifies which 
+                      object-to-object link types are included in a given
+                      view.  These tables, together with the 
+                      DEPARTMENT_CHILD table, define objects 
+                      and organizations each view (each view_type) 
+                      of the department hierarchy.
+                      </td></tr>
+<tr><td>table</td><td>LINK_TYPE (aka VIEW_SUBTYPE)</td>
+                  <td>Each department parent/child link has one
+                      link_type.  Link_types are used to control 
+                      which links are included for each view of the
+                      department hierarchy.</td></tr>
+<tr><td>table</td><td>VIEW_TYPE_TO_SUBTYPE</td>
+                  <td>This table maps each view_type to a set of 
+                      link_types (aka view_subtypes).</td></tr>
+<tr><td>table</td><td>DEPT_NODE_TYPE</td>
+                  <td>Each record in the DEPARTMENT table (i.e., each 
+                      DLC or node) has one dept_node_type.  Objects of
+                      various types can be included/excluded from a 
+                      given view of the department hierarchy.
+                      </td></tr>
+<tr><td>table</td><td>VIEW_TO_DEPT_TYPE</td>
+                  <td>This table maps each view_type to a set 
+                      of dept_node_types.  A view of the department
+                      hierarchy can only include a given object if its
+                      dept_node_type is part one of the set of 
+                      dept_node_types mapped to the given view_type.
+                      </td></tr>
+<tr><td>table</td><td>DEPARTMENT_DESCENDENT</td>
+    <td>This table is derived from the DEPARTMENT_CHILD table.  
+        While the DEPARTMENT_CHILD table only has records for 
+        direct parent/child links, the DEPARTMENT_DESCENDENT table
+        also has links for grandparents, great-grandparents, etc..
+        Another difference is that each record in the 
+        DEPARTMENT_DESCENDENT table includes a view_type column;
+        thus it is easy to use the
+        DEPARTMENT_DESCENDENT table to 
+        find all descendents of a given object 
+        within a given view_type without doing a recursive 
+        tree traversal.</td></tr>
+<tr><td>table</td><td>OBJECT_LINK</td>
+                  <td>Each record in the OBJECT_LINK table represents
+                      a link between a DLC (from the DEPARTMENT table)
+                      to a financial, HR, or student-systems "department-like"
+                      object.  The actual linked objects are found in the
+                      QUALIFIER table within the perMIT system.  Links in the
+                      OBJECT_LINK table should be made to QUALIFIERs
+                      at the highest level that makes sense.  For example,
+                      link the DLC D_BIOLOGY to the highest profit center
+                      node or profit center in the hierarchy of 
+                      profit centers and cost objects that does not include
+                      any objects unrelaetd to the department of Biology.
+                      Each link record specifies a DLC, an object type
+                      (e.g., profit center node, HR org unit, academic
+                      course number, etc. - see OBJECT_TYPE table), 
+                      and an object_code (i.e., the code identifying 
+                      a particular HR, financial, or student-systems object).
+                      </td></tr>
+<tr><td>table</td><td>OBJECT_TYPE</td>
+                  <td>Each record in this table represents a type of
+                      ofject to which DLCs can be linked.  Columns
+                      in the OBJECT_TYPE table also specify the 
+                      corresponding QUALIFIER_TYPE for the Roles 
+                      Database QUALIFIER table, and may specify 
+                      a template to indicate valid formats for the
+                      given object type.</td></tr>
+<tr><td>table</td><td>DEPARTMENT_AUDIT</td>
+                  <td>This table stores an audit trail for 
+                      changes made to the DEPARTMENT table.</td></tr>
+<tr><td>table</td><td>DEPT_CHILD_AUDIT</td>
+                  <td>This table stores an audit trail for 
+                      changes made to the DEPARTMENT_CHILD table.</td></tr>
+<tr><td>table</td><td>EXPANDED_OBJECT_LINK</td>
+                  <td>This table is derived from the OBJECT_LINK 
+                      table and the perMIT system's QUALIFIER_DESCENDENT 
+                      table.  It has records that should represent 
+                      each object linked to a DLC, not only through
+                      directly-defined links from the
+                      OBJECT_LINK table, but indirect links found
+                      by looking for descendents of directly-linked
+                      objects.</td></tr>
+</table>
+<p />
+<hr />
+<p />
+<h3>Test/development tables that may never be put into production</h3>
+<p />
+The tables listed below were defined in the TROLES database for testing 
+or development purposes, but might not ever be moved to the production Roles 
+Database.
+<p />
+<table border>
+<tr><td colspan=3 bgcolor="#e0e0e0" align=center>Test/development tables - may never be moved to production</td></tr>
+<tr><th>Table or view</th><th>Table or view name</th><th>Description</th></tr>
+<tr><td>table</td><td>ACCESS_TO_QUALNAME</td><td>...</td></tr>
+<tr><td>table</td><td>DLC_SHADOW</td><td>...</td></tr>
+<tr><td>table</td><td>PROXY_USER</td><td>...</td></tr>
+<tr><td>table</td><td>TERM_OR_TRANSFER_CODE</td><td>...</td></tr>
+<tr><td>table</td><td>USER_TERM_OR_TRANSFER</td><td>...</td></tr>
+</table>
+<p />
+</BODY>
+
+
+

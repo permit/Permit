@@ -1,0 +1,256 @@
+<HTML>
+<HEAD>
+<TITLE>HR Roles now recorded in the perMIT system</TITLE>
+<!--
+ *  Copyright (C) 2006-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H2>HR Roles now recorded in the perMIT system</H2>
+</td></tr></table>
+<p>
+<h3>I. HR-related roles recorded in perMIT system</h3>
+The perMIT system is used to record several HR-related roles, including
+<ul>
+ <li>Contacts for personnel actions and letter-related questions for the 
+     Human Resources department (HR)
+ <li>Authorizations to report on HR-related data
+ <li>Authorizations to perform HR-related transactions
+</ul>
+<p>
+HR contact data and other authorizations 
+in the perMIT system will be maintained by the
+Business Liaison Team and HR, and are also maintainable by
+departmental HR Primary Authorizers.
+<p>
+<h3>II. Explanation of authorizations in the perMIT system</h3>
+<p>
+In the perMIT system, a person can have one or more Authorizations, where 
+an Authorization describes a role or permission to perform some business 
+function.  Even if we are describing a role that does not strictly represent 
+the authority to do something, such as a contact person, we still use
+the perMIT system technical term <b>Authorization</b>.
+Every Authorization has three parts: a 
+person (who), a function (what) and a qualifier (where). A <b>person</b> is a 
+Kerberos username.  A <b>function</b> is what the person may do. A 
+<b>qualifier</b> defines the area in which a person may perform that function,
+for instance, an organizational unit.
+<p>
+HR-related Authorizations can be granted at the DLC level (e.g., 
+10000429 Biology), a school or area level (e.g., 10000030 Science Area), 
+or a higher level (e.g., 10000001 Provost Area, or 10000000 MIT-All).
+When an Authorization is granted at a higher level than a DLC, the
+Authorization applies to all DLCs within that area.  For example, 
+an Authorization whose qualifier is 1000030 Science Area applies to
+10000429 Biology, 10000491 Chemistry, 10000533 Mathematics, etc..
+<p>
+Authorizations defined in the perMIT system are distributed to the
+systems that use the Authorizations for controlling access, 
+such as SAP and MIT's Data Warehouse. 
+<p>
+<h3>III. View HR roles on the web</h3>
+<p>
+<small>Many employees at MIT are already authorized to view HR-related
+Authorizations via the Roles web interface.  If you think you should be
+authorized to view this information but you are not, see the rules for
+who is allowed to view Authorizations described in the memo
+<a href="/metaauth_help.html">
+perMIT system Meta-authorizations</a>.</small>
+<p>
+Click one of the items below to view HR-related roles from the Roles
+Database.
+<ul>
+  <li><a
+  href="/cgi-bin/qualauth2b.pl?category=META&qualtype=DEPT&show_all=1&detail=2&rolesflag=N&group_option=2&expand_auth=Y&levels=20">
+  View HR Primary Authorizers</a>
+  <p>
+  <li><a
+  href="/cgi-bin/qualauth2b.pl?category=ADMN,HR&qualtype=ORG2&show_all=1&detail=2&rolesflag=N&group_option=2&hide_qualcode=Y&expand_auth=Y&levels=20">View departmental contacts and people with other HR roles</a>
+      <ul>
+        <li>Same as above, but <a
+  href="/cgi-bin/qualauth2b.pl?category=ADMN,HR&qualtype=ORG2&show_all=1&detail=2&rolesflag=N&group_option=2&hide_qualcode=N&expand_auth=Y&levels=20">include new 8-digit Organization numbers
+  </a>
+      </ul>
+</ul>
+<p>
+ 
+<h3>IV. Definition of Functions used in HR roles</h3>
+<p>
+<blockquote>
+<table border>
+  <tr><th>Function name</th><th>Definition</th></tr>
+  <tr><td colspan=2 bgcolor="#E0E0E0" align=center>
+    HR Primary Authorizer</td></tr>
+  <tr><td>HR PRIMARY AUTHORIZER</td>
+      <td>The administrator in a department who has the
+          authority to change HR contact information and other HR-related
+          authorizations for their department in the perMIT system.
+      </td> 
+  </tr>
+  <tr><td colspan=2 bgcolor="#E0E0E0" align=center>
+    HR people to contact</td></tr>
+  <tr><td>ACTIONS-ACADEMIC</td>
+      <td>Person in the DLC to contact if there
+	  is a question on a personnel action for an Academic employee.</td>
+  </tr>
+  <tr><td>ACTIONS-ADMINISTRATIVE</td>
+      <td>Person in the DLC to contact if there is a question on a
+          personnel action for an Administrative Staff employee.</td>
+  </tr>
+  <tr><td>ACTIONS-SERVICE</td>
+      <td>Person in the DLC to contact if there is a question on a
+          personnel action for a Service Staff employee.</td>
+  </tr>
+  <tr><td>ACTIONS-SRS</td><td>Person in the DLC to contact if there is
+          a question on a personnel action for a Sponsored Research
+          Staff employee.</td>
+  </tr>
+  <tr><td>ACTIONS-SUPPORT</td>
+      <td>Person in the DLC to contact if there is a question on a
+	  personnel action for a Support Staff employee.</td>
+  </tr>
+  <tr><td>DEPT HEAD/DIRECTOR</td>
+      <td>Department Head or Director of the DLC.</td>
+  </tr>
+  <tr><td>HRO</td><td>The Human Resources Officer for the DLC.</td></tr>
+  <tr><td>EXEMPT STAFF LETTER RECIPIENT</td>
+      <td>Person in the DLC to contact with questions about letters
+	  for Exempt employees.</td>
+  </tr>
+  <tr><td>EXEMPT STAFF LETTER SIGNER</td>
+      <td>Person in the DLC who signs HR-related letters related to
+          Exempt employees.</td>
+  </tr>
+  <tr><td colspan=2 bgcolor="#E0E0E0" align=center>
+    HR Functions</td></tr>
+  <tr><td>ASR - DEPARTMENT LEVEL</td>
+      <td><i>(Added to this document 6/7/2006.)</i>
+          This function, used to grant authorizations at the DLC level,
+          allows the authorized person to update and 
+          approve Annual Salary Reviews in SAP.  It allows slightly 
+          different privileges in SAP than the function 
+          ASR - SCHOOL/AREA LEVEL.</td>
+  </tr>
+  <tr><td>ASR - SCHOOL/AREA LEVEL</td>
+      <td><i>(Added to this document 6/7/2006.)</i>
+          This function, used to grant authorizations at the school or area
+          level,  allows the authorized person to update and 
+          approve Annual Salary Reviews in SAP. It allows slightly 
+          different privileges in SAP than the function 
+          ASR - DEPARTMENT LEVEL.</td>
+  </tr>
+  <tr><td>DISPLAY FACULTY CHAIR DATA</td>
+      <td><i>(Added to this document 6/7/2006.)</i>
+          This function allows the authorized person to display 
+          data about the faculty chair for an org unit in SAP.</td>
+  </tr>
+  <tr><td>MAINT EMPL EDUCATION DATA</td>
+      <td>This function allows the authorized person to 
+          maintain education data for employees within 
+          an org. unit, i.e., 
+          the school, degree, and field of
+          study for each level of education attained</td></tr>
+  <tr><td>MAINT EMPL EMERG CONTACT</td><td>This function allows the authorized 
+          person to maintain emergency
+          contact information for employees within an org. unit, 
+          i.e., the person to contact in case of emergency</td></tr>
+  <tr><td>MAINT EMPL ETHNIC & MILITARY</td>
+      <td>This function allows the authorized person to maintain ethnic and 
+          military data for employees
+          within an org. unit, 
+          i.e., select the categories that best describe
+          ethnic background, military, and veteran status</td></tr>
+  <tr><td>MAINT EMPL TELEPHONE DIR</td>
+      <td>This function allows the authorized person to maintain directory 
+          information for employees
+          within an org. unit, including home
+          and office address and telephone numbers</td></tr>
+  <tr><td>MAINT FACULTY CHAIR DATA</td>
+      <td><i>(Added to this document 6/7/2006.)</i>
+          This function allows the authorized person to maintain 
+          faculty chair data for one or more DLCs in SAP.</td>
+  </tr>
+  <tr><td>REPORT ON ALL HR DATA</td>
+      <td>This function is intended for members of the MIT community who
+          have the need to report on all HR data for the entire Institute.  
+          Individuals that are granted this reporting access can report on 
+          confidential payroll salary data.  Authorizations for this function 
+          are not intended to be granted at an org. unit level, only at 
+          the MIT_ALL level.  These authorizations cannot be granted by 
+          HR Primary Authorizers, only by central adminstrators following
+          approval by HR.</td></tr>
+  <tr><td>REPORT ON APPTS & POS - FULL</td>
+      <td>This function allows the authorized person to 
+          report on all appointment and position data (including salary and
+          budget data) for employees within the specified org. unit. 
+          Individuals who are granted this reporting access for employees on 
+          the confidential payroll see a salary of $0.01</td></tr>
+  <tr><td>REPORT ON APPTS & POS - LMTD</td>
+          <td>This function allows the authorized person to 
+          report on a limited set of appointment and position data
+          (excludes salary and budget data) for employees within the specified
+          org. unit.</td></tr>
+  <tr><td>REPORT ON BENEFITS DATA</td>
+          <td><i>(Added to this document 6/7/2006.)</i>
+          This function allows the authorized person to report on benefits 
+          data for one or more org units.
+          </td></tr>
+  <tr><td>REPORT ON DEPT DIRECTORY</td>
+          <td>This function allows the authorized person 
+          to report on the data found in the departmental directory, 
+          allowing the viewing of records for employees whose org. unit 
+          or adminstrative org. unit matches the org. unit 
+          specified as a qualifier in the authorization.
+          </td></tr>
+  <tr><td>REPORT ON PERSON - FULL</td>
+      <td>This function allows the authorized person
+          to report on all employee data (including home address and emergency
+          contact data) for employees within the specified org. unit.</td></tr>
+  <tr><td>REPORT ON PERSON - LMTD</td>
+      <td>This function allows the authorized person
+          to report on a limited set of appointment and position data (excludes
+          salary and budget data) for employees within the specified org. 
+          unit.</td></tr>
+  <tr><td>REPORT ON PNSN BENEFITS DATA</td>
+          <td><i>(Added to this document 6/7/2006.)</i>
+          This function allows the authorized person to report on Pension 
+          Benefits Data for one or more org units.
+          </td></tr>
+  <tr><td>VACA ADMIN FOR EXEMPT STAFF</td>
+          <td><i>(Added to this document 6/7/2006.)</i>
+          This function allows the authorized person to maintain vacation data
+          for "exempt" employees under a given org unit on SAP.
+          </td></tr>
+  <tr><td colspan=2 bgcolor="#E0E0E0" align=center>
+    Other Administrative Functions (now in the ADMN category, not HR)</td></tr>
+  <tr><td>TEL&nbsp;DIR CONTACT&nbsp;-&nbsp;PRIMARY</td>
+      <td>Primary person in the DLC responsible for communicating and
+	  coordinating the annual update to MIT's printed telephone
+	  directory.</td>
+  </tr>
+  <tr><td>TEL&nbsp;DIR&nbsp;CONTACT-&nbsp;ALTERNATE</td>
+      <td>An alternate person in the DLC responsible for communicating and
+	  coordinating the annual update to MIT's printed telephone
+	  directory.</td>
+  </tr>
+</table>
+</blockquote>
+<p>
+<small>Last modified by repa on 3/02/2004</small>
+</BODY>
+</HTML>
+ 

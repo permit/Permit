@@ -1,0 +1,153 @@
+#!/bin/tcsh
+##############################################################################
+#
+#  Early morning jobs run for Roles feeds.  This shell script is scheduled
+#  to be run early every morning (before 5 AM).
+#
+#
+#  Copyright (C) 1999-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+#  Created 4/5/1999, Jim Repa
+#  Modified 8/31/1999
+#  Modified 8/21/2001 (Add fix_dept_appr_func.pl)
+#  Modified 8/27/2001 (Run feeds for yroles, then don't)
+#  Modified 6/27/2002 (Add ORG2 feed, for new HR hierarchy)
+#  Modified 3/20/2004 (Add Steve Landry sml@mit.edu. to Email recipients)
+#  Modified 11/01/2004 (Add PBUD feed)
+#  Modified 9/6/2005  (Add PCCS feed)
+#  Modified 6/15/2006 (Remove Steve Landry sml@mit.edu from Email recipients)
+#  Modified 9/6/2006  (Add processing for EHST qualifiers)
+#  Modified 11/29/2006  (Add processing for MDEPT tables and ORGU qualifiers)
+#  Modified 2/26/2007 (PYTG processing uses warehouse tables, not FTP)
+#  Modified 1/23/2008 (Use Mail command, not sendmail.)
+#
+##############################################################################
+#
+# Process COST, FUND, and SPGP qualifiers for Roles
+#
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract cost ftpwarehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare cost roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load cost roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.cost.roles.log
+/bin/mail -s 'COST feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.cost.roles.log
+
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract fund ftpwarehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare fund roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load fund roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.fund.roles.log
+/bin/mail -s 'FUND feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.fund.roles.log
+
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract spgp roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare spgp roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load spgp roles
+/bin/mail -s 'SPGP feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.spgp.roles.log
+
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract whcost warehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare whcost roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load whcost roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.whcost.roles.log
+/bin/mail -s 'WHCOST feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.whcost.roles.log
+
+# Disabled 2010-04-02 due to Jim Repa pointing out that it's no longer used
+#$HOME/permit/feeds/cronjobs/cron_roles_feed extract lorg ftpwarehouse
+#$HOME/permit/feeds/cronjobs/cron_roles_feed prepare lorg roles
+#$HOME/permit/feeds/cronjobs/cron_roles_feed load lorg roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.lorg.roles.log
+#/bin/mail -s 'LORG feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.lorg.roles.log
+
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract org2 warehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare org2 roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load org2 roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.org2.roles.log
+/bin/mail -s 'ORG2 feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.org2.roles.log
+
+
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract oldorg warehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare oldorg roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load oldorg roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.oldorg.roles.log
+/bin/mail -s 'OLDORG feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.oldorg.roles.log
+
+
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract pbud warehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare pbud roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load pbud roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.pbud.roles.log
+/bin/mail -s 'PBUD feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.pbud.roles.log
+
+
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract pmit warehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare pmit roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load pmit roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.pmit.roles.log
+/bin/mail -s 'PMIT feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.pmit.roles.log
+
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract pytg warehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare pytg roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load pytg roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.pytg.roles.log
+/bin/mail -s 'PYTG feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.pytg.roles.log
+
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract pccs warehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare pccs roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load pccs roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.pccs.roles.log
+/bin/mail -s 'PCCS feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.pccs.roles.log
+
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract ehst ehs
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare ehst roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load ehst roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.ehst.roles.log
+/bin/mail -s 'EHST feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.ehst.roles.log
+
+$HOME/permit/feeds/cronjobs/cron_aux_roles_feed fix_pa_desc.pl roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_aux_roles_feed.fix_pa_desc.pl.roles.log
+/bin/mail -s 'fix_pa_desc.pl results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_aux_roles_feed.fix_pa_desc.pl.roles.log
+
+# we will temporarily disable these - vkonda (2/8/10)
+#$HOME/permit/feeds/cronjobs/cron_roles_feed extract mdeptdesc mdept
+#$HOME/permit/feeds/cronjobs/cron_roles_feed prepare mdeptdesc mdept
+#$HOME/permit/feeds/cronjobs/cron_roles_feed load mdeptdesc mdept
+# we will temporarily disable these - vkonda (2/8/10)
+#/bin/mail -s 'MDEPT descendant feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.mdeptdesc.mdept.log
+
+# we will temporarily disable these - vkonda (2/8/10)
+#$HOME/permit/feeds/cronjobs/cron_roles_feed extract mdeptlink mdept
+#$HOME/permit/feeds/cronjobs/cron_roles_feed prepare mdeptlink mdept
+#$HOME/permit/feeds/cronjobs/cron_roles_feed load mdeptlink mdept
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.mdeptlink.mdept.log
+# we will temporarily disable these - vkonda (2/8/10)
+#/bin/mail -s 'MDEPT links feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.mdeptlink.mdept.log
+
+$HOME/permit/feeds/cronjobs/cron_aux_roles_feed fix_dept_appr_func.pl roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_aux_roles_feed.fix_dept_appr_func.pl.roles.log
+/bin/mail -s 'fix_dept_appr_fund.pl results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_aux_roles_feed.fix_dept_appr_func.pl.roles.log
+
+# we will temporarily disable these until perMIT becomes primary- vkonda (2/8/10)
+#$HOME/permit/feeds/cronjobs/cron_external_extract dacca_extract.pl roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_external_extract.dacca_extract.pl.roles.log
+# we will temporarily disable these - vkonda (2/8/10)
+#/bin/mail -s 'dacca_extract feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_external_extract.dacca_extract.pl.roles.log
+
+#
+# Run the SAPbud special extract
+#
+# we will temporarily disable these until perMIT becomes primary- vkonda (2/8/10)
+#$HOME/permit/feeds/cronjobs/cron_external_extract budg_extract.pl roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_external_extract.budg_extract.pl.roles.log
+#/bin/mail -s 'SAPBud extract results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_external_extract.budg_extract.pl.roles.log
+
+
+
+

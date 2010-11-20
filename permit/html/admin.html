@@ -1,0 +1,112 @@
+<HTML>
+<HEAD>
+<TITLE>System Administrator Tools</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY BGCOLOR="#fafafa">
+<TABLE>
+<TR><TD><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></TD>
+<TD>
+<H1>System Administrator Tools</H1></TD>
+</TR>
+</TABLE>
+<BR>
+Below are some perMIT system web pages that will be useful to people who
+maintain qualifier hierarchies in the perMIT system or Funds/Fund Centers
+in SAP.  See also <A HREF="more_auth.html">
+miscellaneous authorization web pages</A>.
+<P><HR><BR>
+Rules-based authorizations: 
+<a href="auth_rules.html">Links to reports, UI for setting rules, etc.</a>
+<p />
+Report on differences between the Approver authorizations in the PD Org and
+in the perMIT system:
+<br>(refreshed each day at 5 AM, 12 noon, and 4 PM)
+<ul>
+<li>Abridged report: 
+<A HREF="/cgi-bin/pdorg_compare.pl?show_all=n">
+Show differences for matchable Spending Groups only</A> 
+<li>Unabridged report: 
+<A HREF="/cgi-bin/pdorg_compare.pl?show_all=y">
+Show all differences</A> (including spending groups
+that cannot be matched because the [spending group code] has not been 
+included in the org. name field in the PD Org).
+</ul>
+<P>
+A clean-up aid for the SAP standard hierarchy of Funds/Fund Centers:
+<BR>
+Each Fund Center in SAP's standard hierarchy of Fund Centers should have
+as its children either all Funds or all Fund Centers, not a combination of 
+of the two.  Authorized individuals can display a list of Fund Centers 
+that break this rule.
+<BR>
+<A HREF="/cgi-bin/sap-reports.pl?report_num=2">
+Show Fund Centers that break the "one kind of children" rule</A> 
+<BR>
+<BR>
+A clean-up aid for the Custom Fund Center hierarchy:
+<BR>
+In most cases, a Fund Center should only be a member of one Spending Group.
+You can display a list of Fund Centers that break 
+this rule. Certificates and a meta-authorization are required to use 
+this web page.
+<BR>
+<A HREF="/cgi-bin/sap-reports.pl?report_num=3">
+Show Fund Centers that belong to more than one Spending Group</A> 
+<P />
+Show <A HREF="/cgi-bin/roles_exception_reports.cgi?report_num=1">qualifiers with an inactive status</a>. (These are usually 
+qualifiers that should be deleted but must have their related authorizations
+deleted first.)
+<P />
+Run <A HREF="/roles_quarterly_stats.html">quarterly report statistics</a>.
+<P />
+For authorized administrators only: <A HREF="/cgi-bin/update_roles_parameters.cgi">Update perMIT system parameters for data feeds and other processes</a>.
+<p />
+Maintain the list of <A HREF="/cgi-bin/rel_str.cgi">Model 1 (Release Strategy) Funds Centers</a>. 
+(To use this feature, you need an authorization to 'MAINTAIN MOD 1 FC'.)
+<p />
+Make additions or changes to one of the Qualifier hierarchies.  You are
+probably not authorized to use this Web page;  this web page can only be
+used by a few Roles administrators.<BR>
+<A HREF="/cgi-bin/qualmaint/RolesQM.pl">
+Maintain qualifiers within perMIT system.</A>
+<p> 
+<b>Roles users reports</b> (for system administrators with 
+'VIEW ADMIN REPORTS' authorization):
+<ul>
+<li><a href="/person_history.html">
+Users whose directory information has changed</a> 
+(e.g., department or employment changes)
+<li><a href="/auth_creators.html">
+People who can create authorizations</a> in the perMIT system.
+<li><i>New:</i> <a href="/auths_created_summary.html">
+Number of authorizations created by a person</a> for a given time period.
+<LI><a href="/missing_users.html">
+Missing Roles usernames</a>, i.e., users who can create authorizations,
+but are waiting for a perMIT system username/password.
+<LI><a href="/cgi-bin/roles_db_users.cgi">
+Roles usernames</a>, and the last time they connected to the database.
+<LI><i>For specially-authorized administrators:</i> 
+<a href="/cgi-bin/roles_db_users_edit.cgi">
+Add or delete Roles usernames</a>
+</ul>
+<p>
+<HR>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>
+</BODY>

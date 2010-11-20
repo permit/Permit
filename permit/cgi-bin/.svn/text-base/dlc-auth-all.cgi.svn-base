@@ -1,0 +1,1004 @@
+#!/usr/bin/perl
+##############################################################################
+#
+# Modified to handle auths in all categories...
+#
+# CGI script to list Authorizations for people "within a
+# department."  An input parameter contains a department code, D_xxxx.
+# A person's authorizations are included if
+# s/he has one or more authorizations where Qualifier_code is a descendent
+# of D_xxxx in the PRIMARY_AUTH_DESCENDENT table.
+# 
+# The requestor must have certificates and must have a meta-authorization
+# allowing him to view other people's authorizations within category SAP.
+#
+#
+#  Copyright (C) 1998-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+# Written by Jim Repa, 12/15/1998 (uses some code from a script
+#  written by Dwaine Clarke, spring 1998)
+# Modified by Jim Repa, 1/6/1999 - Improve the format
+# Modified by Jim Repa, 2/8/1999 - Remove description about SPEND/COMMIT only
+# Modified by Jim Repa, 2/24/1999 - Gray out auths that are not in effect
+# Modified by Jim Repa, 3/1/1999, 3/3/1999 - Add more format options
+# Modified by Jim Repa, 4/8/1999 - Make format option 1 the default
+# Modified by Jim Repa, 4/29/1999 - Swap filter options 1 and 2
+# Modified by Jim Repa, 1/18/2000 - Add option to sort by last name
+# Modified by Jim Repa, 2/1/2000 - Improve format for new report form
+# Modified by Jim Repa, 2/29/2000 - Use PRIMARY_AUTH_DESCENDENT table
+# Modified by Jim Repa, 3/09/2001 - Improve error message
+# Modified by Jim Repa, 3/1/2004 - Support "category" parameter
+# Modified by Jim Repa, 3/21/2006 - Remember "category" parm on new rpt screen
+# Modified by Jim Repa, 4/17/2008 - Put Oracle hints in select stmt. for perf.
+# Modified by Jim Repa, 6/3/2008 - Support "ALL" viewable categories
+# Modified by Jim Repa, 12/31/2008 - Add 'VPFINANCE' as another special DLC
+#
+##############################################################################
+#
+# Get packages
+#
+use rolesweb('login_sql');   #Use sub. login_sql in rolesweb.pm
+use rolesweb('login_dbi_sql');   #Use sub. login_sql in rolesweb.pm
+use rolesweb('parse_forms'); #Use sub. parse_forms in rolesweb.pm
+use rolesweb('parse_authentication_info'); #Use sub. parse_authentication_info in rolesweb.pm
+use rolesweb('check_auth_source'); #Use sub. check_auth_source in rolesweb.pm
+use rolesweb('verify_metaauth_category'); #Use sub. verify_metaauth_category
+use rolesweb('get_viewable_categories'); #Use sub. get_viewable_categories
+use rolesweb('print_header'); #Use sub. print_header in rolesweb.pm
+
+#
+#  Set constants
+#
+ $0 =~ /([^\/]*)$/;  # Find string past the last / in full prog. path
+ $progname = $1;    # Set $progname to this string.
+ $host = $ENV{'HTTP_HOST'};
+ $url_stem = "https://$host/cgi-bin/$progname?";  # this URL
+# Stem for a url for a users's authorizations
+ $url_stem3 = "/cgi-bin/my-auth.cgi?FORM_LEVEL=1&";  
+ $url_list_dept = "http://$host/cgi-bin/qualauth.pl?"
+            . "qualtype=DEPT+%28MIT+departments+%28unofficial%29%29"
+            . "&noleaf=1&levels=20";
+ $url_category_doc = "http://$host/category_status.html";
+ ## Make a list of non-leaf DLCs to allow in the list
+ @g_non_leaf_dlc = ('D_ASO', 'D_DSL', 'D_DUE', 'D_VPFINANCE');
+
+
+#
+#  Process form information
+#
+$request_method = $ENV{'REQUEST_METHOD'};
+if ($request_method eq "GET") {
+   $input_string = $ENV{'QUERY_STRING'};
+} 
+elsif ($request_method eq "POST") {
+    read (STDIN, $input_string, $ENV{'CONTENT_LENGTH'});  # Read input string
+}
+else {
+    $input_string = '';  # Error condition 
+}
+%formval = ();  # Hash of reformatted key->variables populated by &parse_forms
+%rawval = ();  # Hash of unformatted key->variables populated by &parse_forms
+&parse_forms($input_string, \%formval, \%rawval); # Call sub. to parse input
+$picked_qual = $formval{'qualcode'};
+$picked_qual =~ tr/a-z/A-Z/;
+$format = $formval{'format'};
+$format = ($format) ? $format : '1';
+$filter_opt = $formval{'filter'};
+#$filter_opt = ($filter_opt) ? $filter_opt : '2';
+$sort_opt = $formval{'sort'};
+#$sort_opt = ($sort_opt) ? $sort_opt : '2';
+$g_category = $formval{'category'};
+$g_category =~ tr/a-z/A-Z/;
+#unless ($g_category) {$g_category = 'SAP';}
+if ($g_category eq 'ALL') {$g_category = '';}
+
+#
+#  If the qualifier does not begin with a D_, add one.
+#
+$picked_qual =~ s/^FC_/D_/;
+if (substr($picked_qual, 0, 2) ne 'D_') {
+  $picked_qual = 'D_' . $picked_qual;
+}
+
+#
+#  Print beginning of the document
+#    
+ print "Content-type: text/html", "\n\n";
+ print "<HTML>", "\n";
+ print "<HEAD><TITLE>$g_category Authorizations List",
+       "</TITLE></HEAD>", "\n";
+ print '<BODY bgcolor="#fafafa">';
+ if ($picked_qual ne 'D_') {
+   $header = "$g_category Authorizations for people authorized on qualifiers"
+      . " within $picked_qual";
+ }
+ else {
+   $header = "Report on Authorizations for people and qualifiers"
+      . " within a given Department";
+ }
+ &print_header ($header, 'https');
+ print "<P>";
+
+#
+#  Print an error message if user did not specify a qualifier.
+#
+if ( (!$picked_qual) && ($filter_opt) ) {
+  print "Error: No Department code (e.g., D_BIOLOGY) was specified.<BR>";
+  die;
+}
+
+
+ # authentication checks
+  ($info,$k_principal, $domain)  = &parse_authentication_info();  # Parse authentication info 
+  $k_principal =~ tr/a-z/A-Z/;  # Raise username to uppercase
+  $full_name = $k_principal;
+  $result = &check_auth_source($info); # Check other certificate fields
+  if ($result ne 'OK') {
+      print "<br><b>Your authentication cannot be accepted: $result";
+      exit();
+  }
+
+#
+#  Log something
+#
+ $remote_host = $ENV{'REMOTE_HOST'};
+ chomp($time = `date +'%y/%m/%d %H:%M:%S'`);
+ print STDERR "***$time $remote_host $k_principal $progname $info\n";
+
+
+use DBI;
+$lda = login_dbi_sql('roles') || die "$DBI::errstr . \n";
+
+#
+#  If a category other than 'ALL' was requested, 
+#  make sure the user has a meta-authorization to view all authorizations
+#  in the requested category.
+#
+#  If no category was requested, then call get_viewable_categories to
+#  get a list of categories for which the user is authorized to view 
+#  authorizations.
+#
+%g_viewable_cat = ();
+&get_viewable_categories($lda, $k_principal, \%g_viewable_cat);
+if ($g_category && $g_category ne 'D_ALL') {
+  if (!(&verify_metaauth_category($lda, $k_principal, $g_category))) {
+    print "Sorry.  You do not have the required perMIT system 'meta-authorization'",
+    " to view other people's $g_category authorizations.";
+    exit();
+  }
+}
+$g_can_see_all_cat = ($g_viewable_cat{'ALL'}) ? 1 : 0;
+
+#
+#  If no DEPT and no filter_option were picked, then
+#  display a form for running the report (not the report itself).
+#
+if ( (!$filter_opt) && ($picked_qual eq 'D_') ) {
+  &allow_another_report($format, $picked_qual, 'I');
+}
+
+#
+#  Print authorization list
+#
+else {
+  &print_dept_auths($lda, $picked_qual);
+  print "<HR>";
+
+#
+# Print form allowing user to run another report
+#
+  &allow_another_report($format, $picked_qual, '');
+}
+
+#
+#  Drop connection to Oracle.
+#
+#&ora_logoff($lda) || die "can't log off Oracle";    
+$lda->disconnect();
+
+print "<hr>";
+print "For questions on this service, please send E-mail to business-help\@mit.edu";
+
+chomp($time = `date +'%y/%m/%d %H:%M:%S'`);
+print STDERR "***$time $remote_host $k_principal $progname Done.\n";
+exit();
+
+########################################################################
+#
+#  Strips off trailing <cr> and leading and trailing blanks.
+#
+###########################################################################
+sub strip {
+    my($s);  #temporary string
+    $s = $_[0];
+    $s =~ s/\'/\"/;  # Change back-tick to double quote to foil hackers.
+    while ($s =~ /[\s\n]$/) {   # Remove trailing <cr> or space
+	chop($s);
+    }
+    while (substr($s,0,1) =~ /^\s/) {
+	$s = substr($s,1);
+    }
+ 
+    $s;
+}
+
+###########################################################################
+#
+#  Subroutine allow_another_report
+#   
+#  Prints out the categories from which the superuser, $k_prinicipal,
+#  is allowed to choose, if he wants to view another user's authorizations.
+#
+###########################################################################
+sub allow_another_report {
+    my ($format, $picked_qual, $initial) = @_;
+    
+    #
+    # Check the format option that is already in effect
+    #
+    my $check1 = ($format eq '1') ? 'CHECKED' : '';
+    my $check2 = ($check1) ? '' : 'CHECKED';
+    unless ($filter_opt) {$filter_opt = 2;}
+    my $checkb1 = ($filter_opt eq '1') ? 'CHECKED' : '';
+    my $checkb2 = ($checkb1) ? '' : 'CHECKED';
+    unless ($sort_opt) {$sort_opt = 1;}
+    my $checks1 = ($sort_opt eq '1') ? 'CHECKED' : '';
+    my $checks2 = ($checks1) ? '' : 'CHECKED';
+
+    #
+    # If this is an initial call, then print an introdutory paragraph.
+    #
+    if ($initial eq 'I') {
+      print "Most cost objects, funds centers, funds, spending groups, and 
+       other perMIT system \"qualifiers\" have been organized into an 
+       unofficial hierarchy of Departments, Labs, and Centers.  Using this
+       hierarchy, it is possible to find and dislpay authorizations for
+       qualifiers related to a given Department.
+       <p />
+       There are two \"filter options\" for selecting department-related
+       authorizations to be displayed.  Filter option  finds only the 
+       authorizations whose qualifiers are actually found under a given DLC 
+       in the hierarchy.  Filter option 2 selects authorizations for display
+       through a 2-step process: first find any person who has at least 
+       one authorization related to a given DLC, and second display all 
+       authorizations for that person even if they do not apply to the
+       specified DLC.
+       <p />
+       For example, if you specify department D_SLOAN, the report:
+       <ol>
+         <li>finds all people having authorizations for a qualifier of any
+             Funds Center, Spending Group, Cost Object, Profit Center, etc.
+             that falls under D_SLOAN, and then
+         <li>shows all authorizations for those people, even where the
+             qualifier is not related to the Sloan School.
+       </ol><hr>";
+    }  
+
+    #
+    # Print out FORM stuff to allow a call for a different qualifier
+    #    
+    print "<FORM METHOD=\"GET\" ACTION=\"$url_stem\">";
+    #print "<INPUT TYPE=HIDDEN NAME=category VALUE=\"$g_category\">";
+    print "Select a Department code, "
+     . " select a Function Category (or ALL for all you can view), "
+     . " pick the format, filter, and sort"
+     . " options, and then click SUBMIT to display another report.<p />";
+    print "<table>",
+    "<tr><td><strong>Department<br>code: </strong></td>";
+    #print 
+    # "<td><INPUT TYPE=TEXT NAME=qualcode value=\"$picked_qual\"></td></tr>";
+    print "<td>";
+    &print_dept_list($lda, 'qualcode');
+    print "</td><td><small>"
+       . "<a href=\"$url_list_dept\" target=new>Show DEPT hierarchy</a>"
+       . "</small></td></tr>\n";
+    print "<tr><td><strong>Function<br>category</td><td>";
+    &print_category_list($k_principal, $g_category);
+    print "</td><td><small>"
+    . "<a href=\"$url_category_doc\" target=new>Show category descriptions</a>"
+    . "</small></td></tr>\n";
+    print "<tr><td><strong>Format option:</strong></td>",
+    "<td colspan=2><INPUT TYPE=RADIO NAME=format VALUE=1 $check1>",
+    "1. Display qualifier name",
+    "<BR>",
+    "<INPUT TYPE=RADIO NAME=format VALUE=2 $check2>",
+    "2. Display flags (do_function, grant, in_effect_today, modified_by,",
+    " date) </td></tr>",
+    "<tr><td><strong>Filter option:</strong></td>",
+    "<td colspan=2><INPUT TYPE=RADIO NAME=filter VALUE=1 $checkb1>",
+    "1. Show only authorizations for qualifiers directly related to the",
+    " department<BR>",
+    "<INPUT TYPE=RADIO NAME=filter VALUE=2 $checkb2>",
+    "2. Show all authorizations for selected people</td></tr>",
+    "<tr><td><strong>Sort option:</strong></td>",
+    "<td colspan=2><INPUT TYPE=RADIO NAME=sort VALUE=1 $checks1>",
+    "1. Sort by Kerberos username",
+    "<BR>",
+    "<INPUT TYPE=RADIO NAME=sort VALUE=2 $checks2>",
+    "2. Sort by last name and first name</td></tr></table>",
+    '<center><INPUT TYPE="SUBMIT" VALUE="Submit"></center></FORM>';
+}
+
+###########################################################################
+#
+#  Subroutine print_dept_auths.
+#
+#  Prints out the authorizations within a selected category
+#  (or list of categories) for users having
+#  authorizations where the qualifier_code equals or is a descendent
+#  of the given Fund Center.
+#
+###########################################################################
+sub print_dept_auths {
+    my ($lda, $picked_qual) = @_;
+    my (@akerbname, @afn, @aqc, @adf, @agandv, @adescend, @amoddate, @modby,
+        $aafc, $aafn, $aaqc, $aadf, $aagandv, $aadescend, $aamoddate, $modby,
+        $csr, $n, @stmt, $last_kerbname, $kerbstring);
+
+    $picked_qual = &strip($picked_qual);
+
+    #
+    #  Print out introductory paragraph.
+    #
+    print "Below is a list of $g_category authorizations 
+           for users who have one or more
+           authorizations for qualifiers under department
+           $picked_qual.";
+    print "To keep the display fast, the only field with links to other 
+           web pages is the Kerberos username field.
+           Click on a Kerberos name to see a different display of that user's 
+           $g_category authorizations, complete with links to
+           web pages about qualifiers and authorization details.<P>";
+    &print_options_desc($picked_qual, $format, $filter_opt);
+    print "<P><HR>";
+
+    #
+    # Check to make sure $picked_qual exists.
+    #
+    $stmt = "select count(*) from qualifier"
+             . " where qualifier_type = 'DEPT'"
+             . " and qualifier_code = '$picked_qual'";
+    $csr = $lda->prepare("$stmt") or die( $DBI::errstr . "\n");
+    $csr->execute();
+#    ($n) = &ora_fetch($csr);
+    ($n) = $csr->fetchrow_array();
+#    &ora_close($csr) || die "can't close cursor";    
+ $csr->finish();
+    if ($n == 0) {
+      print "Department '$picked_qual'"
+            . " <strong>does not exist</strong>.<BR>";
+      print "<p>Would you like to see a list of "
+            . '<a href="' . $url_list_dept 
+            . '">valid department codes</a>?<BR>';
+    }
+
+    else {  #### Beginning of big ELSE group
+     #
+     #  Set up the complex query to display the authorizations.
+     #
+     $stmt = &get_select_stmt($picked_qual, $filter_opt, $sort_opt);
+     print $stmt;
+     print "<BR>";
+     #exit();
+     #unless($csr = &ora_open($lda, "@stmt")) {
+     #   print $ora_errstr;
+     #   die;
+     #}
+     $csr = $lda->prepare("$stmt") or die( $DBI::errstr . "\n");
+     $csr->execute();
+    
+     #
+     #  Get a list of authorizations
+     #
+     @akerbname = ();
+     @afn = ();
+     @aqc = ();
+     @adf = ();
+     @agandv = ();
+     @adescend = ();
+     @aqid = ();
+     @aqt = ();
+     @ahc = ();
+     @aqtd = ();
+     @acurrent = ();
+     @amoddate = ();
+     @amodby = ();
+     @aqualname = ();
+     @afullname = ();
+     @adept = ();
+     @acat = ();
+     my ($old_kerbname, $old_fn, $oldqc);
+     my ($aakerbname, $aafn, $aaqc, $aadf, $aagandv, $aadescend, $aaqid, 
+         $aaqt, $aahc, $aaqtd, $aacurrent, $aamoddate, $aamodby, $aaqualname,
+         $aafullname, $aadept, $aacat);
+     while (($aakerbname, $aafn, $aaqc, $aadf, $aagandv, $aadescend, $aaqid, 
+        $aaqt, $aahc, $aaqtd, $aacurrent, $aamoddate, $aamodby, $aaqualname,
+        $aafullname, $aadept, $aacat) 
+ 	    = $csr->fetchrow_array())
+     {
+        $aadept = substr($aadept, 2); #Chop off 'D_'
+        if ($aakerbname ne $old_kerbname || $aafn ne $old_fn
+            || $old_qc ne $aaqc) {
+          push(@akerbname, $aakerbname);
+          push(@afn, $aafn);
+          push(@aqc, $aaqc);
+          push(@adf, $aadf);
+          push(@agandv, $aagandv);
+          push(@adescend, $aadescend);
+          push(@aqid, $aaqid);
+          push(@aqt, $aaqt);
+          push(@ahc, $aahc);
+          push(@aqtd, $aaqtd);
+          push(@acurrent, $aacurrent);
+          push(@amoddate, $aamoddate);
+          push(@amodby, $aamodby);
+          push(@adept, $aadept);
+          $aacat = &strip($aacat);
+          push(@acat, $aacat);
+          if ($format eq '1') {push(@aqualname, $aaqualname);}
+          $aafullname =~ s/ Ii,/ II,/;  $aafullname =~ s/ Iii,/ III,/;
+          $aafullname =~ s/ Iv,/ IV,/;
+          if ($aafullname =~ /^Mc/) {substr($aafullname, 2, 1) =~ tr/a-z/A-Z/;}
+          push(@afullname, $aafullname);
+        }
+        else {
+          my $old_adept = pop(@adept);
+          push(@adept, "$old_adept,$aadept");
+        }
+        $old_kerbname = $aakerbname;
+        $old_fn = $aafn;
+        $old_qc = $aaqc;
+        #print "$aakerb, $aafn, $aaqc, $aadf, $aagandv, $aadescend \n";
+     }
+    # &ora_close($csr) || die "can't close cursor";
+$csr->finish();
+
+     #
+     #  Before printing out the table, get some constants ready.
+     #
+      $n = @akerbname;  # How many authorizations?
+      $dwidth = &maxlength(\@adept);  # What's longest DEPT string?
+      if ($dwidth < 13) {$dwidth = 13;} # Leave enough room for the header
+      if ($format eq '2') {
+        $fmt_string =
+        "%-2s %-30s %-15s %-${dwidth}s %-4s %-4s %-3s %-8s %11s\n",
+      }
+      else { # ($format must be '1')
+        $fmt_string = "%-2s %-30s %-15s %-${dwidth}s %s\n";
+      }
+
+     # 
+     #  Print out the http document.
+     #
+     if ($n != 0) {
+         print "<pre>\n";
+         &print_column_header($format, $dwidth);
+
+         $last_kerbname = '????????';
+         $last_category = '????';
+	 for ($i = 0; $i < $n; $i++) {
+             if ($last_kerbname ne $akerbname[$i]) {  # Kerb name break
+              #$kerbstring = '<A HREF="' . $url_stem3 . "category=$g_category&"
+               #     . 'username=' . $akerbname[$i]
+	       #     . '">' . $akerbname[$i] . "</A>";
+               $kerbstring = &get_kerbstring($akerbname[$i], $g_category);
+               $kerbstring .= ' <small>' . $afullname[$i] . '</small>';
+               print "</pre>$kerbstring<pre>";
+               print "&nbsp;&nbsp;" . 
+                 &get_catstring($akerbname[$i], $acat[$i], $g_category)
+                 . "<br>";
+               #print "&nbsp;&nbsp;<b>$acat[$i] - "
+               #      . $g_viewable_cat{$acat[$i]} . "</b><br>";
+               $last_kerbname = $akerbname[$i];
+               $last_category = $acat[$i];
+             }
+             if ($last_category ne $acat[$i]) {
+               print "<br>&nbsp;&nbsp;" . 
+                 &get_catstring($akerbname[$i], $acat[$i], $g_category)
+                 . "<br>";
+               #print "<br>&nbsp;&nbsp;<b>$acat[$i] - "
+               #      . $g_viewable_cat{$acat[$i]} . "</b><br>";
+               $last_category = $acat[$i];
+             }
+             if ($adf[$i] eq 'N' || $acurrent[$i] eq 'N') {
+               $gray = 1;
+               #print "adf=$adf[$i] acurrent=$accurent[$i]<BR>";
+             }
+             else {$gray = 0;};
+             if ($gray) {print '<font color="#909090">';}
+             if ($format eq '2') {
+               if ($akerbname[$i] eq $akerbname[$i-1]
+                   && $afn[$i] eq $afn[$i-1]
+                   && $aqc[$i] eq $aqc[$i-1]) {
+                 printf $fmt_string,
+	         ' ', ' ', ' ', $adept[$i], ' ', ' ',
+	         ' ', ' ', ' ';
+               }
+               else {
+                 printf $fmt_string,
+	         ' ', $afn[$i], $aqc[$i], $adept[$i], $adf[$i], $agandv[$i],
+	         $acurrent[$i], $amodby[$i], $amoddate[$i];
+               }
+             }
+             else {
+               printf $fmt_string,
+	         ' ', $afn[$i], $aqc[$i], $adept[$i], $aqualname[$i];
+             }
+             if ($gray) {print "</font>";}
+	 }
+         printf "</pre>\n";
+     } 
+     else {
+ 	 #
+	 # $picked_user has no authorizations in $picked_cat
+	 #
+	 print "No users found with authorizations"
+               . " within '$picked_qual'<BR>\n";
+
+     }
+
+    }  #### End of big ELSE group
+}
+
+###########################################################################
+#
+#  Function &web_string($astring)
+#
+#  Converts spaces to '+', left parentheses to %28, 
+#   right parentheses to %29
+#
+###########################################################################
+sub web_string {
+    my ($astring) = $_[0];
+    $astring =~ s/ /+/g;
+    $astring =~ s/\(/%28/g;
+    $astring =~ s/\)/%29/g;
+    $astring;
+}
+
+###########################################################################
+#
+#  Subroutine &print_column_header($format, $dwidth)
+#
+#  Prints a header for columns.  The first parameter should be 1 (display
+#  qualifier names on report) or 2 (display authorization flags).
+#  The 2nd parameter should be the length of the longest DEPT item.
+#
+###########################################################################
+sub print_column_header {
+    my ($format, $dwidth) = @_;
+    if ($format eq '2') {
+         $dwidth -= 3;  # Steal 3 bytes from DEPT col. for next field name
+         printf "%-2s %-30s %-15s %-${dwidth}s %s\n",
+           ' ', '', '', 'Qualifier',
+           '  Do        In';
+         printf "%-2s %-30s %-15s %-${dwidth}s %s\n",
+           ' ', 'Function', 'Qualifier', 'is in',
+           'func-      Effect Modified  Modified';
+         printf "%-2s %-30s %-15s %-${dwidth}s %-4s %-s\n",
+           ' ', 'Name', 'Code', 'Dept.',
+           ' tion Grant Today By        Date';
+     }
+    else {
+         printf "%-2s %-30s %-15s %-${dwidth}s %s\n",
+           ' ', '', '', 'Qualifier',
+           '';
+         printf "%-2s %-30s %-15s %-${dwidth}s %s\n",
+           ' ', 'Function', 'Qualifier', 'is in',
+           'Qualifier';
+         printf "%-2s %-30s %-15s %-${dwidth}s %-s\n",
+           ' ', 'Name', 'Code', 'Dept.',
+           'Name';
+    }
+}
+
+###########################################################################
+#
+#  Subroutine &print_options_desc($picked_qual, $format, $filter_opt)
+#
+#  Prints a description of the selected format option and filter option.
+#
+###########################################################################
+sub print_options_desc {
+    my ($picked_qual, $format) = @_;
+    if ($format eq '1') {
+      print "You selected format option 1, which displays the qualifier name"
+        . " for each authorization. "
+        . "To see alternate fields (Do_function, Grant, In_effect_today,"
+        . " Modified_by, and modified_date) select"
+        . " <A HREF=\"$url_stem" . "format=2&filter=$filter_opt"
+        . "&sort=$sort_opt&category=$g_category"
+        . "&qualcode=$picked_qual\">format option 2</A>.";
+     }
+    else {
+      print "You selected format option 2, which displays Do_function, Grant,"
+        . " etc. fields for each authorization. "
+        . "To see the qualifier name field, select"
+        . " <A HREF=\"$url_stem" . "format=1&filter=$filter_opt"
+        . "&sort=$sort_opt&category=$g_category"
+        . "&qualcode=$picked_qual\">format option 1</A>.";
+    }
+    if ($filter_opt eq '2') {
+      print " You also selected filter option 2, which shows"
+        . " all authorizations for the selected people. "
+        . "To hide authorizations not specific to"
+        . " qualifiers under $picked_qual, choose"
+        . " <A HREF=\"$url_stem" . "format=$format&filter=1"
+        . "&sort=$sort_opt&category=$g_category"
+        . "&qualcode=$picked_qual\">filter option 1</A>.";
+     }
+    else {
+      print " You also selected filter option 1,"
+        . " which only shows authorizations for qualifiers"
+        . " under department $picked_qual."
+        . " To show <strong>all</strong> authorizations for the"
+        . " selected people, choose"
+        . " <A HREF=\"$url_stem" . "format=$format&filter=2"
+        . "&sort=$sort_opt&category=$g_category"
+        . "&qualcode=$picked_qual\">filter option 2</A>.";
+    }
+    if ($sort_opt eq '2') {
+      print " Finally, you selected sort option 2, sorting people"
+        . " by last name. "
+        . "To sort by Kerberos username, choose"
+        . " <A HREF=\"$url_stem" . "format=$format&filter=$filter_opt&sort=1"
+        . "&qualcode=$picked_qual&category=$g_category\">sort option 1</A>.";
+     }
+    else {
+      print " Finally, you selected sort option 1,"
+        . " sorting people by Kerberos username."
+        . " To sort by last name, choose"
+        . " <A HREF=\"$url_stem" . "format=$format&filter=$filter_opt&sort=2"
+        . "&qualcode=$picked_qual&category=$g_category\">sort option 2</A>.";
+    }
+    print "<p />";
+    if ($g_category eq 'ALL' || !($g_category)) {
+       my $n_cat = (keys %g_viewable_cat);
+       if ($g_can_see_all_cat) {
+	 print "The report will include <b>all</b> categories of"
+             . " authorizations.<BR>";
+       }
+       elsif ($n_cat == 0) {
+         print "<big><b>You are not authorized to view authorizations in any"
+               . " category.</b></big><BR>";
+         die "Not authorized.";
+       }
+       else {
+           print "You have requested all categories of authorizations. "
+              .  "The report will include the categories you are authorized"
+              .  " to view:";
+           print "<blockquote><small>";
+           my $first_time = 1;
+           foreach $key (sort keys %g_viewable_cat) {
+             if ($key ne 'ALL') {
+	       if ($first_time) {
+	         print "<b>$key</b>&nbsp;($g_viewable_cat{$key})";
+                 $first_time = 0;
+	       }
+               else {
+	         print ",<b> $key</b>&nbsp;($g_viewable_cat{$key})";
+               }
+             }
+           }
+           print "</small></blockquote>";
+       }
+    }
+    else {
+      print "The report will include authorizations in category $g_category."
+          . "<BR>";
+    }
+}
+
+###########################################################################
+#
+#  Subroutine &get_select_stmt($picked_qual, $filter_opt, $sort_opt)
+#
+#  Returns the main select statement (as an array)
+#
+###########################################################################
+sub get_select_stmt {
+    my ($picked_qual, $filter_opt, $sort_opt) = @_;
+    my ($sql_frag1, $sql_frag2, $sql_frag3, $sql_frag4);
+    if ($sort_opt eq '1') {
+      #$sql_frag1 = "' '";
+      $sql_frag1 = " CONCAT(initcap(p.last_name) , ', ' , initcap(p.first_name))";
+      $sql_frag3 = "";
+      $sql_frag4 = "a.kerberos_name, a.function_category, a.function_name, "
+                 . "a.qualifier_code, q3.qualifier_code";
+    }
+    else {
+      $sql_frag1 = " CONCAT(initcap(p.last_name) , ', ' , initcap(p.first_name))";
+      #$sql_frag1 = "initcap(p.last_name) || ', ' || initcap(p.first_name)"
+      #   . " || ' (' || decode(p.primary_person_type, 'E', 'Employee',"
+      #   . " 'S', 'Student', 'Other') || ' '"
+      #   . " || q2.qualifier_name || ')'";
+      $sql_frag3 = " and p.kerberos_name = a.kerberos_name";
+      $sql_frag4 = "15, a.function_category, a.function_name, "
+                  . "a.qualifier_code, q3.qualifier_code";
+    }
+    if ($g_category) {
+      $sql_frag5 = " and a.function_category = '$g_category'";
+      $sql_frag6 = " and a2.function_category = '$g_category'";
+    }
+    else {
+      my $catlist = '';
+      foreach $key (keys %g_viewable_cat) {
+	 $catlist = ($catlist) ? "${catlist}, '$key'" : "'$key'";
+      }
+      $catlist = "(" . $catlist . ")";
+      $sql_frag5 = " and a.function_category in $catlist";
+      $sql_frag6 = " and a2.function_category in $catlist";
+    }
+    if ($filter_opt eq '1') {  # Show only auths. with qualcodes for the DLC
+      return ("select a.kerberos_name, a.function_name,"
+             . " a.qualifier_code, a.do_function,"
+             . "  CASE grant_and_view WHEN 'GD' THEN 'Y' ELSE  'N' END , a.descend,"
+             . " a.qualifier_id, 'QT', q.has_child,"
+             . " 'QT Desc',"
+             . " AUTH_SF_IS_AUTH_CURRENT(a.effective_date,a.expiration_date),"
+             . " DATE_FORMAT(modified_date, '%d-%m-%Y'), modified_by,"
+             . " q.qualifier_name,"
+	     . " $sql_frag1"
+             . " q3.qualifier_code, a.function_category"
+             . " from authorization a left outer join "
+             . " primary_auth_descendent pa on pa.child_id=a.qualifier_id and pa.is_dlc='Y'" 
+	     . " left outer join qualifier q3 on q3.qualifier_id = pa.parent_id "
+             . " , person p left outer join qualifier q2 on q2.qualifier_code = p.dept_code and q2.qualifier_type='ORGU', qualifier q"
+             . " where a.authorization_id in"
+             . " (select distinct a2.authorization_id "
+             . "  from qualifier q,primary_auth_descendent pa,authorization a2"
+             . "   where q.qualifier_type = 'DEPT'"
+             . "   and q.qualifier_code = '$picked_qual'"
+             . "   and pa.parent_id = q.qualifier_id"
+             . "   and a2.qualifier_id = pa.child_id"
+             . "   $sql_frag6"
+             . "  union"
+             . "  select distinct a2.authorization_id"
+             . "   from authorization a2"
+             . "   where a2.qualifier_code = '$picked_qual'"
+             . "   $sql_frag6"
+             . "  )"
+             . " $sql_frag5"
+             . " and q.qualifier_id = a.qualifier_id"
+             #. " and pa.child_id(+) = a.qualifier_id"
+             #. " and pa.is_dlc(+) = 'Y'"
+             #. " and q3.qualifier_id(+) = pa.parent_id"
+             . " and p.kerberos_name = a.kerberos_name"
+             #. " and q2.qualifier_code(+) = p.dept_code"
+             #. " and q2.qualifier_type(+) = 'ORGU'"
+             . " order by $sql_frag4");
+  }
+  else {
+      return ("select a.kerberos_name, a.function_name,"
+             . " a.qualifier_code, a.do_function,"
+             . "  CASE grant_and_view WHEN 'GD' THEN 'Y' ELSE  'N' END , a.descend,"
+             . " a.qualifier_id, 'QT', q.has_child,"
+             . " 'QT Desc',"
+             . " AUTH_SF_IS_AUTH_CURRENT(a.effective_date,a.expiration_date),"
+             . " DATE_FORMAT(modified_date, '%d-%m-%Y'), modified_by,"
+             . " q.qualifier_name, $sql_frag1,"
+             . " q3.qualifier_code, a.function_category"
+             . " from authorization a"
+             . " left outer join primary_auth_descendent pa on pa.child_id = a.qualifier_id and pa.is_dlc = 'Y'"
+             . " left outer join qualifier q3 on q3.qualifier_id=pa.parent_id "
+             . "  , person p left outer join qualifier q2 on q2.qualifier_code = p.dept_code and q2.qualifier_type = 'ORGU'"
+             . "  , qualifier q"
+             . " where a.kerberos_name in"
+             . " (select distinct a.kerberos_name "
+             . "  from qualifier q,primary_auth_descendent pa,authorization a"
+             . "   where q.qualifier_type = 'DEPT'"
+             . "   and q.qualifier_code = '$picked_qual'"
+             . "   and pa.parent_id = q.qualifier_id"
+             . "   and a.qualifier_id = pa.child_id"
+             . "   $sql_frag5"
+             . "  union"
+             . "  select distinct a.kerberos_name"
+             . "   from authorization a"
+             . "   where a.qualifier_code = '$picked_qual'"
+             . "   $sql_frag5"
+             . "  )"
+             . " $sql_frag5"
+             . " and q.qualifier_id = a.qualifier_id"
+             #. " and pa.child_id(+) = a.qualifier_id"
+             #. " and pa.is_dlc(+) = 'Y'"
+             #. " and q3.qualifier_id(+) = pa.parent_id"
+             . " and p.kerberos_name = a.kerberos_name"
+             #. " and q2.qualifier_code(+) = p.dept_code"
+             #. " and q2.qualifier_type(+) = 'ORGU'"
+             . " order by $sql_frag4");
+  }
+}
+
+##############################################################################
+#
+#  Function maxlength(\@list)
+#
+#  Returns the length of the longest element of the list.
+#
+##############################################################################
+sub maxlength {
+  my ($rlist) = @_;
+  my $maxlength = 0;
+  my $item;
+  foreach $item (@$rlist) {
+    if (length($item) > $maxlength) {
+      $maxlength = length($item);
+    }
+  }
+  return $maxlength;
+}
+
+##############################################################################
+#
+#  Function get_kerbstring($kerbname, $category)
+#
+#  Given a kerberos username and a category, returns an appropriate
+#  HTML string for the username.  
+#  - If a specific (non-ALL) category is given, then return a string for 
+#    a URL to display the user's authorizations in the given category.
+#  - If category is blank or ALL, then determine whether the end-user
+#    is authorized to view auths in all categories.  If so, return a 
+#    URL to display the requested-user's auths in all categories.  Otherwise
+#    return a simple string for the username (not a URL).
+#
+##############################################################################
+sub get_kerbstring {
+  my ($kerbname, $category) = @_;
+  my $kerbstring;
+  if ( ($category) && ($category ne 'ALL') ) {
+    $kerbstring = "<b>$kerbname</b>";
+  }
+  else {
+    if ($g_can_see_all_cat) {
+      $kerbstring = '<A HREF="' . $url_stem3 . "category=ALL&&"
+        . 'username=' . $kerbname . '">' . $kerbname . "</A>";
+    }
+    else {
+      $kerbstring = "<b>$kerbname</b>";
+    }
+  }
+
+}
+
+##############################################################################
+#
+#  Function get_catstring($kerbname, $split_category, $requested_category)
+#
+#  Given a kerberos username, a currently-displayed category of auths, and
+#  the requested category of auths, return an appropriate HTML string
+#  for the category.
+#
+#  If the requested category was ALL (or blank), then return a URL string
+#  for viewing the given user's authorizations within the current
+#  category.
+#
+#  Otherwise, just return the category itself (along with its description)
+#  without its being a URL.
+#
+##############################################################################
+sub get_catstring {
+  my ($kerbname, $split_category, $requested_category) = @_;
+  my $catstring = '<b><a href="' . $url_stem3 . "category=$split_category&"
+         . 'username=' . $kerbname . '">' 
+         . $split_category . "</a></b>"
+         . " - " . $g_viewable_cat{$split_category}; ;
+  return $catstring;
+}
+
+##############################################################################
+#
+#  Function print_category_list($kerbname, $old_category)
+#
+#  Prints part of an HTML form containing a pick list of categories
+#  in which the end-user can view authorizations.
+#
+##############################################################################
+sub print_category_list {
+  my ($kerbname, $g_category) = @_;
+  my $picked_category = ($g_category) ? $g_category : 'ALL';
+  my $selected = '';
+  print "<select name=category>\n";
+  $selected = ($picked_category eq 'ALL') ? 'SELECTED' : ''; 
+  print "  <option $selected>ALL</option>\n";
+  foreach $key (sort keys %g_viewable_cat) {
+    if ($key ne 'ALL') {
+      $selected = ($key eq $picked_category) ? 'SELECTED' : ''; 
+      print "  <option $selected>$key</option>\n";
+    }
+  }
+  print "</select>\n";
+}
+
+##############################################################################
+#
+#  Function print_dept_list($lda, $form_variable)
+#
+#  Prints part of an HTML form containing a pick list of categories
+#  in which the end-user can view authorizations.
+#
+##############################################################################
+sub print_dept_list {
+  my ($lda, $form_variable) = @_;
+  my %dept_to_name;
+  &get_dlc_list($lda, \%dept_to_name);
+  print "<select name=$form_variable>\n";
+  foreach $key (sort keys %dept_to_name) {
+    print "  <option $selected>$key</option>\n";
+  }
+  print "</select>\n";
+}
+
+###########################################################################
+#
+#  Subroutine get_dlc_list($lda, \%dlc_code2name);
+#
+#  Gets a hash of department codes and names from the qualifier table.
+#
+###########################################################################
+sub get_dlc_list {
+  my ($lda, $rdlc_code2name) = @_;
+
+  #
+  #  Format a list of non-leaf DLCs to include in the list of
+  #  pickable DLCs.
+  #
+  my $dlc_array;
+  my $dlc;
+  foreach $dlc (@g_non_leaf_dlc) {
+      if ($dlc_array) {
+	  $dlc_array .= ",'$dlc'";
+      }
+      else {
+	  $dlc_array .= "'$dlc'";
+      }
+  }
+  $dlc_array = "(" . $dlc_array . ")";
+
+  #
+  #  Open a cursor for a select statement
+  #
+  my $stmt = 
+  "select qualifier_code, qualifier_name from qualifier q
+     where q.qualifier_type = 'DEPT'
+     and substr(q.qualifier_code, 1, 2) = 'D_'
+     and not exists (select q2.qualifier_code from 
+       qualifier_child qc, qualifier q2
+       where qc.parent_id = q.qualifier_id
+       and q2.qualifier_id = qc.child_id
+       and substr(q2.qualifier_code, 1, 2) = 'D_')
+   union select qualifier_code, qualifier_name from qualifier q
+     where q.qualifier_type = 'DEPT'
+     and q.qualifier_code in $dlc_array
+   order by 1";
+  #print "'$stmt'<BR>";
+#  my $csr = &ora_open($lda, "$stmt");
+   my $csr = $lda->prepare("$stmt"); 
+  unless ($csr) {
+     print "Error in get_dlc_list: '$ora_errstr'<BR>";
+     die $ora_errstr;
+  }
+   $csr->execute();
+
+  #
+  #  Get a list of department codes
+  #
+  my ($d_code, $d_name);
+  while ( ($d_code, $d_name) = $csr->fetchrow_array() )
+  {
+      $$rdlc_code2name{$d_code} = $d_name;
+  }
+#  &ora_close($csr) || die "can't close cursor";
+$csr->execute();
+  
+}

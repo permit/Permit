@@ -1,0 +1,85 @@
+Some notes on setting up perMIT/Roles to manage TSM authorizations. In this context 
+TSM is the Tivoli Storage Manager back up system. 
+
+It has been a few weeks since we talked about the Roles DB and TSM.
+The last time we talked, I promised to send you two things, a SELECT 
+statement to be used to extract authorizations related to TSM from the
+Roles DB, and a file format for a flat file of Report Groups and accounts,
+to be used by the Roles DB to build a "qualifier" hierarchy to be used
+for TSM authorizations.
+
+I've set up TSM functions on the production Roles DB, and I've got a 
+temporary hierarchy of objects set up there as well.  Let's start to use 
+the production Roles DB (roles rather than troles) for future development.
+
+A. Select statements to extract authorization information from the
+   Roles DB
+
+  There are two options for doing this.  Some applications have chosen 
+  to handle "root-level" authorizations (those for the "superusers" who 
+  have access to all objects) as a special case.
+
+  Below, option 1 does not treat the root-level authorizations as a special
+  case.  It displays all authorizations expanded down to the most detailed
+  level, including those authorizations that are granted at the 
+  root of the tree of objects (ALL_TSM).
+ 
+  Then, option 2 contains two SELECT statements, one for just the
+  root-level authorizations with no expansion, and a second SELECT statement
+  for all authorizations other than the root-level ones showing expanded
+  objects down to the most detailed level.
+
+  To use these select statements, make sure you connect to the production
+  Roles DB (roles).  The columns returned will be
+  - Kerberos username of person authorized to do something
+  - Function category (always 'TSM')
+  - Function name (VIEW TSM FILE SPACE, CHANGE TSM ACCOUNT,
+                   CHANGE TSM PW, or CREATE ACCT WITHIN GROUP)
+  - Qualifier code (the code for the account, report group, or node
+                    in the hierarchy)
+  - Qualifier name (the descriptive name of the qualifier)
+  You might want to exclude function_category and/or qualifier_name if you
+  don't need them.
+
+  Option 1: Expand all authorizations, even those for all objects, to
+            the most detailed level in a single select statement
+  
+  select kerberos_name, function_category, function_name, qualifier_code,
+         qualifier_name
+   from expanded_auth_func_qual
+   where function_category = 'TSM'
+   and do_function = 'Y'
+   and sysdate between effective_date and nvl(expiration_date, sysdate);
+  
+  
+  Option 2: Handle root-level authorizations and other authorizations in
+            separate select statements.
+  
+  select kerberos_name, function_category, function_name, qualifier_code,
+         qualifier_name
+   from expanded_auth_func_root
+   where function_category = 'TSM'
+   and do_function = 'Y'
+   and sysdate between effective_date and nvl(expiration_date, sysdate);
+  
+  select kerberos_name, function_category, function_name, qualifier_code,
+         qualifier_name
+   from expanded_auth_func_qual
+   where function_category = 'TSM'
+   and parent_qual_code <> 'ALL_TSM'
+   and do_function = 'Y'
+   and sysdate between effective_date and nvl(expiration_date, sysdate);
+  
+B. File format for file of TSM Report Groups and accounts
+
+Let's use a tab-delimited file with the following fields:
+  - account or report group code
+  - description or name of account or report group
+  - parent code (for accounts, this would be the report group or "NOGROUP";
+    for report groups this would be "ALL_TSM")
+
+
+If you have any questions or run into any problems, let me know.
+
+
+                                  Jim

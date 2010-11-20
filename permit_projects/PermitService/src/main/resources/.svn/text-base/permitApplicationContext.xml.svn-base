@@ -1,0 +1,154 @@
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
+"http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+
+ <!--
+ <jee:jndi-lookup id="commonsDataSource" jndi-name="java:comp/env/jdbc/Permit" resource-ref="true" />
+ -->
+
+<bean id="commonsDataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+<property name="jndiName">
+<value>java:comp/env/jdbc/Permit</value>
+</property>
+</bean>  
+<!-- use apache commons pooling datasource -->
+
+<!--
+<bean id="commonsDataSource"  
+         class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+     <property name="driverClassName">
+        <value>javax.sql.DataSource</value>
+     </property>
+     
+     <property name="removeAbandoned">
+         <value>true</value>
+     </property>
+     <property name="removeAbandonedTimeout">
+         <value>20</value>
+     </property>
+    
+    <property name="url">
+        <value>jdbc:mysql://auth-edv-permit1.mit.edu:3306/rolesbb</value>
+        
+    </property>
+
+    <property name="username">
+        <value>rolewww9</value>
+    </property>
+    <property name="password">
+        <value>keox047c</value>
+     </property>     
+     
+    <property name="initialSize">    
+        <value>2</value>  
+    </property>  
+    <property name="maxWait">
+        <value>20000</value>
+    </property>    
+   </bean>
+-->
+
+  
+        
+   <bean id="springSessionFactory"  
+         class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+     <property name="dataSource" ref="commonsDataSource"/>
+
+     <property name="mappingResources">
+       <list>
+            <value>edu/mit/isda/permitservice/dataobjects/Person.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/PersonType.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/Category.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/QualifierType.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/Qualifier.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/Function.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/PickableCategory.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/PickableFunction.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/PickableQualifier.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/QualBase.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/QualRoot.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/ViewableCategory.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/ViewableFunction.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/SelectionList.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/LevelCount.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/Authorization.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/AuthorizationRaw.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/AuthorizationExt.hbm.xml</value>
+            <value>edu/mit/isda/permitservice/dataobjects/EditableAuthorizationRaw.hbm.xml</value>
+            
+       </list>
+     </property>
+     <property name="hibernateProperties">
+       <props>
+            <prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+            <prop key="hibernate.show_sql">true</prop>      
+       </props>
+     </property>
+   </bean>
+
+  <bean id="businessObjectTarget"
+         class="edu.mit.isda.permitservice.dataobjects.HibernateAuthorizationMgr">
+         <property name="sessionFactory">
+             <ref local="springSessionFactory"/>
+         </property>
+         <property name="batchActionDao">
+             <ref local="batchActionDaoTarget"/>
+         </property>             
+   </bean>
+   <bean id="batchActionDaoTarget"
+         class="edu.mit.isda.permitservice.service.BatchActionDaoImpl">
+         <property name="sessionFactory">
+             <ref local="springSessionFactory"/>
+         </property>
+        <property name="dataSource">
+             <ref local="commonsDataSource"/>
+         </property>         
+   </bean>
+   <!-- Transaction manager for a single Hibernate SessionFactory 
+        Binds a Hibernate Session from the specified factory to the thread, 
+        potentially allowing for one thread Session per factory
+   -->
+   <bean id="transactionManager1" class="org.springframework.orm.hibernate3.HibernateTransactionManager" abstract="false" singleton="true" lazy-init="default" autowire="default" dependency-check="default">
+     <property name="sessionFactory">
+    <ref local="springSessionFactory" /> 
+    </property>
+  </bean>
+    
+    <!--Proxy factory bean for simplified declarative transaction handling
+        There are three main properties that need to be specified:
+        transactionManager: the PlatformTransactionManager implementation to use (for example, a JtaTransactionManager instance) 
+        target: the target object that a transactional proxy should be created for 
+        transactionAttributes: the transaction attributes 
+            PROPAGATION_REQUIRED Support a current transaction, create a new one if none exists.
+            readOnly optimize as read-only transaction
+     -->
+
+   <bean id="AuthorizationManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean" abstract="false" singleton="true" lazy-init="default" autowire="default" dependency-check="default">
+        <property name="transactionManager">
+        <ref local="transactionManager1" /> 
+        </property>
+        <property name="target">
+            <ref bean="businessObjectTarget"/>
+         </property>
+         <property name="transactionAttributes">
+            <props>
+                <prop key="*">PROPAGATION_REQUIRED,readOnly</prop> 
+            </props>
+         </property>
+    </bean>       
+    
+    <bean id="batchActionDao" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean" abstract="false" singleton="true" lazy-init="default" autowire="default" dependency-check="default">
+        <property name="transactionManager">
+        <ref local="transactionManager1" /> 
+        </property>
+        <property name="target">
+            <ref bean="batchActionDaoTarget"/>
+         </property>
+         <property name="transactionAttributes">
+            <props>
+                <prop key="*">PROPAGATION_REQUIRED,readOnly</prop> 
+            </props>
+         </property>
+    </bean>    
+ 
+</beans>

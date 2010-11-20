@@ -1,0 +1,55 @@
+More thoughts on extracted "triplets" of person data and implied auths
+------------------------------------------------------------------------
+
+Three kinds of "triplets":
+  - standard Roles DB authorizations (A)
+  - non-authorization person data in the form of a triplet (I)
+  - externally-derived authorizations (XAuths) (X)
+
+Rules for building triplets (type I or X)
+
+  * Table TRIPLET_GEN_RULE
+      rule_id
+      description
+      derived_function_id
+      source_type             (S=SQL, R=roles triplet(s), ...)
+      output_triplet_type     (A, I, or X)
+
+  * If the source_type is S (SQL), then use 
+    table EXTERNAL_RULE_BY_SQL
+      rule_id
+      source_database
+      sql_string
+
+  * If the source is R (roles triplets), then use the table
+    EXTERNAL_RULE_BY_TRIPLET
+
+      rule_id
+      number_of_prerequisites  (number of records to be ANDed together)
+      prerequisite_number      (1, 2, 3, ...)
+      source_function_type     (A, I, or X)
+      target_qual_algorithm (H=hard-coded target qualifier_code,
+                             E=exact - use source qualcode as target code, 
+                             P=parent - use parent(s) of source qualifier_code,
+                             C=child - use child(ren) of source qualifier_code,
+                             D=transform qual to another qualtype via DLC link)
+      fixed_source_qualifier_code (Null unless source qualcode is fixed)
+      fixed_target_qualifier_code (Null unless target qualcode is fixed)
+      expand_source_qualifiers (Y or N - do we need this?)
+      source_qualifier_subtype (Only look for source records for this subtype)
+      target_qualifier_subtype (Only return qualifiers of this subtype)
+
+- - - 
+
+Let's examine some scenarios for extracting data using SQL statements.
+  
+  1. Batch extract of data "triplets" for all people
+  2. "Triplets" for a person 
+  3. Answer the question "Who can do Function F with Qualifier Q?", i.e., 
+     for each rule for a function, given a qualifier, find all people 
+     who end up with a derived authorization for the function/qualifier 
+     pair
+  4. Given a function, find all people who have a "triplet" for that 
+     function for at least one qualifier
+
+      

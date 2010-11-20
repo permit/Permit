@@ -1,0 +1,116 @@
+<HTML>
+<HEAD>
+<TITLE>perMIT system New or Test Web Pages</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY BGCOLOR="#fafafa">
+<TABLE>
+<TR><TD><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></TD>
+<TD>
+<H1>New or Experimental web pages for the perMIT system</H1></TD>
+</TR>
+</TABLE>
+<BR>
+Below are some perMIT system-related web displays that are under development
+or in experimental status.
+<UL>
+<LI>Alternate version, <a href="/dlc_auth3.html"> 
+SAP Authorizations within a "department"</a> (handles departments within 
+D_DUE, D_DSL, and D_ASO differently)
+<br>
+<small>Same as  
+above, but allows for 
+<a href="/cgi-bin/dlc-auth-all.cgi">
+all</a> categories (You need auth. to view all categories) 
+and it doesn't use the new algorithm for DUE, DSL, ASO.</small>
+<P>
+<LI>For operations people who maintain telephone preferences: <a href="roles_tnet_special_auth.html">View or maintain
+telephone-preference authorizations by network ID</a>
+<p>
+<LI>View <a href=
+"/quallist1a.html">
+Fund Center Hierarchy with Release Strategies</a>.
+<P>
+<hr>
+<LI>EHS Roles: 
+<a href="http://web.mit.edu/ehsweb/ms/www/ehs_roles.html">
+Documentation on EHS-related roles</a>.
+<hr>
+<p>
+<LI>New version of 
+  <a href="/cgi-bin/view_auth_by_user.cgi?report=0">Authorizations for a Person</a> (includes implied authorizations)
+
+<p>
+<LI><a href="auth_branch_null.html">
+Authorizations with NULL qualifiers by category</a>.  (Shows "all-or-nothing"
+authorizations that are not limited by an organizational, financial, or other
+"qualifying" unit.)
+<p>
+<LI>New <a href="auth_branch2.html">
+Hierarchy of qualifiers with authorizations</a>.  (Includes some new
+features as of 10/29/2002.)
+<P>
+<LI><a href=
+"/cgi-bin/qualauth.pl?cat_qt=META%2FDEPT+%28Primary+Authorizer+auths.+by+DLC%29&detail=2&noleaf=1&levels=5&rolesflag=Y&group_option=2">
+Primary Authorizers by department</a> with new flag (r) to show which PAs
+have a perMIT system username.
+<P>
+<LI><a href=
+"/pick_user_display.html">
+Show categories where a person has authorizations</a> and click on a category
+to see current authorizations, authorization history, or authorizations changed
+by the person.
+<P>
+<LI><a href="dlc_summary.html">Tabular display of DLCs</a> in the DEPT 
+hierarchy
+<P>
+<LI><a href="auth_matrix.html">Matrix display of authorizations</a> by DEPT and Function
+<P>
+<LI>Report on <a href="show_co_supervisor.html">cost object supervisors</a> and their profit centers
+<P>
+<LI>New for Payroll rollout
+ <ul>
+   <li>New improved version (Sept. 26, 2006) of a handy tool to <a href="/cgi-bin/auth_tree_by_dlc_jr.cgi?action=first_page">list authorizations by DLC within various hierarchies</a>
+   <li>Descriptions and links to <a href="/payr_roles.html">Payroll functions and authorizations</a>
+ </ul>
+<P>
+<LI>View hierarchy of EHS PIs, Room Sets, and Rooms (special auths required)
+<ul>
+ <li><A HREF="/cgi-bin/qualauth_jr.pl?category=&qualtype=RSET&show_all=1&&sort=NAME&showdeptname=N&rolesflag=N&group_option=2&levels=20">
+View PIs, Room Sets, and Rooms</A>
+ <li><A HREF="/cgi-bin/qualauth_jr.pl?cat_qt=EHS%2FRSET+%28Room+Sets+and+implied+authorizations%29%29&detail=2&group_option=2&levels=20">
+View PIs and Room Sets along with roles and authorizations</A>
+</ul>
+<P>
+<LI>Improved <a href="cost_object_info_test.html">Tell me about a cost object</a> (adds links for related PAYR authorizations)
+<P>
+<LI>View a list of <a href="cgi-bin/rolefunc2.pl?category=ALL">all Functions that can be granted by HR or Financial Primary Authorizers</a>
+<P>
+<LI><a href="misctest.html">Infrequently-used or obsolete web pages</a>
+<P>
+<LI><table border><tr><td>
+For developers:  Documents on  
+<a href="http://blue-goose.mit.edu/roles_api_docs.html">Roles Java API</a> 
+(work in progress).
+</td></tr></table>
+</UL>
+<P>
+<HR>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>
+</BODY>

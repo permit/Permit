@@ -1,0 +1,57 @@
+<HTML>
+<HEAD>
+<TITLE>List parents of a Qualifier</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td><H2>perMIT system: Show a Qualifier's position in the tree</H2></td></tr>
+</table>
+<p>
+To display a qualifier's position in its hierarchy:
+<ol>
+<li>Select a <strong>Qualifier type</strong> from the drop down menu.
+<li>Enter a <strong>Qualifier code</strong>. Make sure you enter the 
+    <i>whole</i> qualifier code.  (Qualifier codes must start with the 
+    appropriate prefix - <a href="qualcode_prefix.html">see explanation</a>.)
+<li>Click on the <strong>Submit</strong> button
+</ol>
+<FORM METHOD="GET" ACTION="/cgi-bin/qualauth.pl">
+<strong>Qualifier type:</strong>   <select name = "qualtype">
+                  <option>COST (Cost Object)
+                  <option selected>FUND (Fund Center or Fund)
+                  <option>ORGU (Org. Unit - Personnel)
+                  <option>CATE (Roles CATEGORY)
+                  <option>AORG (Org. Unit - Admissions)
+                  <option>LORG (LDS Org. Units)
+                  <option>BUDG (Budget Plan Versions)
+                  <option>BAGS (NIMBUS Budget Area Groups)
+                  <option>SPGP (Spending Groups)
+                  <option>SISO (SIS Organizations)
+                  <option>DEPT (MIT departments (unofficial))
+                  </select>
+<BR>
+<strong>Qualifier code:</strong>   <INPUT TYPE="TEXT" NAME="childqc">
+<BR>
+<BR>
+<INPUT TYPE="SUBMIT" VALUE="Submit">
+<HR>
+</FORM>
+
+

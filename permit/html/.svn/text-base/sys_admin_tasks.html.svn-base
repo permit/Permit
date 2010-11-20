@@ -1,0 +1,1046 @@
+<HTML>
+<HEAD>
+<TITLE>System Administrator Tasks for the perMIT system</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY BGCOLOR="#fafafa">
+<TABLE>
+<TR><TD><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></TD>
+<TD>
+<H1>System Administrator Tasks for the perMIT system</H1></TD>
+</TR>
+</TABLE>
+<p><small><i>Last updated March 5, 2008</i></small><p>
+As of the writing of this memo, there are some regular tasks to be 
+performed for the perMIT system for which there is no web interface or
+PowerBuilder interface.  While there are interfaces for creating 
+or deleting authorizations, creating or deleting functions, and 
+creating or deleting qualifiers, there are still several tasks that
+must be performed by connecting to the perMIT system via SQLPLUS
+(or another database tool) and running SQL insert, delete, or update
+statements.
+<p />
+The tasks that must be performed by directly invoking SQL statements
+or editing a flat file on the server include
+<ol>
+  <li><a href="#func_parent_child">Setting up parent/child relations between 
+      functions</a>
+  <li><a href="#add_pa_function">Including or excluding a function from the 
+      list of functions grantable by Financial or HR Primary Authorizers</a>
+  <li><a href="#add_cat">Adding a Category</a>
+  <li><a href="#add_qual_type">Adding a Qualifier Type</a>
+  <li><a href="#add_pa_type">Adding another type of Primary Authorizer</a>
+  <li><a href="#move_qualifiers">Moving qualifiers to a new qualifier_id 
+      range to make more room</a>
+  <li><a href="#add_sys_user">Adding a special system username (not a 
+      user with a Kerberos principal) to the Person table</a>
+  <li><a href="#mod_email_users">Changing the list of people who receive
+      exceptions Email from the perMIT system server</a>
+</ol>
+Web-based interfaces for doing these administrative tasks should be 
+developed in the future in order to make it easier to maintain the 
+perMIT system.  For now, we will document the necessary steps
+for performing these tasks using SQL statements.  Even when web-based
+interfaces are built to help with some of these administrative tasks, some
+of the information in this document will still be useful to the system 
+administrator, since some tasks may still require knowledge and 
+expertise that cannot easily be built into a web-based or other interface.
+<p />
+<h3><a name="func_parent_child">1.</a> Setting up parent/child relations 
+    between functions</h3>
+While the Roles PowerBuilder application allows you to create Functions,
+it does not allow you to set up parent/child relationships between Functions.
+<p />
+To add a parent/child relationship between Functions, do the following:
+<ol type="a">
+  <li>Make sure that the parent function and the child function have
+      the same Qualifier Types.  Do not set a function parent/child pair
+      if the Qualifier Types do not match.  (Either the qualifier types should
+      be exactly the same or they should be similar, such as 
+      PMIT and PCCS, whose hierarchies are identical from the root down to 
+      the Profit Center level.  The hierarchies ORG2 and PYTG are also
+      similar, matching each other down to the Org Unit level.)
+  <li>Look in the Function table and find the function_id of the 
+      parent function and the function_id of the child function.
+  <li>Connect to the perMIT system using SQLPLUS and run the following 
+      commands:
+      <blockquote><code>
+        insert into function_child (parent_id, child_id)
+               values (<i>parent_function_id</i>, <i>child_function_id</i>);
+        <br>commit;
+      </code></blockquote>
+</ol>
+<h3><a name="add_pa_function">2.</a> Including or excluding a function from 
+       the list of functions grantable by Financial or
+       HR Primary Authorizers</h3>
+The perMIT system PowerBuilder interface does not allow you to include Functions 
+in the suite of Functions grantable by different types of Primary Authorizers.
+<p />
+To allow a given function to be grantable by a FINANCIAL PRIMARY AUTHORIZER,
+do the following:
+<ol type="a">
+  <li>Find the function_id of the given function (<i>id</i>).
+  <li>Connect to the perMIT system using SQLPLUS and run the following 
+      commands:
+      <blockquote><code>
+        update function set primary_authorizable='Y', primary_auth_group='FIN'
+        <br>&nbsp;&nbsp;where function_id = <i>id</i>;
+        <br>commit;
+      </code></blockquote>
+</ol>
+<p />
+To allow a given function to be grantable by an HR PRIMARY AUTHORIZER,
+do the following:
+<ol type="a">
+  <li>Find the function_id of the given function (<i>id</i>).
+  <li>Connect to the perMIT system using SQLPLUS and run the following 
+      commands:
+      <blockquote><code>
+        update function set primary_authorizable='Y', primary_auth_group='HR'
+        <br>&nbsp;&nbsp;where function_id = <i>id</i>;
+        <br>commit;
+      </code></blockquote>
+</ol>
+<h3><a name="add_cat">3. Adding a Category</a></h3>
+A Category (or Function Category) is a group of Functions applying to a 
+certain application area.  Categories are defined in the table CATEGORY.
+Each category also has a matching record in the QUALIFIER table with 
+qualifier_type = 'CATE' -- categories serve as qualifiers for Authorizations
+for creating authorizations, creating functions, etc..
+<p />
+To create a new Category, do the following
+<ol type="a">
+ <li>Insert a record into the CATEGORY table.  You'll need to specify
+     a 4-character Category code, a 15-character category description, and 
+     a one character field ('Y' or 'N') indicating whether or not 
+     authorizations in this category are considered sensitive and need 
+     special restrictions on who can view them.
+     <p />
+     For example, let's suppose we want to create a new category with
+     code 'TNET', representing 'Tel. & network' related authorizations, 
+     where the authorizations are not considered to be highly sensitive.
+     Then you would run the following SQL Insert statement:
+     <blockquote><code>
+      set define off;  -- Use this so that '&' does not generate a prompt
+      <br>insert into category 
+      <br>&nbsp;&nbsp;(function_category, function_category_desc, auths_are_sensitive)
+      <br>&nbsp;&nbsp;values ('TNET', 'Tel. & network', 'N');
+     </code></blockquote> 
+ <li>Find the maximum qualifier_id in the qualifier table for qualifiers 
+     of qualifier_type = 'CATE', plus 1.
+      <blockquote><code>
+        select max(qualifier_id)+1 from qualifier where qualifier_type = 'CATE';
+      </code></blockquote>
+ <li>Take the number from the previous step and use it as the qualifier_id
+     to create a new qualifier in the qualifier table.  Suppose the
+     result of the previous step is 100028.  Then continuing with the 
+     'TNET' example, we would create a new qualifier with a qualifier_code of
+     'CATTNET' (always 'CAT' || <i>function_category_code</i>), 
+     a qualifier_name
+     of 'FUNCTION CATEGORY: TNET', and a qualifier_type = 'CATE'.  We will 
+     set has_child = 'N' (since this will be a leaf level qualifier), 
+     qualifier_level = 2 (since it is always one level below the root), and
+     custom_hierarchy='N' (since this field is only applicable to qualifiers
+     of qualifier_type 'FUND').  The insert statement for this example would
+     be as follows:
+      <blockquote><code>
+        insert into qualifier
+        <br>&nbsp;&nbsp;(qualifier_id, qualifier_code, qualifier_name, 
+        <br>&nbsp;&nbsp;&nbsp;qualifier_type, has_child, qualifier_level, custom_hierarchy)
+        <br>&nbsp;&nbsp;values (100028, 'CATTNET', 'FUNCTION CATEGORY: TNET', 
+        <br>&nbsp;&nbsp;'CATE', 'N', 2, 'N');        
+      </code></blockquote>
+ <li>Find the root-level qualifier for the qualifier_type 'CATE'.
+      <blockquote><code>
+        select qualifier_id from qualifier 
+        <br>&nbsp;&nbsp;where qualifier_type = 'CATE'
+        <br>&nbsp;&nbsp;and qualifier_level = 1;
+      </code></blockquote>
+ <li>Use the qualifier_id of the root-level qualifier and the qualifier_id 
+     of the newly inserted qualifier to create a record in the QUALIFIER_CHILD
+     table linking parent and child.  Suppose the root-level qualifier_id is
+     100001.
+      <blockquote><code>
+        insert into qualifier_child (parent_id, child_id)
+        <br>&nbsp;&nbsp;values (100001, 100028);
+      </code></blockquote>
+ <li>Create a similar record in the QUALIFIER_DESCENDENT table.
+      <blockquote><code>
+        insert into qualifier_descendent (parent_id, child_id)
+        <br>&nbsp;&nbsp;values (100001, 100028);
+      </code></blockquote>
+ <li>Update web pages on Rolesweb to add the new category.  The following 
+     pages should be examined and updated:
+     <ul>
+       <li>/category_status.html
+           (/var/https/htdocs/category_status.html)
+       <li>/auth_branch1.html
+           (/var/https/htdocs/auth_branch1.html)
+           <br>Add new category/qualifier_type pairs
+       <li>/auth_branch1a.html
+           (/var/https/htdocs/auth_branch1a.html)
+           <br>Add new category/qualifier_type pairs
+       <li>Possibly /cgi-bin/auth_tree_by_dlc.cgi?action=first_page
+           <br>(/var/https/cgi-bin/auth_tree_by_dlc.cgi)
+           <br>Add new category if we want it to appear in this display.
+     </ul>
+     <p />
+  <li>Set up meta-authorizations where appropriate, e.g., for the 
+      following functions 
+     <ul>
+       <li>CREATE AUTHORIZATIONS
+       <li>CREATE FUNCTIONS
+       <li>VIEW AUTH BY CATEGORY
+          <br>People with this role can view authorizations for others 
+              within a given Category using the Roles Web interface.
+       <li>NOTIFICATION - INACTIVE USERS
+          <br>People with this role receive Email notification about
+              inactive users, i.e., whenever someone has 
+              an authorization in this category but their Kerberos username 
+              becomes deactivated.
+     </ul>
+     <p />
+  <li>Possibly, modify /var/https/cgi-bin/rolesweb.pm to add another 
+      category where people have "implied authority to view authorizations" 
+      based on their other authorizations.  (Note, for example, that 
+      people who have one or more authorizations in the SAP category are 
+      automatically authorized to view authorizations for others on the 
+      web in the categories 'SAP', 'HR', and 'PAYR'.) 
+      <p />
+      Within rolesweb.pm, see the subroutines:
+      <ul>
+        <li>verify_metaauth_category
+        <li>get_viewable_categories
+      </ul>
+</ol>
+
+<h3><a name="add_qual_type">4. Adding a Qualifier Type</a></h3>
+<p />
+Several steps are involved in creating a new Qualifier Type, 
+which involve adding a record to the
+QUALIFIER_TYPE table, creating a root-level qualifier of the new 
+type, adding a qualifier_type = 'QTYP' record to the qualifier table for
+the new qualifier type, adding new authorizations, 
+and updating appropriate web pages.
+<p />
+Here are the detailed steps for creating a new Qualifier Type:
+<ol type="a">
+  <li>Insert a record into the QUALIFIER_TYPE table.  Choose a unique
+      4-character qualifier_type code and a 30-character description.
+      As of this writing,
+      there are 2 columns in the qualifier_type table in the production 
+      Roles database and 3 columns in the TRoles database.  At some point,
+      the extra column will be added to the production perMIT system.
+      (The extra column is IS_SENSITIVE, set to 'Y' if the qualifier names
+      are sensitive and only visible to people with an authorization 
+      to VIEW RESTRICTED QUALIFIERS for the given qualifier_type.  The
+      hidden qualifier_names are stored in the table SUPPRESSED_QUALNAME.)
+      <p />
+      To insert a new record into the QUALIFIER_TYPE table on the
+      production or test perMIT system, use the following SQL Insert statement:
+      <blockquote><code>
+      insert into qualifier_type 
+      <br>&nbsp;&nbsp;(qualifier_type, qualifier_type_desc, is_sensitive)
+      <br>&nbsp;&nbsp;values ('<i>qualifier_type_code</i>', '<i>qualifier_type_name</i>', '<i>Y</i>' or '<i>N</i>');
+      </code></blockquote>
+ <li>Decide on the range of qualifier_id numbers for the new qualifier_type.
+     All qualifiers of a given qualifier_type in the QUALIFIER table have 
+     qualifier_id numbers that fall within a given range.  When a new 
+     qualifier record is created (in the qualifier table), it is 
+     created with a qualifier_id of 1 + the maximum existing qualifier_id for
+     the given qualifier_type. As of this writing,
+     the following qualifier_types exist with the following range of 
+     qualifier_id's:
+     <blockquote><code><pre>
+   select qualifier_type, min(qualifier_id), max(qualifier_id) 
+        from qualifier
+        group by qualifier_type
+        order by min(qualifier_id);
+
+     QUAL MIN(QUALIFIER_ID) MAX(QUALIFIER_ID)
+     ---- ----------------- -----------------
+     NULL                 0                 0
+     CATE            100001            100028
+     QTYP            120000            120025
+     SPGP            150000            154018
+     ORGU            200001            200649
+     LORG            220000            221874
+     PBUD            260000            263345
+     AORG            300000            300113
+     IAPS            350000            350040
+     COST            400001            620338
+     DEPT            650000            652090
+     FUND            700000            771679
+     BUDG            800000            800043
+     BAGS            810000            810366
+     EHSG            820000            820018
+     PDED            830000            830019
+     SISO            850000            850253
+     ORG2            870000            870879
+     PMIT           1200000           1201333
+     PYTG           2200000           2202125
+     PCCS           3200000           3426145
+     PRIN           4500000           4500324
+     TSMA           4700000           4700019
+     EHST           5000000           5000060
+     </pre></code></blockquote>
+     Notice that the above table shows currently existing minimum and 
+     maximum qualifier_id's within each qualifier_type.  The unused
+     qualifier_id numbers available for a given qualifier_type can be found
+     by looking at the minimum qualifier_id minus 1 for the next
+     qualifier_type.  For example, the maximum existing qualifier_id
+     for qualifiers of type 'CATE' is 100028, and the minimum qualifier_id
+     for the next qualifier_type ('QTYP') is 120000, so there are 
+     120000 - 100028 = 19972 unused qualifier_id numbers available for
+     qualifier_type 'CATE'.
+     <p />
+     When creating a new Qualifier Type, you'll want to determine the
+     maximum number of qualifiers of that type that will ever be created
+     in the future.  This is not just the maximum number of qualifiers
+     existing at one point in time, but all qualifiers that will ever 
+     be created even if they are subsequently deleted.  The reason for this
+     is that qualifier_id numbers are not "recycled";  each new qualifier
+     created uses a new qualifier_id number.
+     <p />
+     If there will only be a small number of qualifiers, say 5000 of
+     them, then you could start the new qualifier type with a qualifier_id
+     of, for example, 110000.  This would allw for up to 
+     120000 - 110000 = 10000 qualifiers of the new type. 
+     <p />
+     If there may be half a million of the new qualifiers, then pick a number
+     that gives you a big range, e.g., starting at 5100000 
+     (which would currently give no upper limit).
+     <p />
+ <li>Take the first qualifier_id number from the previous step and use
+     it to create the root-level qualifier of the new type.
+      <blockquote><code>
+        insert into qualifier
+        <br>&nbsp;&nbsp;(qualifier_id, qualifier_code, qualifier_name, 
+        <br>&nbsp;&nbsp;&nbsp;qualifier_type, has_child, qualifier_level, custom_hierarchy)
+        <br>&nbsp;&nbsp;values (<i>qualifier_id_number</i>, 
+            '<i>qualifier_code</i>', '<i>qualifier_name</i>', 
+        <br>&nbsp;&nbsp;'<i>qualifier_type</i>', 'N', 1, 'N');        
+      </code></blockquote>
+     Note that qualifier_level is set to 1.
+     <p />
+ <li>The next few steps will create a record in the qualifier table of 
+     for the qualifier_type itself.  Each qualifier_type has a matching 
+     record in the qualifier table with qualifier_type = 'QTYP' (qualifier 
+     types).  These special qualifiers can be referenced in authorizations 
+     for the function MAINTAIN QUALIFIERS.
+     <p />
+     Find the maximum qualifier_id in the qualifier table for qualifiers 
+     of qualifier_type = 'QTYP', plus 1.
+      <blockquote><code>
+       select max(qualifier_id)+1 from qualifier where qualifier_type = 'QTYP';
+      </code></blockquote>
+ <li>Take the number from the previous step and use it as the qualifier_id
+     to create a new qualifier in the qualifier table.  Suppose the
+     result of the previous step is 120025.  Then, if we are creating a 
+     new qualifier_type 'PDED', for example, 
+     we would create a new qualifier with a qualifier_code of
+     'QUAL_PDED' (always 'QUAL_' || <i>qualifier_type_code</i>), 
+     a qualifier_name
+     of 'Qualifier type: PDED', and a qualifier_type = 'QTYP'.  We will 
+     set has_child = 'N' (since this will be a leaf level qualifier), 
+     qualifier_level = 2 (since it is always one level below the root), and
+     custom_hierarchy='N' (since this field is only applicable to qualifiers
+     of qualifier_type 'FUND').  The insert statement for this example would
+     be as follows:
+      <blockquote><code>
+        insert into qualifier
+        <br>&nbsp;&nbsp;(qualifier_id, qualifier_code, qualifier_name, 
+        <br>&nbsp;&nbsp;&nbsp;qualifier_type, has_child, qualifier_level, custom_hierarchy)
+        <br>&nbsp;&nbsp;values (120025, 'QUAL_PDED', 'Qualifier type: PDED', 
+        <br>&nbsp;&nbsp;'QTYP', 'N', 2, 'N');        
+      </code></blockquote>
+ <li>Find the root-level qualifier for the qualifier_type 'QTYP'.
+      <blockquote><code>
+        select qualifier_id from qualifier 
+        <br>&nbsp;&nbsp;where qualifier_type = 'QTYP'
+        <br>&nbsp;&nbsp;and qualifier_level = 1;
+      </code></blockquote>
+ <li>Use the qualifier_id of the root-level qualifier and the qualifier_id 
+     of the newly inserted qualifier to create a record in the QUALIFIER_CHILD
+     table linking parent and child.  Suppose the root-level qualifier_id is
+     120000.
+      <blockquote><code>
+        insert into qualifier_child (parent_id, child_id)
+        <br>&nbsp;&nbsp;values (120000, 120025);
+      </code></blockquote>
+ <li>Create a similar record in the QUALIFIER_DESCENDENT table.
+      <blockquote><code>
+        insert into qualifier_descendent (parent_id, child_id)
+        <br>&nbsp;&nbsp;values (120000, 120025);
+      </code></blockquote>
+ <li>Decide whether the new qualifiers will be fed automatically each
+     night from an external source, or maintained manually via the 
+     Roles web interface.
+     <ul>
+       <li>If the new qualifiers will be fed from an external source, you'll
+           need to build data feed modules to do nightly updates.  You will
+           need to do the following:
+           <ol type="i">
+              <li>Follow the model set in existing qualifier feed programs
+                  in the directory bin/roles_feed, such as roles_org2.pm
+                  or roles_rset.pm.  The roles_org2.pm module is for ORG2
+                  qualifiers, which are not "sensitive";  the roles_rset.pm
+                  module is for RSET qualifiers which are "sensitive".
+                  Each of these modules supports
+                  the "extract", "prepare", and "load" steps for 
+                  data feeds for one type of qualifier.
+              <li>Update the program bin/rolesfeed.pl to add a "require"
+                  statement for the *.pm perl module developed in the previous
+                  step.
+              <li>Add the three steps of the data feed (extract, prepare, and
+                  load) to one of the
+                  scripts run nightly as a cronjob.  Most data 
+                  feeds are executed from the shell script morning_jobs_early.
+           </ol>
+       <li>If the new qualifiers will be maintained by hand, then 
+           do the following:
+           <ol type="i">
+              <li>Add the new Qualifier_Type to the allowable qualifier types
+                  in the web interface for maintaining qualifiers. In the
+                  module /var/https/cgi-bin/qualmaint/RolesUpdater.pm,
+                  add another line to the hash %_KnownQualifierTypes
+                  specifying the new Qualifier Type code and a 
+                  regular expression indicating the format of qualifier_codes
+                  for the new qualifier_type.  Use the other entries in this
+                  hash as a guide.
+              <li>Set authorizations to allow apppropriate people to use the
+                  web interface to maintain this type of qualifier.  When
+                  creating authorizations, the
+                  function_name will be MAINTAIN QUALIFIERS and the qualifier
+                  will be QUAL_<i>qualtype</i>.
+
+           </ol>
+     </ul>
+     <p />
+ <li>If qualifiers for the new qualifier_type need to be mapped to 
+     DLCs (to allow Primary Authorizers to assign authorizations 
+     with qualifiers of this qualifier_type, and to allow for 
+     reporting on qualifiers and authorizations by DLC), examine and
+     update the data feed program bin/roles_feed/fix_pa_desc.pl.
+     <p />
+ <li>Update web pages where appropriate on Rolesweb to add the new 
+     qualifier type.  The following 
+     pages should be examined and updated:
+     <ul>
+       <li>/qual_branch1.html
+           (/var/https/htdocs/qual_branch1.html)
+           <br>Add the new qualifier type
+       <li>/qual_branch1a.html
+           (/var/https/htdocs/auth_branch1a.html)
+           <br>Add the new qualifier type
+       <li>/auth_branch1.html
+           (/var/https/htdocs/auth_branch1.html)
+           <br>Add new category/qualifier_type pairs to enable the 
+               new qualifier hierarchy to be displayed with authorizations
+       <li>/auth_branch1a.html
+           (/var/https/htdocs/auth_branch1a.html)
+           <br>Add new category/qualifier_type pairs to enable the 
+               new qualifier hierarchy to be displayed with authorizations
+     </ul>
+     <p />
+ <li>If the new qualifiers are "sensitive", i.e., viewing qualifier names
+     is restricted, then grant authorizations to appropriate people to
+     view the suppressed qualifier names (function is 
+     VIEW RESTRICTED QUALIFIERS and the qualifier is a QUAL_<i>qualtype</i>).
+</ol>
+<h3><a name="add_pa_type">5. Adding another type of Primary Authorizer</a></h3>
+As of this writing, there are two types of Primary Authorizers:
+<ul>
+  <li>FINANCIAL PRIMARY AUTHORIZER
+  <li>HR PRIMARY AUTHORIZER
+</ul>
+A Primary Authorizer is a person within a DLC with the responsibility, and the
+authority, to manage authorizations for that DLC's resources within the Roles
+DB. (Note that a Primary Authorizer can grant authorizations to anyone at
+the Institute, not just people affiliated with the DLC, but the 
+Primary Authorizer is restricted to creating authorization for Qualifiers
+that are linked to the DLC specified in their Primary Authorizer 
+authorization.)  
+<p />
+With two different kinds of Primary Authorizer, the 
+responsibility for Financial-related authorizations and HR-related
+authorizations can be given to different people within a DLC.  It is possible
+that in the future, the responsibility for maintaining authorizations 
+within a DLC may expand to new application areas, and there may be a good
+reason to have more types of Primary Authorizer to further divide 
+the responsibility.
+<p />
+The table PA_GROUP has one record for each type of Primary Authorizer.
+The table FUNCTION also has one (or more) matching Functions for each
+type of Primary Authorizer.
+<p />
+Within the FUNCTION table, actual Primary Authorizer functions have the
+columns PRIMARY_AUTHORIZABLE, IS_PRIMARY_AUTH_PARENT, and PRIMARY_AUTH_GROUP
+set as follows:
+<ul>
+ <li>primary_authorizable = 'N' (or null)
+ <li>is_primary_auth_parent = 'Y'
+ <li>primary_auth_group = '<i>group_name</i>'
+     <br>where <i>group_name</i> is a 4-character code that
+         symbolizes this type of Primary Authorizer, matching a record
+         in the PA_GROUP table.
+</ul>
+<p />
+Within the FUNCTION table, functions that can be granted by Primary 
+Authorizers have the
+columns PRIMARY_AUTHORIZABLE, IS_PRIMARY_AUTH_PARENT, and PRIMARY_AUTH_GROUP
+set as follows:
+<ul>
+ <li>primary_authorizable = 'Y'
+ <li>is_primary_auth_parent = 'N' (or null)
+ <li>primary_auth_group = '<i>group_name</i>'
+     <br>where <i>group_name</i> is a 4-character code for the
+         appropriate type of Primary Authorizer, matching a record in 
+         the PA_GROUP table.
+</ul>
+Let's examine actual records in the FUNCTION table that define
+the two types of Primary Authorizer and the Functions that can be 
+granted by each type of Primary Authorizer.  First, let's find the 
+two Primary Authorizer functions.  To do so, we look for records in the
+FUNCTION table where IS_PRIMARY_AUTH_PARENT = 'Y':
+<blockquote><code><pre>
+  select function_name, function_category,
+    primary_authorizable, is_primary_auth_parent, primary_auth_group
+    from function   
+    where is_primary_auth_parent = 'Y';
+
+                                                         IS_PRIMARY
+                               FUNCTION   PRIMARY       _AUTH       PRIMARY
+  FUNCTION_NAME                _CATEGORY  _AUTHORIZABLE _PARENT     _AUTH_GROUP
+  ---------------------------- ---------  ------------- ----------  -----------
+  FINANCIAL PRIMARY AUTHORIZER    META         null          Y          FIN
+  HR PRIMARY AUTHORIZER           META         null          Y          HR
+
+</pre></code></blockquote>
+Notice that Primary Authorizer functions are always defined with 
+FUNCTION_CATEGORY = 'META'.
+<p />
+The two PRIMARY_AUTH_GROUP values match records in the table PA_GROUP:
+<blockquote><code><pre>
+  select * from pa_group;
+
+ PRIMARY                                                           SORT
+ _AUTH_GROUP  DESCRIPTION             WEB_DESCRIPTION               _ORDER
+------------  ----------------------  ----------------------------  ------
+    FIN       Grantable by financial  Grantable&lt;br&gt;by (financial)     10
+              Primary Authorizer      &lt;br&gt;Primary&lt;br&gt;Authorizer
+
+    HR        Grantable by HR         Grantable&lt;br&gt;by HR              20
+              Primary Authorizer      &lt;br&gt;Primary&lt;br&gt;Authorizer    
+
+</pre></code></blockquote>
+
+<p />
+Now, let's find the Functions that can be granted by the two kinds of 
+Primary Authorizer.  To do so, we look for Functions where 
+PRIMARY_AUTHORIZABLE = 'Y'.  (Only a sample of these functions is 
+shown below.)
+<blockquote><code><pre>
+ select function_name, function_category,
+  primary_authorizable, is_primary_auth_parent,
+  primary_auth_group
+  from function where primary_authorizable = 'Y';
+ 
+                                                         IS_PRIMARY
+                               FUNCTION   PRIMARY       _AUTH       PRIMARY
+  FUNCTION_NAME                _CATEGORY  _AUTHORIZABLE _PARENT     _AUTH_GROUP
+  ---------------------------- ---------  ------------- ----------  -----------
+  ACTIONS-ACADEMIC               HR              Y        null          HR
+  ACTIONS-ADMINISTRATIVE         HR              Y        null          HR
+  ACTIONS-SERVICE                HR              Y        null          HR
+  ACTIONS-SRS                    HR              Y        null          HR
+  ACTIONS-SUPPORT                HR              Y        null          HR
+  CAN SPEND OR COMMIT FUNDS      SAP             Y        null          FIN
+  DEPT HEAD/DIRECTOR             HR              Y        null          HR
+  EDACCA ADMIN-PERCENT ONLY      PAYR            Y        null          HR
+  MAINT EMPL. TELEPHONE DIR.     HR              Y        null          HR
+  MAINT FACULTY CHAIR DATA       HR              Y        null          HR
+  MANUAL RESERVATION             SAP             Y        null          FIN
+  REPORT BY CO/PC                SAP             Y        null          FIN
+  REPORT BY FUND/FC              SAP             Y        null          FIN
+    ...
+</pre></code></blockquote>
+Examining the results from the two SELECT statements, we see, for 
+example, that
+<ul>
+  <li>An HR PRIMARY AUTHORIZER can grant authorizations for the function
+      ACTIONS-ACADEMIC.  This happens to be a Function with function_category
+       = 'HR' but the function_category does not need to match the 
+      primary_auth_group.
+  <li>An HR PRIMARY AUTHORIZER can grant authorizations for the function
+      EDACCA ADMIN-PERCENT ONLY.  This Function has function_category = 'PAYR'.
+  <li>A FINANCIAL PRIMARY AUTHORIZER can grant authorizations for the
+      function CAN SPEND OR COMMIT FUNDS, which has function_category = 'SAP'.
+</ul>
+<p />
+We have seen that Primary Authorizers can only grant 
+Authorizations for Functions that are related to the appropriate type of
+Primary Authorizer function according to the definitions shown above.
+It is also important to note that Primary Authorizers can only grant 
+Authorizations where the Qualifier is either (a) a qualifier related
+to the DLC specified in the Primary Authorizer authorization or (b) NULL.
+For Functions that have qualifier_type = NULL, and that are linked
+to a Primary Authorizer function, there is no checking to make sure
+the qualifier in a granted authorization maps to the Primary Authorizer's
+DLC.  However, where the qualifier_type is something other than NULL, 
+then the qualifier must be linked to the DLC specified in the 
+Primary Authorizer authorization.
+<p />
+The links between qualifiers of various types and DLCs is defined in the
+table PRIMARY_AUTH_DESCENDENT.  The PARENT_ID field matches a 
+qualifier_id in the QUALIFIER table for a Qualifier where
+qualifier_type = 'DEPT'.  The CHILD_ID field matches a qualifier_id
+of varying types.  The column IS_DLC = 'Y' if the PARENT_ID is a
+DLC and not a higher-level node in the DEPT hierarchy.  The records 
+in the PRIMARY_AUTH_DESCENDENT table are updated each night by the
+data feed program bin/roles_feed/fix_pa_desc.pl.  The source of data
+for DLC to qualifier links is the DEPT hierarchy, maintained by a 
+few administrators of the perMIT system via the Roles web interface for
+maintaining qualifiers.  In the future, the data will be extracted from
+the new Master Department Hierarchy, and not maintained by hand in the
+perMIT system.
+<p />
+Now that we understand how Primary Authorizer functions work, we can list
+the steps for adding a new type:
+<ol type="a">
+  <li>Decide on the 4-byte Primary Auth Group code for the new type of
+      Primary Authorizer.  Suppose the code is OTHR.  Connect to the
+      perMIT system with sqlplus and insert a record into the PA_GROUP table.
+      <blockquote><code><pre>
+insert into pa_group
+  (PRIMARY_AUTH_GROUP, DESCRIPTION, WEB_DESCRIPTION, SORT_ORDER)
+  values ('OTHR', 'Grantable by Other Primary Authorizers',
+          'Grantable&lt;br&gt; by other&lt;br&gt;Primary&lt;br&gt;Authorizers', 30);
+      </pre></code></blockquote>
+      This table is used by the web script rolefunc2.pl 
+      (in the directory /var/https/cgi-bin), which generates another 
+      web table column for each type of Primary Authorizer.  Specifically, the
+      database table column WEB_DESCRIPTION is used to generate each 
+      "Grantable by ..." column in the displayed web page.
+      <p />
+  <li>Decide on the 30-byte function name for the new Primary Authorizer 
+      function.
+      For this example, suppose the Function 
+      name is OTHER&nbsp;PRIMARY&nbsp;AUTHORIZER.
+      <p />
+  <li>Use the perMIT system PowerBuilder application to create a new Function
+      with the chosen function name. The category must be META and the
+      qualifier_type must be DEPT.
+      <p />
+  <li>Connect to the perMIT system with sqlplus and modify IS_PRIMARY_AUTH_PARENT
+      and PRIMARY_AUTH_GROUP codes in the new Function.
+      <blockquote><code>
+      update function set is_primary_auth_parent = 'Y', 
+      primary_auth_group = 'OTHR'
+      <br>&nbsp;&nbsp;where function_name = 'OTHER PRIMARY AUTHORIZER';
+      </code></blockquote>
+      <p />
+  <li>Verify that the web script rolefunc2.pl 
+      (in the directory /var/https/cgi-bin)
+      correctly includes the new Primary Authorizer function.  
+      To test it, start at /category_status.html,
+      and pick a Category that will have Functions grantable by the
+      new type of Primary Authorizer.  If you've
+      done everything right with inserting rows into the PA_GROUP and
+      FUNCTION tables, then an additional column should appear for
+      the new type of Primary Authorizer when you run the script.
+</ol>
+<h3><a name="move_qualifiers">6. Moving qualifiers to a new qualifier_id range to make more room</a></h3>
+As described in the section "Adding a Qualifier Type", all qualifiers 
+of a given qualifier_type within the QUALIFIER table must fall within a 
+single range of qualifier_id's, without any interleaved qualifiers of another
+type.  Nightly data feed programs that process qualifiers depend on this
+rule, including bin/roles_feed/fix_pa_desc.pl and bin/roles/feed/roles_qual.pm.
+<p />
+When creating a new qualifier_type and planning for qualifiers of that type
+in the qualifier table, enough "spare" qualifier_id's have been allowed 
+so that there is no collision with the lowest qualifier_id of the next
+qualifier_type.  However, with qualifiers of qualifier_type COST, we have 
+created over 200000 qualifiers, and we have had to move other qualifier
+types to a higher number range to make more room for COST qualifiers.  
+As of this writing, both COST and FUND qualifiers are close to running out
+of qualifier_id numbers.  (Adding 20% more COST qualifiers or 30% more 
+FUND qualifiers will result in a collision with the next qualifier type.)
+<p />
+It would be possible to modify the data feed programs so that either (a) 
+they take advantage of gaps within a qualifier_id range for a given 
+qualifier_type and make better use of available qualifier_id's or (b) remove 
+the requirement for non-interleaved qualifier_id ranges altogether.  
+However,
+either of these changes would require significant program modifications.  For
+now, if a "collision" is imminent, the only solution is to move qualifiers 
+of one qualifier_type to make more room.
+<p />
+As of this writing, the COST qualifier_type will bump into qualifiers of 
+type DEPT if the number of COST qualifiers increases by 20%, which will 
+probably happen in the next 1-2 years.  We could make more room by either
+moving the COST qualifiers or moving the DEPT qualifiers.  However, 
+because DEPT qualifiers have some special characteristics, it would be
+more difficult to move them than other qualifier_types.  There are 
+more than 200,000 COST qualifiers, so the SQL statements to move them
+may take a long time to run (maybe an hour), but there there probably will 
+come a day when they need to be moved.
+<p />
+In nightly feed programs, if we run out of qualifier_id's for a given
+qualifier type, we might see an error message similar to the following
+one:
+<code><pre>
+  insert into qualifier (QUALIFIER_ID, QUALIFIER_CODE, QUALIFIER_NAME, 
+  QUALIFIER_TYPE, CUSTOM_HIERARCHY, HAS_CHILD, QUALIFIER_LEVEL) 
+  values('520000','I4537317','Please Install A Fire Extinguisher', 'COST',
+  'N','N','8')
+  ERROR at line 1:
+  ORA-00001: unique constraint (ROLESBB.RDB_PK_Q_QUALIFIER_ID) violated
+</pre></code>
+This meant that the feed program was trying to insert a record into the 
+QUALIFIER table with qualifier_id = 520000, but
+a qualifier already existed in the table with qualifier_id = 520000.
+To fix the problem, we would need to move qualifiers to another qualifier_id
+range to make more room.
+<p />
+Here are the steps to follow when moving qualifiers of a given qualifier_type 
+to another qualifier_id number range.  Replace XXXX with the 4-character
+code for the specific qualifier_type:
+<ol type="a">
+  <li>Print or save a copy of some or all authorizations for qualifiers of 
+      qualifier_type XXXX save for later verification.
+      <p />
+      If there are only a few thousand qualifiers of this qualifier_type,
+      get this from Rolesweb;  see "Hierarchy of qualifiers with 
+      authorizations ... by category/qualifier_type.  
+      <p />
+      If there are
+      more than a few thousand qualifiers of this type, print 
+      or save the results from select 
+      statement against the Authorizations table using SQLPLUS or
+      BrioQuery, e.g., 
+      <blockquote><code>
+        select a.kerberos_name, a.qualifier_code, a.function_name
+        <br>from authorization a, qualifier q
+        <br>where q.qualifier_id = a.qualifier_id and q.qualifier_type = 'XXXX'
+        <br>order by a.kerberos_name, a.qualifier_code, a.function_name;
+      </code></blockquote>
+    <p />
+  <li>Add two temporary qualifier types to the qualifier_type table.  (Do
+      not follow the full instructions for adding qualifier_types;  this is
+      only a partial, temporary measure to get around table constraint 
+      issues.)
+     <blockquote><code>
+      insert into qualifier_type values ('TST1', 'Temp qualtype 1', 'N');
+      <br>insert into qualifier_type values ('TST2', 'Temp qualtype 2', 'N');
+     </code></blockquote>
+     <p />
+  <li>Get the old mininum and maximum qualifier_id numbers for the
+      qualifier_type XXXX.
+     <blockquote><code>
+       select min(qualifier_id), max(qualifier_id)
+       <br>from qualifier
+       <br>where qualifier_type = 'XXXX';
+     </code></blockquote>
+     Let the old minimum and maximum qualifier_id numbers be
+     <i>old_min_id</i> and <i>old_max_id</i>.
+     <p />
+  <li>Decide on the new starting qualifier_id number for qualifier_type XXXX.
+      Let the new minimum qualifier_id number be <i>new_min_id</i>.
+      Determine the "delta" for the old qualifier_id's to the new 
+      qualifier_id's, i.e., 
+      <blockquote>
+      <i>delta</i> = <i>new_min_id</i> - <i>old_min_id</i>
+      </blockquote>
+      <i>Delta</i> will be the constant to add to the old
+      qualifier_id numbers to arrive at the new numbers.
+     <p />
+  <li>Copy the XXXX qualifiers.
+     <code><pre>
+      insert into qualifier
+        (QUALIFIER_ID, qualifier_code, qualifier_name, qualifier_type, 
+         HAS_CHILD, QUALIFIER_LEVEL, CUSTOM_HIERARCHY)
+        select QUALIFIER_ID+<i>delta</i>, qualifier_code, qualifier_name, 'TST1',
+               has_child, qualifier_level, custom_hierarchy
+        from qualifier where qualifier_type = 'XXXX';
+     </pre></code>
+  <li>Copy the XXXX-related records in the QUALIFIER_CHILD and 
+      QUALIFIER_DESCENDENT tables.
+     <code><pre>
+      insert into qualifier_child
+        (parent_id, child_id)
+         select PARENT_ID+<i>delta</i>, CHILD_ID+<i>delta</i>
+        from qualifier_child where parent_id between <i>old_min_id</i> and <i>old_max_id</i>;
+      insert into qualifier_descendent
+        (parent_id, child_id)
+         select PARENT_ID+<i>delta</i>, CHILD_ID+<i>delta</i>
+        from qualifier_descendent where parent_id between <i>old_min_id</i> and <i>old_max_id</i>;
+     </pre></code>
+  <li>Copy the XXXX-related records in the table PRIMARY_AUTH_DESCENDENT
+     <code><pre>
+      insert into primary_auth_descendent
+       (parent_id, child_id, is_dlc)
+       select parent_id, child_id+<i>delta</i>, is_dlc
+       from primary_auth_descendent
+       where child_id between <i>old_min_id</i> and <i>old_max_id</i>;
+     </pre></code>
+  <li>Move qualifier_id's in AUTHORIZATIONs
+     <code><pre>
+      update authorization set qualifier_id = qualifier_id+<i>delta</i>
+         where qualifier_id between <i>old_min_id</i> and <i>old_max_id</i>;
+     </pre></code>
+  <li>Flip qualifier types for old and new qualifier_type XXXX qualifier
+      records
+     <code><pre>
+      update qualifier set qualifier_type = 'TST2'
+             where qualifier_type = 'XXXX';
+      update qualifier set qualifier_type = 'XXXX'
+             where qualifier_type = 'TST1';
+     </pre></code>
+  <li>Verify that we have the same number of new records and old
+      records in the QUALIFIER, QUALIFIER_CHILD, QUALIFIER_DESCENDENT
+      and PRIMARY_AUTH_DESCENDENT tables.
+      <p />
+      The four numeric results from these statements:
+     <code><pre>
+      select count(*) from qualifier where qualifier_type = 'TST2';
+      select count(*) from qualifier_child
+          where child_id between <i>old_min_id</i> and <i>old_max_id</i>;
+      select count(*) from qualifier_descendent
+          where child_id between <i>old_min_id</i> and <i>old_max_id</i>;
+      select count(*) from primary_auth_descendent
+          where child_id between <i>old_min_id</i> and <i>old_max_id</i>;
+     </pre></code>
+      should match the results from these statements:
+     <code><pre>
+      select count(*) from qualifier where qualifier_type = 'XXXX';
+      select count(*) from qualifier_child
+          where child_id between <i>new_min_id</i> and <i>new_max_id</i>;
+      select count(*) from qualifier_descendent
+          where child_id between <i>new_min_id</i> and <i>new_max_id</i>;
+      select count(*) from primary_auth_descendent
+          where child_id between <i>new_min_id</i> and <i>new_max_id</i>;
+     </pre></code>
+  <li>Check on web and in Roles application to make sure that people still 
+    have the same authorizations in XXXX hierarchy that they did before
+    the changes performed above.
+    <p />
+    If you've verified that the new records in the QUALIFIER, QUALIFIER_CHILD,
+    QUALIFIER_DESCENDENT and PRIMARY_AUTH_DESCENDENT tables are OK, and 
+    if you've verified that the records in the AUTHORIZATION table are OK,
+    the continue with the remaining steps to delete the old records.  
+    Otherwise, retrace your steps.
+    <p />
+  <li>Delete old records from PRIMARY_AUTH_DESCENDENT table.
+     <code><pre>
+      delete from primary_auth_descendent
+       where child_id between <i>old_min_id</i> and <i>old_max_id</i>;
+     </pre></code>
+  <li>Delete old records from QUALIFIER_CHILD and QUALIFIER_DESCENDENT tables.
+     <code><pre>
+      delete from qualifier_child
+       where child_id between <i>old_min_id</i> and <i>old_max_id</i>;
+      delete from qualifier_descendent
+       where child_id between <i>old_min_id</i> and <i>old_max_id</i>;
+     </pre></code>
+  <li>Delete old records from QUALIFIER table.
+     <code><pre>
+      delete from qualifier
+       where qualifier_id between <i>old_min_id</i> and <i>old_max_id</i>;
+     </pre></code>
+  <li>Delete the temporary qualifier types from QUALIFIER_TYPE table.
+     <code><pre>
+      delete from qualifier_type where qualifier_type in ('TST1', 'TST2');
+     </pre></code>
+</ol>
+<h3><a name="add_sys_user">7. Adding a special username to Person table</a>
+</h3>
+<p />
+The table rdb_t_person (synonym PERSON) is automatically updated each night
+from the Warehouse table KRB_PERSON to contain all people at MIT with
+current Kerberos principals.
+<p />
+However, there are a few special usernames in the PERSON table. (We'll 
+call it a table even though it is really a synonym for a view of a table).  
+Most of these are special usernames in the Roles Oracle database used within 
+the perMIT system itself or used by other systems to connect to the system.  In 
+the cases where we want a username that is not a Kerberos username to which 
+we can assign authorizations, we need to do the following:
+<ul>
+  <li>Use telnet or ssh to connect to the test or production perMIT system 
+      server as username rolesdb.
+  <p />
+  <li>Use "cd" to go to the directory ~/data, and 
+      check out the file roles_person_extra.dat
+      <blockquote><code>
+        cd ~/data
+        <br>
+        checkout roles_person_extra.dat 
+      </code></blockquote>
+      (Note: Do not confuse this with the file 
+      <code>roles_person_extract.dat</code>.)
+  <p />
+  <li>Use emacs (or the editor of your choice) to edit the file 
+      <code>roles_person_extra.dat</code>.  Add a line of the following
+      format:
+      <blockquote><code>
+         999999999:pseudo_last_name:pseudo_first_name:username:email_address::O:A:
+      </code></blockquote>
+      Where
+      <ul>
+        <li>999999999 - is the placeholder MIT ID number for a special username
+        <li>pseudo_last_name - is what will appear in the last_name field
+             of the PERSON table
+        <li>pseudo_first_name - is what will appear in the last_name field
+             of the PERSON table
+        <li>username - is the actual 3-8 character username you want to add.
+              Make sure that you include a special character (e.g., $) so that
+              the username can never match an actual MIT Kerberos principal
+        <li>email_address - is the email address of the person responsible 
+              for using the special username
+        <li><i>null field</i> - is a placeholder for a student or HR org unit
+        <li>O - means a person_type of Other
+        <li>A - means active
+      </ul>
+  <p />
+  <li>Save the modified file
+  <p />
+  <li>Run the script ~/bin/run_procedure.pl, executing the steps to 
+      extract, prepare and load person data from the Warehouse.  These
+      three steps will cause the new record from the flat file 
+      roles_person_extra.dat to be added to the PERSON table.
+  <p />
+  <li>If the previous step worked properly, then check back in the 
+      flat file roles_person_extra.dat.
+      <blockquote><code>
+        cd ~/data
+        checkin roles_person_extra.dat
+      </code></blockquote>
+  <p />
+  <li>If the new perMIT system user will need to actually connect to the
+      perMIT system, you'll need to create a database username for the
+      new user.  
+      <p>
+      Since this is not a normal user (one whose database username matches
+      his/her Kerberos principle), you cannot use the standard web interface
+      for adding perMIT system users.  You will need to use SQLPLUS and
+      create a username/password as follows:
+      <ul>
+        <li>create user <i>USERID</i> identified by <i>PASSWORD</i> 
+              default tablespace users
+              temporary tablespace temp profile default;
+        <li>grant connect to <i>USERID</i>;
+      </ul>  
+      <p>
+      Normal users (those with a Kerberos principle) can be created
+      using the following steps:
+      <ul>
+        <li>Start at the main Roles web page 
+        <li>Click on "System Administrators Tools"
+        <li>Click on "Add or delete Roles usernames"
+        <li>If you are authorized, <i>i.e.</i> if you have an 
+            authorization to <b>MAINTAIN ROLES DB USERS</b>, then you'll
+            be able to fill in the Username field and the Notes field and 
+            click the button "Add User" to add the new username.
+      </ul>
+  <p />
+  <li>You'll have to set the Oracle password for this username using 
+      standard Oracle DBA tools.  (Normal users with a Kerberos principal
+      can use the web page "I forgot my perMIT system password" to set their
+      own perMIT system Oracle password, but this cannot be done for special
+      usernames.)
+</ul> 
+<p />
+<h3><a name="mod_email_users">8. Modifying Email recipients for perMIT system exceptions reports</a>
+</h3>
+<p />
+There are three different kinds of Email sent out by the perMIT system server.  
+The list of people to receive these kinds of Email is controlled in different
+ways.  In short, the recipients of Email are controlled by a combination of
+(A) authorizations for a specific function, (B) lines in a control file, and 
+(C) hardcoded Email addresses in some high-level scripts for cron jobs.
+<p />
+<ol type="A">
+ <li>Deactivated users report
+     <p />
+     If there are deactivated Kerberos usernames who still have authorizations
+     within the perMIT system, an Email message will be sent out each night
+     listing the people with these authorizations.  The authorizations should
+     be manually reviewed and either deleted or reassigned to other 
+     current users at MIT.
+     <p />
+     The list of people who receive these exception Emails is determined
+     from the list of users who have Authorizations for the function 
+     "NOTIFICATION&nbsp;-&nbsp;INACTIVE USERS".  A separate exception set 
+     of Email 
+     messages is sent for each Function Category (e.g., SAP, HR, GRAD, etc.).  
+     A person will receive the exception Email for category XXXX
+     if the person has an authorization for function 
+     "NOTIFICATION&nbsp;-&nbsp;INACTIVE&nbsp;USERS" and qualifier 
+     "CATXXXX".  For example, user JOEUSER will receive deactivated user 
+     exception Email messages for category SAP if he has the following
+     authorization:
+     <pre>
+     <code>
+       Person          Category Function                       Qualifier
+       ----------      -------- -----------------------------  ---------
+       JOEUSER         META     NOTIFICATION - INACTIVE USERS  CATSAP
+     </code>
+     </pre>
+     Also note that authorizations for 
+     "NOTIFICATION&nbsp;-&nbsp;INACTIVE USERS" 
+     follow the usual rules for parent/child qualifiers.  Thus, a person
+     with an authorization for function 
+     "NOTIFICATION&nbsp;-&nbsp;INACTIVE USERS" 
+     and for qualifier "CATALL" will a separate Email notification 
+     for each category in which there are authorizations for deactivated 
+     users.
+     <p />
+     The Email about deactivated users with Authorizations is sent out
+     by the script ~rolesdb/bin/roles_feed/exception_mail.pl.
+     <p />
+ <li>roles_feed.pl error Email
+     <p />
+     Many of the nightly data feed programs in the perMIT system identify
+     job-stopping errors and send out Email to a list of people when one 
+     of these errors is detected.  The list of people receiving these error
+     Email messages is controlled by the config file ~rolesdb/lib/roles_notify.
+     Each record in this file contains an Email address of a person who
+     will receive error Email messages from the nightly data feed programs.
+     <p />
+ <li>Email containing normal nightly log files
+     <p />
+     There may be warning messages or errors not included in the Email 
+     sent out by the notification mechanism.  For that reason, complete
+     log files are sent out via Email whether or not those log files contain
+     error messages.
+     <p />
+     The following scripts within the directory ~rolesdb/crontabs 
+     contain hard-coded Email addresses of people who are sent the
+     log files.
+     <ul>
+      <li>cron_run_sapfeed
+      <li>evening_jobs
+      <li>mail_all_logs (An early experiment - Not used)
+      <li>morning_jobs_early
+      <li>morning_jobs_late
+     <p />
+</ol>
+<p />
+</body>
+</html>

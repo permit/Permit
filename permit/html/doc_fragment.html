@@ -1,0 +1,179 @@
+<HTML>
+<HEAD>
+<TITLE>Documentation fragments
+</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H2>Notes on SAP-related authorizations, plus termination codes
+</H2></td>
+</tr></table><BR>
+<P>
+This page contains documentation fragments to be displayed on the
+web page for <A href="/req_auth.html">
+req_auth.html</A>.
+<P>
+
+<ol>
+<li>perMIT system authorizations required for financial tasks
+<ul>
+<li><a href="#REQ">Requisition creation in SAP</a>
+<li><a href="#CRED">Credit card verification in SAP</a>
+<li>Approval of requisitions within the various release strategies
+<ul>
+<li><a href="#Model1">Model 1</a>
+<li><a href="#Model2">Model 2</a>
+<li><a href="#Model3">Model 3</a>
+<li><a href="#Model4">Model 4</a>
+<li><a href="#BatesModel">Bates Model</a>
+<li><a href="#SloanModel">Sloan Model</a>
+</ul>
+<li><a href="#INVOICE">Invoice approval</a>
+<li><a href="#TRAVEL">Travel documents approval</a>
+</ul>
+<li><a href="#TermCode">Termination codes for cost objects</a> 
+</ol>
+
+<HR>
+<a name="REQ"></a>
+<!docfrag REQ:*>
+<h4>Requisition creation in SAP</h4>
+To create a requisition, you need a CAN SPEND OR COMMIT FUNDS
+authorization that applies to the fund or fund center, plus
+a REQUISITIONER authorization. (REQUISITIONER
+authorizations are checked, but not shown on the one-step lookup web page.)
+</!docfrag>
+<P>
+<a name="CRED"></a>
+<!docfrag CRED:*>
+<h4>Credit card verification in SAP</h4>
+To do credit card verification, you need a CAN SPEND OR COMMIT FUNDS 
+authorization that applies to the fund or fund center, plus
+a CREDIT CARD VERIFIER authorization. (CREDIT CARD VERIFIER
+authorizations are checked, but not shown on the one-step lookup web page.)
+</!docfrag>
+<P>
+<a name="INVOICE"></a>
+<!docfrag INVOICE:*>
+<h4>Invoice approval</h4>
+To do invoice approval, you need an INVOICE APPROVAL UNLIMITED
+ authorization that applies to the fund or fund center.
+</!docfrag>
+<P>
+<a name="TRAVEL"></a>
+<!docfrag TRAVEL:*>
+<h4>Travel documents approval</h4>
+To do travel documents approval, you need a
+ TRAVEL DOCUMENTS APPROVAL
+ authorization that applies to the fund or fund center.
+</!docfrag>
+<hr>
+<a name="APPROVER"></a>
+<!docfrag APPROVER:*>
+<h4>Approval of requisitions</h4>
+</!docfrag>
+<a name="Model1"></a>
+<!docfrag APPROVER:Model 1>
+<h4>Model 1</h4>
+Requisitions for Model 1 funds do not require a separate approval step. 
+To create and approve a requisition for Model 1 funds, you need
+a CAN SPEND OR COMMIT FUNDS
+authorization that applies to the fund or fund center, plus
+a REQUISITIONER authorization. (REQUISITIONER
+authorizations are checked, but not shown on the one-step lookup web page.)
+</!docfrag>
+<P>
+<a name="Model2"></a>
+<!docfrag APPROVER:Model 2>
+<h4>Model 2</h4>
+To approve requisitions for Model 2 funds, you need
+authorizations for APPROVER MOD 2 LEV 1 and
+APPROVER MOD 2 LEV 2 regardless of dollar amount.
+</!docfrag>
+<P>
+<a name="Model3"></a>
+<!docfrag APPROVER:Model 3>
+<h4>Model 3</h4>
+To approve requisitions for Model 3 funds, the required
+authorizations vary depending on the amount.<UL>
+<LI>For amounts < $500, requisitions are automatically approved by the 
+requisition creator. You need a
+CAN SPEND OR COMMIT FUNDS authorization that applies to the
+fund or fund center plus a REQUISITIONER authorization.
+<LI>For amounts between $500 and $2500, you need an
+APPROVER MOD 3 LEV 1 authorization.
+<LI>For amounts > $2500, you need an
+APPROVER MOD 3 LEV 2 authorization.</UL>
+</!docfrag>
+<P>
+<a name="Model4"></a>
+<!docfrag APPROVER:Model 4>
+<h4>Model 4</h4>
+To approve requisitions for Model 4 funds, the required
+authorizations vary depending on the amount.<UL>
+<LI>For amounts < $2500, you need an APPROVER MOD 4 LEV 1
+authorization.
+<LI>For amounts > $2500, you need an
+APPROVER MOD 4 LEV 2 authorization.</UL>
+</!docfrag>
+<P>
+<a name="BatesModel"></a>
+<!docfrag APPROVER:Bates Model>
+<h4>Bates Model</h4>
+To approve requisitions for Bates Model funds, you need
+authorizations for BATES APPROVER LEV 1 - 4.
+</!docfrag>
+<P>
+<a name="SloanModel"></a>
+<!docfrag APPROVER:Sloan Model>
+<h4>Sloan Model</h4>
+To approve requisitions for Sloan Model funds, the required
+ authorizations vary depending on the amount.<UL>
+<LI>For non-equipment purchases for amounts < $5000,
+ you need a SLOAN LEV 1 APPROVER authorization.
+<LI>For equipment purchases or amounts > $5000, you need
+ both SLOAN LEV 1 APPROVER and SLOAN LEV 2 APPROVER
+ authorizations.</UL>
+</!docfrag>
+<hr>
+<a name="TermCode"></a>
+<h4>Termination codes</h4>
+<ul>
+<li>1 - 
+<!docfrag term-code:1>
+Closed. Pre-end date charges allowed
+</!docfrag>
+<li>2 - 
+<!docfrag term-code:2>
+Open. Charges not allowed.
+</!docfrag>
+<li>3 - 
+<!docfrag term-code:3>
+Terminated. Charges not allowed
+</!docfrag>
+<li>8 - 
+<!docfrag term-code:4>
+Invalid cost object [without charges]
+</!docfrag>
+<li>9 - 
+<!docfrag term-code:5>
+Invalid cost object [with charges]
+</!docfrag>
+</ul>
+

@@ -1,0 +1,109 @@
+<HTML>
+<HEAD>
+<TITLE>People who can create authorizations</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY BGCOLOR="#fafafa">
+<TABLE>
+<TR><TD><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></TD>
+<TD>
+<H1>People who can create authorizations</H1></TD>
+</TR>
+</TABLE>
+<P>
+You need a special authorization to 'RUN ADMIN REPORTS' to be able to
+see this web display.  The web page allows you to see all users who have 
+the authority to create authorizations in the perMIT system.
+There are three kinds of meta-authorizations that allow a
+person to create authorizations for others:
+<p>  
+<table border>
+<tr><th width="35%">Function is...</th><th>Person can create...</th></tr>
+<tr><td><ul><li>CREATE AUTHORIZATIONS</ul></td>
+<td>Allows person to create any authorization in a given category.</td></tr>
+<tr><td><ul><li>FINANCIAL PRIMARY AUTHORIZER
+            <li>HR PRIMARY AUTHORIZER
+        </ul></td>
+<td>Allows person to create authorizations for a given department's resources.
+</td></tr>
+<tr><td align=center>Any other function.<br>Authorization has Grant=Y.</td> 
+<td>Allows person to create authorizations for the specified function and
+qualifier (or other qualifiers that are a subset).</td><tr>
+</table>
+<P>
+The display will show all authorizations of any of these types that allow
+a user to create authorizations.
+<p>
+<hr>
+<FORM METHOD="GET" ACTION="/cgi-bin/roles_users.cgi">
+Select a Category (for which user can create authorizations), pick the format
+option and sort option, and then click SUBMIT to display a report.
+<P>
+<table>
+<tr><td><strong>Category:</strong></td>
+<td>
+<SELECT NAME="category">
+<OPTION SELECTED> ALL All categories
+<option> ADMN Admin (misc)
+<option> BUDG SAP Budget
+<option> EHS  Env Hlth Safety
+<option> EPS  E. Proposal Sys
+<option> GAID Graduate Aid
+<option> GRAD GRAD ADMISSIONS
+<option> HELP Help Desk
+<option> HR   New HR System
+<option> HR_C HR-central adm
+<option> IDDB MIT ID Database
+<option> LABD LABOR DIST
+<option> MDEP Master Dept. Hierarchy
+<option> META Roles META-auth
+<option> NIMB NIMBUS (Budget)
+<option> OKI  Open Know. Ini.
+<option> PAYR Payroll
+<option> SAP  SAP
+<option> SFS  Student Financial Sys
+<option> SIS  Student Systems
+<option> TEST Test perMIT system
+<option> TSM  Tivoli Stor Mgr
+<option> UADM Undrgr Admiss
+<option> WRHS WAREHOUSE
+<option> XSIS Student Info
+</SELECT>
+</td></tr>
+<tr><td><strong>Format option:</strong></td>
+<td><INPUT TYPE=RADIO NAME=format VALUE=1 CHECKED>
+ 1. Display qualifier name<br>
+<INPUT TYPE=RADIO NAME=format VALUE=2>
+ 2. Display flags (do_function, grant, in_effect_today, modified_by, date)</td>
+</tr>
+<tr><td><strong>Sort option:</strong></td>
+<td><INPUT TYPE=RADIO NAME=sort VALUE=1 CHECKED>
+1. Sort by Kerberos username
+<BR>
+<INPUT TYPE=RADIO NAME=sort VALUE=2>
+2. Sort by last name and first name</td>
+</tr>
+</table>
+<center><INPUT TYPE="SUBMIT" VALUE="Submit"></center>
+<p>
+</FORM>
+<hr>
+<small>Modified February 3, 2004</small>
+<p>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>

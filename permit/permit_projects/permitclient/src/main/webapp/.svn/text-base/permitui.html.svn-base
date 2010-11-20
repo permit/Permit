@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!--
+ *  Copyright (C) 2007-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>Permit - Authorizations</title>
+<!--CSS file -->
+	<link rel="stylesheet" type="text/css" href="dbmain.css" />
+<!-- Calendar Source files -->
+<script src="jquery/jquery.js" type="text/javascript">
+</script> 
+<style type="text/css">
+    @import url("jquery/ui.datepicker.css");
+</style> 
+
+<script type="text/javascript" src="jquery/ui.datepicker.js">
+</script> 
+<script src="jquery/jquery.autocomplete.js" type="text/javascript">
+</script>
+<script src="jquery/jquery.simplevalidate.js" type="text/javascript">
+</script>
+<!-- Source file --><!-- Source file -->
+<script type="text/javascript" src="gssource.js">
+</script>
+<script src="jquery/jquery.scrollTo.js" type="text/javascript">
+</script>
+</head>
+<body onload="javascript:initForm();">
+<div id="mast">
+	<h1>Permit</h1>
+	<ul id="navTabs">
+		<li>
+			Authorizations
+		</li>
+	</ul>
+</div>
+
+<div id="authQuery">
+<div id="docnav">
+	<button id="newauth" name="newauth" onclick="javascript:hideform('formspan');javascript:newform();">[+] Create Authorization	</button>
+         <a href="https://ist.mit.edu/services/business/roles/introduction" target="_blank"><B>Help</B></a>
+         &nbsp;&nbsp;&nbsp;<a href="https://rolesweb.mit.edu" target="_blank"><B>Go to Roles web Home</B></a>
+</div>
+<h2><br/></h2>
+<div id="requeststatus2"></div>
+<h2><br/></h2>
+<div id="formspan" style="display: none">
+	<form id="authform" name="authform" action="#">
+		<fieldset>
+                    <div class="closeIt"><a href="#" onclick="javascript:hideform('formspan');">close | x</a></div>
+			<legend>
+				Authorization Detail
+			</legend>
+			<ul>
+                <li>
+					<span id="authdet_errors"></span>
+                </li>
+				<li>
+					<label class="required">Kerberos Name (or Last name)</label> <input type="text" name="kerberos_name" id="kerberos_name" size="8" title="Enter last name or kerberos name" onchange="javascript:checkFormReady(0);" onkeypress="javascript:blankPname();"/>
+                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+					Name <input type="text" name="personname" id="personname" size="60"    readonly="readonly"  value="Do not type name. Will be filled in."/>
+ 				</li>
+<!--				<li>
+					<label>Mit ID</label> <input type="text" name="mitId" id="mitId" size="9"  onchange="javascript:checkFormReady(0);" onkeypress="javascript:blankPname();"/>
+                                </li> -->
+				<li>
+					<label class="required">Category</label> <select id="function_category" name="function_category" onchange="javascript:list_functions_oc_auth();checkFormReady(0);">
+                                        <option>-</option></select>
+					<input  type="text" name="function_category_static" id="function_category_static" size="60" style="display:none" />
+
+				</li>
+				<li>
+					<label class="required">Function Name</label> <select id="function_name" name="function_name" onchange="javascript:get_qtype_auth(); "><option>-</option></select>
+					<input  type="text" name="function_name_static" id="function_name_static" size="60" style="display:none" />
+
+                </li>
+				<li  >
+					<label class="required">Function Description</label><input id="function_desc" type="text" name="function_desc" size="80" disabled="disabled" />
+				</li>
+				<li><label>Qualifier Code</label> <input type="text" name="qualifier_code" id="qualifier_code" size="20" onchange="javascript:checkFormReady(0);" onkeypress="javascript:blankQualName();" />
+						 <a href="#" id="qualifier_link" onclick="javascript:get_quals(this.parentNode);">Lookup Qualifiers</a>
+				</li>
+				<li>
+					<label>Qualifier Type</label> <input type='text' name='qualifier_type' size="6" disabled="disabled" />
+                                        <strong> Name</strong> <input type="text" name="qualifier_name" size="45" disabled="disabled" />
+				</li>
+</ul>
+<ul>
+				<li>
+					<label class="required">Effective Date</label> <input type='text' name='effective_date' id="effective_date" size="10" value="mm/dd/yyyy" class="required date" onchange="javascript:checkFormReady(2);"/>
+					<strong>Expires</strong> <span class="formHint"><input type='text' name='expiration_date' id="expiration_date" size="10" value="mm/dd/yyyy" class="date" onchange="javascript:checkFormReady(2);"/>mm/dd/yyyy</span>
+				</li>
+
+                                <li><a href="#" onclick="javascript:detailToggle();" id="detTog">More Detail</a></li>
+                                <li id="extra_detail" style="display: none">
+                                    <ul>
+                                        <li>
+                                            <label class="required">Do Function<br /><input type="checkbox" name="do_function" id="do_function" onchange="javascript:checkFormReady(2);"/></label>
+                                            <label class="required">Grant Authorization<br /><input type="checkbox" name="grant_auth" id="grant_auth" onchange="javascript:checkFormReady(2);"/></label>
+                                        </li>
+                                        <li>
+                                            <label>Modified By</label> <input type="text" name="modified_by" size="10" disabled="disabled" value="mm/dd/yyyy" />
+                                            <strong> On</strong> <input type="text" name="modified_date" size="10" disabled="disabled" value="mm/dd/yyyy" />
+                                        </li>
+                                    </ul>
+                                </li>
+				<li>
+					<input type="hidden" name="auth_id" onkeyup="javascript:check_authid();" size="10" disabled="disabled" /> <input type="hidden" name="qualifier_id" />
+				</li>
+ 				<li>
+						<input type='button' name='create' id="create" value='Create' onclick="javascript:create_auth();" disabled="disabled" />
+						<input type='button' name='update' id ="update" value='Replace' onclick="javascript:update_auth(this.parentNode);" disabled="disabled" />
+						<input type='button' name='del' id="del" value='Delete' onclick="javascript:delete_auth(this.parentNode);" />
+				</li>
+			</ul>
+		</fieldset>
+	</form>
+</div>
+
+	<form name="selectform" action="javascript:get(this.parentNode);" id="selectform">
+		<fieldset>
+			<legend>
+				Look up Authorizations
+			</legend>
+			<select name="selection_id" id="selection_id" style="font-size: 11px;" onchange="javascript:clearErrorMessage();get(this.parentNode);">
+				<option value="">
+					- Make a selection -
+ 				</option>
+			</select>
+
+		</fieldset>
+	</form>
+	<div id="loading"> </div>
+		<div id="myspan">
+		</div>
+</div>
+<div id="authDetail">
+<div id="authspan">
+
+</div>
+<div id="requeststatus"></div>
+</div>
+<div id="quallist"></div>
+<div id="mast">
+        <h1>Permit</h1>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,120 @@
+<HTML>
+<HEAD>
+<TITLE>Show departmental SAP authorizations</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY BGCOLOR="#fafafa">
+<TABLE>
+<TR><TD><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></TD>
+<TD>
+<H1>SAP authorizations for a department - test version</H1></TD>
+</TR>
+</TABLE>
+<P>
+<small>Note: This test version handles certain grouped departments differently.
+If a department has a parent department that has direct links to 
+Funds Centers, Profit Center nodes, etc. (e.g., departments D_CHEME, D_ACAD,
+D_SFS have parent departments such as D_ASO,
+D_DUE, D_DSL), then it will look not only for authorizations for the
+specified department, but for the parent department as well.</small>
+<p>
+Most cost objects, fund centers, funds, spending groups, and other
+perMIT system "qualifiers" have been organized into an unofficial 
+<a 
+href="/cgi-bin/qualauth.pl?qualtype=DEPT+%28MIT+departments+%28unofficial%29%29&noleaf=1&levels=20"
+>
+hierarchy of Departments, Labs, and Centers</a>.
+Using this hierarchy, it is possible to find and display authorizations for
+qualifiers related to a given Department.
+<P>
+<i>Note: This report, based on the department hierarchy, is more complete 
+than an older report based on authorizations within a branch of the 
+Fund Center hierarchy. However, the older report may be useful if you are
+interested in only a subset of a department. 
+<a href="dept_auth.html">Go to older report.</a>
+</i>
+<P>
+There are three "filter options" for selecting department-related 
+authorizations
+to be displayed.  Filter option 1 finds only the authorizations whose
+qualifiers are actually found under a given DLC in the hierarchy.  Filter
+option 2 selects authorizations for display through a 2-step process that
+shows all authorizations for any person who has at least one authorization
+directly related to a DLC.  Filter option 3 also uses a 2-step process, 
+finding people who have at least one authorization directly related to the
+DLC, and then showing those people's authorizations whose qualifiers are 
+found under the DLC plus their authorizations with NULL qualifiers.
+<P>
+For example, if you specify department D_SLOAN, the report:
+<ol>
+<li>finds all people having authorizations for a qualifier of any 
+Fund Center, Spending Group, Cost Object, Profit Center, etc. that falls
+under D_SLOAN, and then
+<li>shows some or all SAP 
+authorizations (spending, reporting, approving, etc.) for those people, 
+depending on the chosen Filter option.
+</ol>
+<P>
+<HR>
+<FORM METHOD="GET" ACTION="/cgi-bin/dlc-auth3a.cgi">
+Specify a 
+<a 
+href="/cgi-bin/qualauth.pl?qualtype=DEPT+%28MIT+departments+%28unofficial%29%29&noleaf=1&levels=20">
+Department Code</a> (e.g., D_SLOAN, D_RLE, etc.), pick format, 
+filter, and sort
+options, and then click SUBMIT to display a report.
+<BR>
+<table>
+<tr><td><strong>Department<br>code: </strong></td>
+<td><INPUT TYPE=TEXT NAME=qualcode></td></tr>
+<tr><td><strong>Format option:</strong></td>
+<td><INPUT TYPE=RADIO NAME=format VALUE=1 CHECKED>
+ 1. Display qualifier name<br>
+<INPUT TYPE=RADIO NAME=format VALUE=2>
+ 2. Display flags (do_function, grant, in_effect_today, modified_by, date)</td>
+</tr>
+<tr><td><strong>Filter option:</strong></td>
+<td><INPUT TYPE=RADIO NAME=filter VALUE=1>
+1. Show only authorizations for qualifiers directly related to the department
+<br>
+<INPUT TYPE=RADIO NAME=filter VALUE=2 CHECKED>
+2. Show all authorizations for selected people
+<br>
+<INPUT TYPE=RADIO NAME=filter VALUE=3>
+3. Show auths. for qualifiers directly related to department plus NULL qualifiers</td>
+</tr>
+<tr><td><strong>Sort option:</strong></td>
+<td><INPUT TYPE=RADIO NAME=sort VALUE=1 CHECKED>
+1. Sort by Kerberos username
+<BR>
+<INPUT TYPE=RADIO NAME=sort VALUE=2>
+2. Sort by last name and first name</td>
+</tr>
+<tr><td><strong>Special option:</strong></td>
+<td><INPUT TYPE=RADIO NAME=inc_supdept VALUE=Y>
+1. Also look for auths. with qualifiers attached to parent department
+<BR>
+<INPUT TYPE=RADIO NAME=inc_supdept VALUE=N CHECKED>
+2. Do not do special lookup of qualifiers for parent department</td>
+</tr>
+</table>
+<center><INPUT TYPE="SUBMIT" VALUE="Submit"></center>
+</FORM>
+<hr>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>

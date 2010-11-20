@@ -1,0 +1,44 @@
+For Department Head reporting, make some modifications to CGI scripts:
+#
+#  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+- roleauth2.pl
+
+  * (Done) Find out if the given cost object has an admin flag of FC.  If so,
+    find its Profit Center and the associated D_code, then see who has
+    DEPT HEAD reporting authorization for the given D_code.  Show people
+    who have this reporting authorization.
+
+  * Test some more.  Rename rolequal3.pl -> rolequal2.pl
+
+- rolequal3.pl
+
+  * Add a third section that shows DEPT HEAD reporting authorizations
+    and link to dh_report.pl
+
+- (Done) dh_report.pl
+    Modify dh_report.pl to include another parameter.  The parameter
+    gives you the option of only showing cost objects with Admin flag = 'FC'.
+    How do we check auths for this CGI script? (OK) 
+    Allow the hiding of MIT ID nos. (Done)
+
+    P9319200 D_CHEME Why does it show more than one DEPT code? (It's OK - 
+    shows cross-WBSE connections)
+
+- (Done) Install new rolecc_info.pl
+
+- - -
+
+- Set up new function category ADMN.

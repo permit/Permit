@@ -1,0 +1,65 @@
+<HTML>
+<HEAD>
+<TITLE>One-step lookup of requisition and approval authorizations</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H2>One-step lookup of requisitioner and approval authorizations</H2></td>
+</tr></table><BR>
+<P>
+This page allows you to do lookups of people who have requisitioning
+or approval authorizations for a given cost object.  The results will take
+into consideration the Release Strategy for the cost object and the
+accompanying rules.  To use this facility, you need 
+<a href=
+"/metaauth_help.html#viewing+authorizations">
+viewing authorizations</a> to see authorizations within category SAP.
+<HR>
+<P>
+Pick a business function.  Enter a 7-digit cost object (the prefix letter
+is not needed).  Then click the SUBMIT button to see a list of people
+authorized to do the given business function.
+<P>
+<FORM METHOD="GET" ACTION="/cgi-bin/req_auth.pl">
+<table>
+<tr><th>Who is authorized to do ...?</th>
+<th>for Cost object:</th>
+<tr>
+<td><INPUT TYPE="radio" NAME="func_code" VALUE="REQ">
+Requisition creation in SAP
+</td><td valign=top rowspan=2><INPUT TYPE=TEXT NAME=cost_object></td>
+<td valign=top rowspan=2>&nbsp;&nbsp;<INPUT TYPE="SUBMIT" VALUE="Submit"></td>
+</tr>
+<tr>
+<td><INPUT TYPE="radio" NAME="func_code" VALUE="CRED">
+Credit card verification in SAP
+</td></tr>
+<tr><td><INPUT TYPE="radio" NAME="func_code" VALUE="APPROVER" CHECKED>
+Approval of requisitions
+</td></tr>
+<tr><td>
+<INPUT TYPE="radio" NAME="func_code" VALUE="INVOICE">
+Invoice approval
+</td></tr>
+<tr><td><INPUT TYPE="radio" NAME="func_code" VALUE="TRAVEL">
+Travel documents approval
+</td></tr>
+</table>
+</FORM>
+<hr>

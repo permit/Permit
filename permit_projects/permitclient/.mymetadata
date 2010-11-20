@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-module
+  type="WEB"
+  name="rolesclient"
+  id="myeclipse.1224096909453"
+  context-root="/rolesclient"
+  j2ee-spec="1.4"
+  archive="rolesclient.war">
+  <attributes>
+    <attribute name="webrootdir" value="webapp" />
+  </attributes>
+</project-module>
+

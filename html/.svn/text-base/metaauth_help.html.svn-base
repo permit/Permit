@@ -1,0 +1,94 @@
+<HTML>
+<TITLE>perMIT system Meta-authorizations</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td><H2>perMIT system Meta-authorizations</H2></td></tr>
+</table>
+<P>
+<H3>What are meta-authorizations?</H3>
+In the perMIT system, authorizations about authorizations are called
+<strong>meta-authorizations</strong>.  Like other authorizations, a 
+meta-authorization consists of a <strong>person</strong>, 
+a <strong>function</strong>, and a <strong>qualifier</strong>.
+Meta-authorizations belong to the Function Category "META". The three
+main functions are
+<ul>
+<li>VIEW AUTH BY CATEGORY
+<br>Allows you to view other people's authorizations within a 
+Function Category, such as SAP (SAP R3) or WRHS (the Warehouse), via the Web
+<P></li>
+<li>PRIMARY AUTHORIZER
+<br>Allows you to grant or maintain authorizations for a common set of
+business functions with qualifiers related to the resources of a 
+specified department.
+<P></li>
+<li>CREATE AUTHORIZATIONS
+<br>Allows you to create an authorization for <i>any</i> function or
+qualifier within a Function Category.  Only a few people have this type
+of meta-authorization.  Most authority to grant authorizations to others
+is restricted to certain functions and qualifiers, and is given either 
+with the PRIMARY AUTHORIZER function or via the 
+Grant flag of a (non-meta) authorization.</li>
+</ul>
+(There are also a few Meta-authorization functions that control maintenance of
+other perMIT system objects; we will ignore them 
+here.)
+<A NAME="viewing+authorizations">&nbsp;</A>
+<p>
+<H3>
+Rules for viewing authorizations on the Web</H3>
+<p>
+People's authorizations are not considered to be highly sensitive data, but 
+it is not our policy to let <i>all</i> Web users view them.
+In order to use the web interface to view authorizations for people other 
+than yourself, you will usually need a VIEW AUTH BY CATEGORY authorization
+for the categories (SAP, WRHS, etc.) of authorizations you want to view.
+<p>
+There is a special rule for viewing SAP, HR, LABD (Labor Distribution), 
+ADMN (miscellaneous administrative roles), and META authorizations that
+may allow you to view these authorizations even if you don't have a 
+VIEW AUTH BY CATEGORY authorization.
+You will be allowed to view other people's authorizations in the categories 
+listed above as long as
+you have at least one currently-active SAP or HR authorization.  
+The reason behind
+this rule is that people who have financial or HR authorizations are likely to 
+have a business need to look up other people's authorizations.
+<p>
+<H3>How do I get a meta-authorization to view authorizations on the Web?</A></H3>
+<p>Meta-authorizations
+to "VIEW AUTH BY CATEGORY" will usually be given to MIT employees on request 
+from a Primary Authorizer. If you don't have a Primary 
+Authorizer, or don't know who that person is, contact 
+the Business Liaison team (<a href="mailto:business-help@mit.edu">business-help@mit.edu</a>). 
+</p>
+<p>Make sure you specify: </p>
+<ul>
+<li>Your Kerberos principal</li>
+<li>Your name</li>
+<li>The <A href=/cgi-bin/rolecat.pl>Function Category
+</A> or Categories for which you wish to view authorizations, 
+i.e. SAP, NIMB (NIMBUS Budget system), WRHS (Data Warehouse) etc.. 
+<li>Your department and reason for needing access to view the authorizations
+</ul>
+<p>
+<HR>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>

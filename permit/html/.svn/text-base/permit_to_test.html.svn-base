@@ -1,0 +1,132 @@
+<HTML>
+<HEAD>
+<TITLE>perMIT system Web Page</TITLE>
+</HEAD>
+<!--
+ *  Copyright (C) 2008-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+<body BGCOLOR="#fafafa">
+
+<TABLE WIDTH="85%">
+<TR><TD>
+<IMG SRC="rolesmall.GIF"></TD>
+<TD align=center>
+<H1>Welcome to the<BR>
+Web Interface to the perMIT system</H1></TD>
+</TR>
+</TABLE>
+
+<P><small>The Web interface to MIT's perMIT system allows view-only access to
+the perMIT system. Access to some information requires 
+<A HREF="http://web.mit.edu/is/help/cert">Secure Web Certificates</A>. 
+These items are marked with (1). Access to information about 
+people other than yourself requires a special 
+<A HREF="/metaauth_help.html#viewing+authorizations">
+viewing authorization</A> in Roles as well as Secure Web Certificates. 
+These items are marked with (2). </small>
+<p>&nbsp; &nbsp;
+<a href="roles_doc.html"><em>Help and documentation...</em></A>
+
+<TABLE CELLSPACING=5 BORDER=3 WIDTH=100%>
+<TR><TD WIDTH="10%" VALIGN="TOP" align="right" BGCOLOR="#cfcfcf">
+<strong>Authorizations</strong></TD>
+
+<TD WIDTH="90%" VALIGN="TOP">
+<A HREF="/cgi-bin/my-auth.cgi">My authorizations</A>
+<sup>1</sup><BR>
+<A HREF="/person_auth.html">
+Authorizations for a person</A> <sup>2</sup>
+<BR>
+<A HREF="/req_auth.html">Who can requisition, approve, invoice, etc.? </A><sup>2</sup> 
+<P>
+Hierarchy of qualifiers with authorizations<sup>2</sup>: 
+<A HREF="/cgi-bin/auth_tree_by_dlc.cgi?action=first_page">
+by DLC</A> or 
+<A HREF="/auth_branch1.html">
+by category/qualifier_type</A>
+<br>
+Authorizations within a department<sup>2</sup>: 
+<A HREF="/dlc_auth.html">SAP financial</A> or 
+<A HREF="/cgi-bin/dlc-auth-all.cgi">HR, Payroll, EHS or <i>all</i> categories</A>
+<BR>
+<A HREF=" /more_auth.html">
+More choices...</A> <sup>2</sup> 
+</TD>
+</TR>
+<TR><TD WIDTH="10%" VALIGN="TOP" align="right" BGCOLOR="#cfcfcf">
+<strong>People</strong></TD>
+<TD WIDTH="90%" VALIGN="TOP">
+<p>
+<A HREF="/lookupname.html">Look up a person</a> 
+<sup>2</sup><br>
+<a href="/pa_lists.html">Primary Authorizers lists</a> 
+</p>
+<p>
+</TD>
+</TR>
+<TR>
+<TD WIDTH="10%" VALIGN="TOP" align="right" BGCOLOR="#cfcfcf">
+<strong>Functions</strong></TD>
+<TD WIDTH="90%" VALIGN="TOP">
+<a href="/category_status.html">
+Business functions by category</a>
+<br>
+Definitions of functions: 
+<a href="http://web.mit.edu/rolesdb/www/definitions.html">
+ SAP financial</a> or
+<a href="/hr_roles.html">
+ HR-related</a>
+<P>
+</TD></TR>
+<TR>
+<TD WIDTH="10%" VALIGN="TOP" align="right" BGCOLOR="#cfcfcf"><strong>Qualifiers</strong></TD>
+<TD WIDTH="90%" VALIGN="TOP">
+<a href="/cost_object_info.html">
+Tell me about a cost object</a> 
+<br>
+<a href="/qual_branch1.html">Hierarchy of qualifiers</a>
+<br>
+Hierarchy of qualifiers with authorizations<sup>2</sup>: 
+<A HREF="/cgi-bin/auth_tree_by_dlc.cgi?action=first_page">
+by DLC</A> or 
+<A HREF="/auth_branch1.html">
+by category/qualifier_type</A>
+<br>
+  </TR>
+<TR><TD WIDTH="10%" VALIGN="TOP" align="right" BGCOLOR="#cfcfcf">
+<strong>Miscellaneous</strong></TD>
+<TD WIDTH="90%" VALIGN="TOP">
+
+<a href="/change_pw.html">
+I forgot my perMIT system password</a> <sup>1</sup>
+<BR>
+<a href="/admin.html">
+System administrator tools</a> <sup>2</sup>
+<BR>
+<a href="/testroles.html">Testing area (beta versions of new Roles web pages)</a>
+ </TD>
+</TR>
+</TABLE>
+
+<P><HR>
+<small>For business or technical help, contact: <a href="mailto:business-help@mit.edu">business-help@mit.edu</a> (x2-1177)</small><p>
+<small><A HREF="http://web.mit.edu/rolesdb/www/roleshome.html">Roles Home Page</A>
+<br>
+<!-- Begin MIT-use only web reporting counter-->
+<img src="http://counter.mit.edu/tally" width="1" height="1" alt="">
+<!-- End MIT-use only web reporting counter-->
+Last modified by Jim Repa on 02/04/2005</small> 
+</BODY>
+</HTML>

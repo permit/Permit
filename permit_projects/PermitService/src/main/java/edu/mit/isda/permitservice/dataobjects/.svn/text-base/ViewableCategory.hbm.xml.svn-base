@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.ViewableCategory" table="viewable_category">
+    <id name="category" type="string">
+      <column name="FUNCTION_CATEGORY" sql-type="char(4)"/>
+      <generator class="assigned"/>
+    </id>
+    <property column="KERBEROS_NAME" length="1" name="kname"/>
+    <property column="FUNCTION_CATEGORY_DESC" length="1" name="catdesc"/>
+  </class>
+  <sql-query name="VIEWABLE_CATEGORY_LIST">	
+            <return alias="cat" class="edu.mit.isda.permitservice.dataobjects.ViewableCategory"/>	
+            SELECT FUNCTION_CATEGORY, FUNCTION_CATEGORY_DESC, KERBEROS_NAME FROM viewable_category WHERE KERBEROS_NAME=? ORDER BY FUNCTION_CATEGORY
+        </sql-query>
+</hibernate-mapping>

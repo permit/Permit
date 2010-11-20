@@ -1,0 +1,43 @@
+<HTML>
+<HEAD>
+<TITLE>Infrequently Used or Obsolete Web Pages</TITLE>
+<!--
+ *  Copyright (C) 2008-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY BGCOLOR="#fafafa">
+<TABLE>
+<TR><TD><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></TD>
+<TD>
+<H1>Infrequently used or obsolete web pages</H1></TD>
+</TR>
+</TABLE>
+<BR>
+Below are some infrequently-used perMIT system-related web displays were formerly 
+in production or test status.
+<UL>
+<LI>For testing PD Org on SF5 (not currently functional):<br>
+<a href="https://blue-goose.mit.edu/cgi-bin/pdorg_compare.pl?show_all=y">
+Show differences</a> between perMIT system approver auths. and the PD Org on SF5.
+<P>
+<LI>For Department Head Reporting Authorizations, run a report showing 
+<a href="dh_report.html">CO Supervisors and their Cost Objects</a> for a given department. 
+</UL>
+<P>
+<HR>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>
+</BODY>

@@ -1,0 +1,91 @@
+<HTML>
+<TITLE>Explanation of perMIT system Authorizations Display</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td><H2>Explanation of Authorizations Display on the Web</H2></td></tr>
+</table>
+<p>
+In the perMIT system, an <strong>Authorization</strong> is a rule that 
+lets you perform a specific business function within a computer-based 
+application. Authorizations have three main parts: Person, 
+Function, and Qualifier, plus some flags and timestamp fields. (See 
+<a href="http://web.mit.edu/rolesdb/www/intro.html#two">
+Introduction to the perMIT system application</a>.) A <strong>Person</strong>
+can perform a business <strong>Function</strong> limited by a 
+<strong>Qualifier</strong>.  
+<p>
+Qualifiers can be Funds, Fund Centers, Organizational Units, etc..  
+(See a list of 
+<a href="quallist1.html">qualifier types</a>.)
+In each Authorization, the type of Qualifier must fit the Function. 
+For example,
+an Authorization for CAN SPEND OR COMMIT FUNDS must have a Qualifier of type
+"FUND" (Fund or Fund Center), whereas an Authorization for "REPORT BY CO/PC"
+must have a Qualifier of type COST (Profit Center or Cost Object).
+<p>
+Some Functions, such as the various JV
+Functions, are either "on or off", and are not restricted by a Qualifier. (Or,
+in the case of "REQUISITIONER" or "CREDIT CARD VERIFIER", the Function is
+linked to the Qualifier on "CAN SPEND OR COMMIT FUNDS" authorizations.)
+All Authorizations for
+these Functions have a Qualifier of <strong>NULL</strong>. 
+The Person is allowed to perform the Function, and NULL is a 
+simply a placeholder for the Qualifier field.
+<p>
+The "Authorizations for a Person" display contains
+a list of Authorizations for a person within a single category
+or application (such as SAP) or for all categories.  Your ability to view
+Authorizations for other people is controlled by a kind of 
+<a href="metaauth_help.html">meta-authorization</a>.
+The display includes the following fields:
+<p>
+<table border>
+<tr><th>Function<BR>Category</th><td>
+The application or system, such as SAP or the Data Warehouse, to which
+the Authorization applies.  (See a 
+<A href="/cgi-bin/rolecat.pl">
+list of Function Categories</A>.)
+</td></tr>
+<tr><th>Function<BR>Name</th><td>The short name of the Function component
+of the Authorization.  (See a 
+<A href="/cgi-bin/rolecat.pl">  
+list of Functions within a Function Category</A>.) If the function name
+is shown in <font color=gray>gray</font>, then the authorization is not in 
+effect due to the do_function flag or expiration/effective dates.</td></tr>
+<tr><th>Qualifier<BR>Code</th><td>The Organizational Unit, Fund Center, Cost
+Object, or other item that limits the data for which the Person can perform
+the Function.</td></tr>
+<tr><th>Do<BR>Function</th><td>Y (Person can do the business Function), or
+N (cannot).  N is specified for people who
+can grant an Authorization but cannot perform the business Function 
+themselves.</td></tr>
+<tr><th>Grant</th><td>Y (Person can grant the Authorization) or N (cannot).
+</td></tr>
+<tr><th>Effective<BR>Today</th><td>Y (Authorization is in effect today) or
+N (Authorization is expired or does not go into effect until a future date).
+</td></tr>
+<tr><th>Click for<BR>Details</th><td>
+Click on the asterisk (<A href="asterisk.html"> *</A>) for more
+details on the Authorization.</td></tr>
+</table>
+<p>
+<HR>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>

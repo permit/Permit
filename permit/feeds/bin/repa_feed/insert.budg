@@ -1,0 +1,159 @@
+#!/usr/bin/perl
+#######################################################################
+#  
+#  This Perl script was used to read in a file of Budget Plan Versions
+#  and insert them into the qualifier table.  It could only be used the
+#  first time to insert these records -- now that there are
+#  Authorizations in the DB that use some of these qualifiers, this
+#  script not work, and it will need to be replaced or modified.
+#
+#
+#  Copyright (C) 1998-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+#     Jim Repa  May 1998
+#
+#######################################################################
+#
+#  Initialize
+#
+ $db = "troles";
+ $db = 'roles';
+ $user = "rolesbb";
+ $tname = "qualifier";
+ $tname2 = "qualifier_child";
+ $infile = "BUDG.RECORDS";
+
+#
+# Set up Oraperl
+#
+eval 'use Oraperl; 1' || die $@ if $] >= 5;
+die ("Need to use oraperl, not perl\n") unless defined &ora_login;
+$| = 1; #Force Output Buffer to Flush on each write
+
+
+#
+#  Read the input file.
+#
+#
+ @field = ();    # Initialize array of field names
+ unless (open(IN,$infile)) {
+   die "Cannot open $infile for reading\n"
+ }
+ $i = 0;
+ @qualid = ();
+ @qualcode = ();
+ @qualname = ();
+ $qualtype = 'BUDG';
+ $haschild = 'N';
+ $quallevel = 2;
+ chop($line = <IN>);   # Throw away the first line (header).
+ while (chop($line = <IN>)) {
+   ($qcode,$qname) = split('\|', $line);
+   $qcode = &strip($qcode);
+   $qname = &strip($qname);
+   print $i . ':' . $qcode . ":" . $qname . "\n";
+   push(@qualcode, $qcode);
+   push(@qualname, $qname);
+   push(@qualid, 800001 + $i);
+   $i++;
+ }
+ close(IN);
+
+#
+#  Open a connection to the database. 
+#
+ print "Enter database name: ";
+ chop($db = <STDIN>);
+ print "Enter username for connection to '$db': ";
+ chop($user = <STDIN>);
+ print "Enter password for user '$user' at '$db': ";
+ chop($pw = <STDIN>);
+ $lda = &ora_login($db, $user, $pw) || die $ora_errstr;
+
+#
+#  Delete all pertinent roles from the table.
+# 
+ &ora_do($lda, 
+   "delete from $tname where qualifier_type = 'BUDG' and qualifier_id != 800000") 
+   || die $ora_errstr;
+ &ora_do($lda, 
+   "delete from $tname2 where parent_id = 800000") 
+   || die $ora_errstr;
+
+#
+#  Insert each row into the table.
+#
+ ## Set up cursor to insert the rows
+ print "Before ora_open\n";
+ $csr = &ora_open($lda,
+		 'insert into ' . $tname .
+		 ' (QUALIFIER_ID, QUALIFIER_CODE, QUALIFIER_NAME,
+                  QUALIFIER_TYPE, HAS_CHILD, QUALIFIER_LEVEL) 
+                  values (:1, :2, :3, :4, :5, :6)')   || die $ora_errstr;
+ $n = @qualid;  # How many rows to insert?
+ print "Before ora_bind\n";
+ for $i (0 .. $n-1) {
+   printf("%3d %6d %-6s %-30s %4s %1s %1d \n",
+              $i, $qualid[$i], $qualcode[$i], $qualname[$i], $qualtype,
+              $haschild, $quallevel);
+   &ora_bind($csr, $qualid[$i], $qualcode[$i], $qualname[$i], $qualtype,
+             $haschild, $quallevel) 
+     || die "$_: $ora_errstr\n"; 
+ }
+#
+#  Insert records into qualifier_child table.
+#
+ ## Set up cursor to insert the rows
+ print "Before 2nd ora_open\n";
+ $csr2 = &ora_open($lda,
+		 'insert into ' . $tname2 .
+		 ' (PARENT_ID, CHILD_ID)
+                  values (:1, :2)')   || die $ora_errstr;
+ $n = @qualid;  # How many rows to insert?
+ print "Before 2nd ora_bind\n";
+ for $i (0 .. $n-1) {
+   printf("%3d %6d %6d \n",
+              $i, 800000, $qualid[$i]);
+   &ora_bind($csr2, '800000', $qualid[$i]) 
+     || die "$_: $ora_errstr\n"; 
+ }
+ 
+#  
+#  Commit work and logoff.
+#
+ &ora_commit($lda); #Now we can commit
+ &ora_logoff($lda);
+
+########################################################################
+#
+#  Strips off trailing <cr> and leading and trailing blanks.
+#
+###########################################################################
+sub strip {
+  local($s);  #temporary string
+  $s = $_[0];
+  while ($s =~ /[\s\n\t]$/) {   # Remove trailing <cr> or space
+    chop($s);
+  }
+  while (substr($s,0,1) =~ /^\s/) {
+    $s = substr($s,1);
+  }
+ 
+  $s;
+}
+
+
+
+
+

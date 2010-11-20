@@ -1,0 +1,133 @@
+Populating the hierarchy of Funds Centers and Funds in the Roles Database
+-------------------------------------------------------------------------
+
+Background
+----------
+
+Within the Roles Database, the Qualifier hierarchy of qualifier_type='FUND'
+defines the hierarchy of Funds Centers and Funds.  It consists of 
+two branches.  The "standard" branch contains Funds Centers,  with child 
+Funds Centers, going all the way down to Funds, which are the leaves of 
+the tree. Funds Centers are represented by 6-digit numbers with the prefix
+'FC'.  Funds are represented by 7-digit numbers with the prefix 'F'.
+
+There is also a "custom" branch of the Funds Center hierarchy.  This 
+branch is built by cloning the Spending Group hierarchy, starting with 
+FC_CUSTOM as the starting point for the custom branch, with each Spending
+Group represented with a qualifier_code of FC_xxxxxxxx where xxxxxxxx
+matches the Spending Group code from the Roles DB SPGP hierarchy. Under
+each FC_xxxxxxxx object, the child objects are Funds Centers, and under each
+Funds Center is either a set of child Funds Centers or a set of Funds.
+Thus, the "custom" branch is another way of grouping Funds Centers and Funds.
+
+Funds Centers are used as qualifiers for a few financial authorizations.
+Funds Centers have been defined in order to group together Funds (or
+their related Cost Objects) for controlling certain financial transactions.
+The Function CAN SPEND OR COMMIT FUNDS uses the FUND hierarchy, meaning 
+that we can grant an authorization for this Function on either a Funds Center
+or on a Fund.  Within SAP, the "profile" information for controlling 
+access to spending/committing funds is stored with either the low-level
+Funds Center (the Funds Center to which Funds are attached, which 
+could be a child of the Funds Center on which the authorization is
+directly granted), or the Fund.  Thus, it is important within SAP that
+some object analogous to the Funds Center continues to exist in order
+to support the current way of storing the authorization information.
+
+Funds and Funds Centers also act as qualifiers for three other Functions
+within the Roles DB:
+ (i) INVOICE APPROVAL UNLIMITED 
+      Checking of authorizations is done manually by Accounts Payable 
+      administrators and not within SAP.
+ (ii) TRAVEL DOCUMENTS APPROVAL
+      Checking of authorizations is done manually by Accounts Payable 
+      administrators and not within SAP.
+ (iii) REPORT BY FUND/FC
+       In the Roles DB, we allow financial reporting authorizations to 
+       be granted either on the standard Profit Center hierarchy or the 
+       Funds Center hierarchy.  When granted on the Funds Center hierarchy
+       the actual authorization information is converted to Cost 
+       Collectors before being sent to either SAP or the Warehouse.  Thus,
+       reporting authorizations granted at the Funds Center level are 
+       convenient for the people who maintain such authorizations, but they
+       are not represented that way in the target systems.
+
+The data needed to populate the "standard" branch of the Funds Center tree are
+ (a) for each Funds Center, the 6-digit code, the name or description, 
+     and the parent Funds Center
+ (b) for each Fund, the 7-digit code, the name or description, and the 
+     parent Funds Center
+It would be preferable to extract the data from Warehouse tables, but 
+when the program that does these extracts was written for the Roles Database
+in 1998, the only option was to use some flat files to get some of the data.
+In the future, it is important that there be some object analagous to the
+Funds Center that groups Cost Collectors.
+
+For most Funds Centers, we also need to know
+ (a) what is the Release Strategy to be applied to Funds (or Cost Objects)
+     under that Funds Center
+ (b) what is the parent Spending Group to which the Funds Center is 
+     attached.  The Spending Group is used for various requisition
+     approver authorizations, and it is also used to populate the 
+     "custom" branch of the Roles DB Funds Center hierarchy.
+Again, it would be preferable to extract the data from Warehouse tables, 
+but the necessary data were not available in Warehouse tables when the 
+applicable programs were written in the Roles Database.  It will be 
+important to continue to have objects analogous to Spending Groups 
+(which currently map to objects in SAP's PD Org structure), and to have
+objects analogous to Funds Centers that are attached to Spending Groups.
+
+Sources of Funds Center data in the Roles Database today
+--------------------------------------------------------
+
+Below, we describe where we happen to find the data used for Funds Center 
+and related data today.  The choice for where to find the data was made 
+based on availability at the time the data feed programs were written, 
+and a different choice might be made if we were making the decisions today.
+
+wh-fmfctrt ($fundtfile in script)
+  Ignore records where Language key (c.c. 3-3) is not 'E'
+  Ignore records where Funds Center Code (c.c. 8-16) is blank
+  Funds Center Code from Funds Center Code (c.c. 8 - 16, drop trailing blanks)
+  Funds Center Name is Description (c.c. 52-91) if Description is not null; 
+     otherwise Name (c.c. 32-51)
+  
+wh-fmhictr ($hierfile in script)
+  Ignore records where $hversion (c.c. 3-12, drop blanks) is not 'SAP'
+  Ignore records where $froot (c.c. 168-189, drop blanks) is not 'FSMIT_MIT'
+  Gets parent/child relationship 
+    between child Funds Center "Object number" (c.c. 13-18)
+    and parent funds center "Parent object" (c.c. 36-41)
+
+wh-fmzuob ($fmassign in script)
+  Gets parent/child relationship between 
+     child Fund (c.c. 92-101, drop blanks) 
+     and parent funds center (c.c. 76-91, drop blanks)
+
+wh-fmfint ($fmftxt in script)
+  Gets the fund name for a given Fund from Fund code (c.c. 8-7)
+     as Fund Name (c.c. 38-77)
+
+Warehouse view COST_COLLECTOR and the flat file wh-fmfint
+ The Fund Name for a given Fund is either
+ (a) the Cost Collector name for the related cost collector in 
+     the Warehouse view COST_COLLECTOR
+ (b) if the above is not found, then looks in wh-fmfint for the 
+     Fund code (c.c. 8-14) and Fund Name (c.c. 38-77)
+ (c) if neither is found, then 'Unknown'
+
+wh-fcrs
+  The release strategy of each Funds Center (except those in Model 1)
+  is extracted from this file.  Each record is split into two tokens, 
+  with the first token being the Funds Center and the 2nd token being
+  the code for the Release Strategy.
+
+Manually maintained by Chuck King and Peggie McGrath
+  The Hierarchy of Spending Groups, and the child Funds Centers for 
+  each Spending Group are manually maintained in two places by 
+  Peggie and Chuck.  They use a web interface to the Roles DB to 
+  maintain the data within the ROles DB.  They also maintain the same
+  data in SAP using the SAP GUI.  Ideally, we would use one of the 
+  two systems as the system of record and automatically extract the
+  data in the other system.  In practice, there have not been many 
+  complaints about the necessity of doing dual maintenance.
+

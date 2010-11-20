@@ -1,0 +1,87 @@
+Perl scripts for "semi-manual" updating of Qualifiers in Roles DB
+#
+#  Copyright (C) 1998-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+Updating Funds and Fund Centers
+-------------------------------
+
+1. compare_fund1.pl
+   Reads in 3 flat files from SAP and the Warehouse (generally transferred to 
+   /warehouse/transfers/sapuser/ directory on Virginia), and produces
+   "fund.warehouse".
+2. compare_fund2.pl
+   Reads qualifier table from the Roles DB and produces the file
+   "fund.roles".
+3. compare_fund3.pl
+   Reads fund.warehouse and fund.roles and produces the file fund.actions
+   (which lists ADD, UPDATE, and DELETE actions to be performed on 
+   Roles DB tables to bring Qualifier and related tables uptodate).
+3a.
+   Before going on to the next step, make sure that ADD records for
+   Fund Centers (FCnnnnnn) are moved ahead of ADD records for Funds
+   (Fnnnnnnn) in the file fund.actions.  This allows parent Fund Centers
+   to be processed before their child Funds.
+4. fund_add.pl
+   Edit this file (to make sure it points to the rignt files).  This
+   script processes the 'ADD' records from fund.actions and produces
+   fundadd.data and fundadd.child files.
+5. insert_newqual5.pl
+   Run this script to insert records into the Qualifier table based on
+   fundadd.data.
+6. insert_qc_plus.pl
+   Run this script to insert records into the Qualifier_child table, based
+   on fundadd.child.
+7. fund_update.pl
+   This script processes the 'UPDATE' records in fund.actions.  It produces
+   fundupdate.sql
+   The next step is to run sqlplus and "start fundupdate", then "commit".
+8. fund_delete.pl
+   This script processes the 'DELETE' records in fund.actions.  It produces
+   fund_delete.sql.  Run sqlplus, "start fund_delete" and "commit".
+9. fix_desc.pl
+   This script reads "fund.actions" and finds a list of qualifiers for
+   which the qualifier_descendent table needs to be updated.  It then
+   generates the file "fix_desc.sql", which contains inserts and deletes
+   for the qualifier_descendent table.  Run sqlplus, "start fix_desc" and
+   "commit".
+10. fund_fix.pl
+    This script looks for 'FUND' type qualifier records where qualifier_name
+    is 'Unknown'.  If there is a matching 'COST' type qualifier record (where
+    the numeric part of the qualifier_code is the same), it updates the
+    qualifier_name field for the 'FUND' record with the qualifier_name field
+    for the matching 'COST' record.
+
+*** Fund-related stuff that isn't done yet:
+    There needs to be a new script
+    to make sure the HAS_CHILD field in the QUALIFIER table is set to 
+    'Y' if a qualifier has children and 'N' if not.  The fund_add.pl 
+    script will make sure that when a qualifier is added to the table,
+    its parent has its HAS_CHILD field set to 'Y'.  However, the fund_update.pl
+    and fund_delete.pl scripts do not make any changes in the HAS_CHILD
+    field for parent qualifiers.  It would be easiest to write a new
+    script that looks at "fund.actions", finds a list of qualifiers that
+    might possibly have a change in their HAS_CHILD field, and check
+    the qualifier_child table for each of these records, changing HAS_CHILD
+    if appropriate.  This should be done after step 8.
+
+Profit Centers
+--------------
+
+(Add stuff here later)
+
+Cost Collectors
+---------------
+
+(Add stuff here later)

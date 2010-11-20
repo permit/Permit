@@ -1,0 +1,112 @@
+<HTML>
+<HEAD>
+<TITLE>Show history of changes for people</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H3>Show the history of changes for people</H3></td>
+</tr></table><BR>
+<P>
+This web page allows authorized people to display directory changes for 
+Kerberos usernames who have or previously had one or more authorizations in 
+the perMIT system.
+The perMIT system only keeps track of directory information for people 
+having a Kerberos name used in one or more current or past authorizations.
+The history information 
+was collected beginning in August, 2002. The first <b>start date</b> 
+recorded for a 
+username indicates the first date that the username was used in 
+an authorization 
+in the perMIT system (on or after July 29, 2002). It is <i>not</i> the 
+date that the person was hired or enrolled.  A new record is entered into 
+the table for a Kerberos username any time there is a change in the 
+associated name, MIT ID number, 6-digit department code, department name, 
+or student/employee/other status.
+<P>
+<HR>
+<strong>Report 1: Show recent changes to people's directory data
+</strong>
+<p>
+<FORM METHOD="GET" ACTION="/cgi-bin/person_history.pl">
+Pick a time period and pick a category.  Check the "Find name changes" 
+checkbox only if you are interested in recent spelling changes in a person's 
+name. Then, click the "Run report 1" button.
+<P>
+<table>
+<tr><th>Time period:</th>
+    <td><SELECT NAME="time_period">
+         <OPTION> Since yesterday
+         <OPTION> Last 7 days
+         <OPTION SELECTED> Last 30 days
+         <OPTION> Last 90 days
+         <OPTION> Last 365 days
+         <OPTION> All
+        </SELECT>
+    </td>
+</tr>
+<tr><th>Has auths. in<br>Category:</th>
+    <td><SELECT NAME="category">
+        <OPTION> EHS   Environment Health & Safety
+        <OPTION> EPS   E. Proposal Sys
+        <OPTION> GRAD  GRAD ADMISSIONS
+        <OPTION> HELP  Help Desk
+        <OPTION> IDDB  MIT ID Database
+        <OPTION> LABD  LABOR DIST
+        <OPTION> META  Roles META-auth
+        <OPTION> NIMB  NIMBUS (Budget)
+        <OPTION> SAP   SAP
+        <OPTION> WRHS  Warehouse
+        <OPTION> XSIS  Student Systems
+        <OPTION> TEST  Test perMIT system
+        <OPTION SELECTED> ALL   All categories
+        </SELECT>
+    </td>
+</tr>
+<tr><th>Find name changes</th>
+    <td><input type=checkbox name=find_name_change value=1></td>
+</tr>
+<tr><th>Sort by</th>
+    <td><input type=radio name=sort_option value=1 checked>&nbsp;Username
+        <br><input type=radio name=sort_option value=2>&nbsp;Change date 
+            (latest change date for the user)
+    </td>
+</tr>
+</table>
+<p>
+<center><INPUT TYPE="SUBMIT" VALUE="Run report 1"></center>
+</FORM>
+<hr>
+<strong>Report 2: Show changes to directory information for a person
+</strong>
+<p>
+<FORM METHOD="GET" ACTION="/cgi-bin/person_history.pl">
+Enter the Kerberos username for whom you would like to see changes. Then
+click the "Run report 2" button.
+<P>
+<strong>Username:</strong> <INPUT TYPE=TEXT NAME=kerbname>&nbsp;&nbsp;
+<P>
+<center><INPUT TYPE="SUBMIT" VALUE="Run report 2"></center>
+</FORM>
+<HR>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>
+
+
+
+

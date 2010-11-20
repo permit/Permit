@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.PersonType" table="person_type">
+    <id column="PERSON_TYPE" length="1" name="type">
+      <generator class="assigned"/>
+    </id>
+    <property column="Description" length="50" name="description"/>
+  </class>
+</hibernate-mapping>

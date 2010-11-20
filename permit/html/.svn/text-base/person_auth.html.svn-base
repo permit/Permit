@@ -1,0 +1,70 @@
+<HTML>
+<HEAD>
+<TITLE>Show authorizations for a person</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td> <H3>Show authorizations for a person</H3></td></tr>
+</table>
+<BR>
+If you have a special 
+<a href="/metaauth_help.html#viewing+authorizations">
+viewing authorization</a> for a business category, you can view authorizations for another person within that category.
+<P>
+To see all of a person's authorizations within a category, 
+enter the Kerberos username of the person, select a category, and click
+Submit.
+<FORM METHOD="GET" ACTION="/cgi-bin/my-auth.cgi">
+Kerberos name:  <INPUT TYPE="TEXT" NAME="username">
+<SELECT NAME="category">
+<OPTION> ADMN  Admin (misc)
+<OPTION> BUDG  SAP Budget
+<OPTION> EHS   Env Hlth Safety
+<OPTION> GAID  Graduate aid
+<OPTION> GRAD  Grad Admissions
+<OPTION> HR    New HR System
+<OPTION> HR_C  Central auths. for HR
+<OPTION> IDDB  MIT ID Database
+<OPTION> LABD  LABOR DIST
+<OPTION> META  Roles META-auth
+<OPTION> NIMB  NIMBUS (Budget)
+<OPTION> PAYR  New Payroll system
+<OPTION SELECTED> SAP   SAP
+<OPTION> TEST  Test perMIT system
+<OPTION> TNET  Telephones and Network
+<OPTION> UADM  Undergraduate systems
+<OPTION> WRHS  Data Warehouse
+<OPTION> XSIS  Student info
+<OPTION> ALL   All Categories
+</SELECT>
+<INPUT type=hidden name=FORM_LEVEL value=1>
+<INPUT TYPE="SUBMIT" Value="Submit">
+</FORM>
+<HR>
+<P>
+Or, try these special <b>MIT-specific</b> authorization lists for a person:<BR>
+<ul>
+<li>View funds/fund centers  for which a person has SAP
+<a href="/pickable_cc.html">
+spend or commit funds</a> authorizations.
+<li>View  cost objects or funds on which a person is authorized to 
+<a href="/reportable_cc.html">report</a> in SAP
+or the data warehouse.
+</ul>

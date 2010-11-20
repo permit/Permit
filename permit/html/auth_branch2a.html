@@ -1,0 +1,191 @@
+<HTML>
+<HEAD>
+<TITLE>Show authorizations within qualifier tree</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H3>Show authorizations within a branch of a qualifier tree -
+<br>with Advanced Options</H3></td>
+</tr></table><BR>
+<P>
+<small>
+This web page allows you to view a branch of a qualifier hierarchy along
+with all of the authorizations in a given category associated with 
+qualifiers in that branch
+of the tree.  For example, you could view the FC_CAES branch of the 
+custom fund center hierarchy along with all of the people authorized to 
+Spend or Commit Funds on the fund centers and funds under FC_CAES. (Warning:
+You will not see authorizations on related fund centers, such as FC100132,
+that are not strictly part of the FC_CAES branch of the tree.)
+To use this facility, you need 
+<a href=
+"/metaauth_help.html#viewing+authorizations">
+viewing authorizations</a> to see authorizations within the Category you
+select.
+</small>
+<HR>
+<P>
+Select a Category/Qualifier type combination.  If you know the qualifier code
+for the branch of the tree you want to view, enter it;  otherwise leave it 
+blank and the display will start at the root of the tree.
+(Qualifier codes must start with the  
+<a href="qualcode_prefix.html">appropriate prefix</a>.)  Usually you should
+leave the Kerberos name field blank;  if you only want to see authorizations
+for one username, then enter that username.
+Choose a format option and a sort option.  In most cases, skip over the
+last three options, which are explained in notes at the bottom of this
+page. To run the report, click the SUBMIT button.
+<P>
+<!-- Was qualauth.pl>
+<FORM METHOD="GET" ACTION="/cgi-bin/qualauth2b.pl">
+<table>
+<tr><td>
+<strong>Category/Qualifier-type:</strong>
+</td>
+<td><select name = "cat_qt">
+<option>SAP/COST (SAP reporting auths. within Cost Object hierarchy)
+<option selected>SAP/FUND (SAP spend/commit and reporting auths. within Fund
+hierarchy)
+<option>SAP/SPGP (SAP approval auths. within Spending Group hierarchy)
+<option>SAP/BUDG (SAP budget auths. by Budget Plan Version)
+<option>GRAD/AORG (Grad. Admissions auths. by Academic Org. Unit)
+<option>LABD/LORG (LDS auths. by LDS Org. Unit)
+<option>NIMB/BAGS (NIMBUS budget auths. by Budget Area Group)
+<option>WRHS/ORGU (Warehouse auths. by Org. Unit)
+<option>WRHS/DEPT (Warehouse auths. - NEW department head reporting)
+<option>XSIS/SISO (Student Information auths.)
+<option>META/DEPT (Primary Authorizer auths. by DLC)
+<option>ADMN/ORG2 (Departmental telephone directory contacts)
+<option>ADMN/DEPT (Miscellaneous administrative roles by DLC)
+<option>ADMN,META/DEPT (Primary Authorizer + misc. administrative roles by DLC)
+<option>EHS/DEPT (Environmental Health & Safety roles by DLC)
+<option>HR/DEPT (HR Primary Authorizers - temporarily in this category)
+<option>HR/ORG2 (New HR roles by DLC - under development)
+</select>
+</td></tr>
+<tr><td>
+<strong>Qualifier code</strong> (optional):
+</td><td>
+<INPUT TYPE=TEXT NAME=rootcode>&nbsp;&nbsp;
+<small>(Leave this blank to start at the root of the qualifier tree)</small>
+</td></tr>
+<tr><td>
+<strong>Kerberos name</strong> (optional):
+</td><td>
+<INPUT TYPE=TEXT NAME=kerbname>&nbsp;&nbsp;
+<small>(Usually, leave this blank. Use it to see auths for only one user.)</small>
+</td></tr>
+<tr><td><strong>Show qualifier code:</strong></td>
+    <td><INPUT TYPE="checkbox" NAME="hide_qualcode" value="N" CHECKED></td>
+</tr>
+<tr><td valign=top>
+<strong>Format options:</strong>
+<br><small>for authorization<br>information</small></td>
+<td><INPUT TYPE="radio" NAME="detail" VALUE="0">
+Show Kerberos name and Function only
+<br><INPUT TYPE="radio" NAME="detail" VALUE="2" CHECKED>
+Add first and last name
+<br><INPUT TYPE="radio" NAME="detail" VALUE="3">
+Add first name, last name, and employee/student/other
+<br><INPUT TYPE="radio" NAME="detail" VALUE="1">
+Add grant-flag and modified-date
+</td></tr>
+<tr><td><strong>Expand authorizations:</strong></td>
+    <td><INPUT TYPE="checkbox" NAME="expand_auth" value="Y">
+    &nbsp;&nbsp;<small>(See note 0)</td>
+</tr>
+<tr><td><strong>Sort by:</strong></td>
+<td><INPUT TYPE="radio" NAME="sort" VALUE="" CHECKED> Qualifier code (number)
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="sort" VALUE="name"> Qualifier name
+</td></tr>
+<tr><td><strong>Show leaves?</strong>
+<BR><small>(Cost Obj., Fund. etc.)</small></td>
+<td><INPUT TYPE="radio" NAME="noleaf" VALUE="D" CHECKED> Default
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="noleaf" VALUE="0"> Yes
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="noleaf" VALUE="1"> No
+&nbsp;&nbsp;<small>(See note 1)</small>
+</td></tr>
+<tr><td><strong>Terminated funds</strong>
+<BR><small>(term code 3)</small></td>
+<td><INPUT TYPE="radio" NAME="hide_term3" VALUE="Y" CHECKED> Hide
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="hide_term3" VALUE="N"> Show
+&nbsp;&nbsp;<small>(See note 2)</small>
+</td></tr>
+<tr><td><strong>Show dept. links?</strong>
+</td>
+<td><INPUT TYPE="radio" NAME="showdeptname" VALUE="Y"> Yes
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="showdeptname" VALUE="N" CHECKED> No
+&nbsp;&nbsp;<small>(See note 3)</small>
+</td></tr>
+<tr><td><strong>Sort authorizations:</strong>
+</td>
+<td><INPUT TYPE="radio" NAME="group_option" VALUE="1"> By username (old format)
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="group_option" VALUE="2" CHECKED> By function (new 
+format)
+</td></tr>
+</table>
+<center>
+<INPUT TYPE="hidden" NAME="hide_qc_default" value="Y">
+<INPUT TYPE="SUBMIT" VALUE="Submit">
+</center>
+</FORM>
+<hr>
+<br>
+<table>
+<tr><td valign="top"><small>Note&nbsp;0</small></td>
+<td><small>In the perMIT system, a given authorization is in effect for the 
+specified qualifier and for all child, grandchild, etc., qualifiers in the 
+hierarchy.  Enable the "Expand authorizations" option if you want to 
+see the implied authorizations for child nodes on the display.  Avoid 
+using this option with the COST or FUND hierarchies, where there are too 
+many qualifiers in the tree for the option to work effectively.
+</small></td></tr>
+<tr><td valign="top"><small>Note&nbsp;1</small></td>
+<td><small>The "Show leaves" option only works with the COST, FUND, and DEPT
+hierarchies.  If you specify "No" when displaying the COST hierarchy or the
+FUND hierarchy, then individual cost collectors or funds will be suppressed
+from the display.  This can be useful if you are interested only in Profit
+Centers or Fund Centers and not the detailed objects below them.  If you 
+specify "No" when displaying the DEPT hierarchy, then the various objects
+linked below departments will be suppressed from the display.  Selecting 
+"Default" gives the same result as selecting "Yes" except when the 
+qualifier-type (from Category/Qualifier-type) is DEPT, in which case the 
+various linked objects will be suppressed.
+</small></td></tr>
+<tr><td valign="top"><small>Note&nbsp;2</small></td>
+<td><small>The "Terminated funds" option only works with the COST and FUND 
+hierarchies.  By default, terminated funds or cost collectors, i.e., those 
+with a term code of 3, are suppressed from the display.  Specify "Show" to 
+override the default and show them.</small></td></tr>
+<tr><td valign="top"><small>Note&nbsp;3</small></td>
+<td><small>The "Show dept. links" option controls the display of an extra 
+column for each qualifier.  Most qualifiers are linked to a Department.  If 
+you specify "Yes", a column will be added for each qualifier displayed that 
+will show which department(s), if any that the qualifier is linked to. 
+This departmental linkage is important in determining the qualifiers for 
+which a Primary Authorizer is allowed to create or delete authorizations.
+</small></td></tr>
+</table>
+

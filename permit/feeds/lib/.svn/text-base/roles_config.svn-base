@@ -1,0 +1,39 @@
+##This file contains configuration information for
+##the Roles Database Cron files
+## Avoid using underscores in the names.
+#Use "\" to escape ":" character in string
+#roles:rolesbb/xxrolesbbxx@roles
+roles:rolesbb/yyrolesbbyy@dbi\:mysql\:rolesbb\:auth-dev-permit1.mit.edu
+troles:rolesbb/zzrolesbbzz@troles
+yroles:rolesbb/xxrolesbbxx@yroles
+warehouse:roles/rfeed@dbi\:Oracle\:host=warehouse.mit.edu;sid=DWRHS;port=1521
+warehouse_e:ehs$user/ehsn522002@warehouse
+testwarehouse:roles/rfeed@test-warehouse
+#testwarehouse:test$wrhs/mitapril17@troles
+ftpwarehouse:roleuser/role.tsfr@warehouse.mit.edu
+ftptestwarehouse:roleuser/role.tsfr@test-warehouse.mit.edu
+ftptosap:rolefeed/no.worry@mitvma.mit.edu
+#scptosap:rolesdb@pine.mit.edu
+scptosap:rolesdb@sap-prd3.mit.edu
+ftpsap:payrp/hto855@sap-dropbox.mit.edu
+# SF2 or SH2
+#ftpsapz:rldb2/lse335@sap-dropbox.mit.edu
+#ftpsapzt:rldb2/lse335@sap-dropbox.mit.edu
+# SF5
+ftpsapzt:rldbt/pwe533@sap-dropbox.mit.edu
+# PS1
+ftpsapz:rldbp/osk962@sap-dropbox.mit.edu
+# Testing
+#ftpsapz:repa/turnip1@yardbird.mit.edu
+# Testing
+pgpsapt:x/azbycw22@x
+# Production
+pgpsap:x/xyab3421_c@x
+ehs:ehs$read/ehsrr2004@dbi\:Oracle\:host=cstmdbprod.mit.edu;sid=iddprod;port=1523
+ehstest:ehs$user/ehs4321@ehstest
+#mdept:mdept$owner/mowner21@dbi\:mysql\:mdept$owner\:auth-dev-permit1.mit.edu
+#mdept:mdept/mowner21@dbi\:mysql\:mdept$owner\:auth-dev-permit1.mit.edu
+mdept:rolesbb/yyrolesbbyy@dbi\:mysql\:mdept$owner\:auth-dev-permit1.mit.edu
+#mdeptprod:mdept$owner/mowner1201@roles
+
+

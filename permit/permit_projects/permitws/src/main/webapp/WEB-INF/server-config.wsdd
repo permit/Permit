@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+<globalConfiguration>
+    <parameter name="adminPassword" value="admin"/>
+    <parameter name="enableNamespacePrefixOptimization" value="true"/>
+    <parameter name="disablePrettyXML" value="true"/><parameter name="sendXsiTypes" value="true"/>
+    <parameter name="sendMultiRefs" value="false"/><parameter name="sendXMLDeclaration" value="true"/>
+</globalConfiguration>
+<handler name="URLMapper" type="java:org.apache.axis.handlers.http.URLMapper"/>
+<handler name="LocalResponder" type="java:org.apache.axis.transport.local.LocalResponder"/>
+<handler name="Authenticate" type="java:org.apache.axis.handlers.SimpleAuthenticationHandler"/>
+<service name="permit" provider="java:RPC" style="wrapped" use="literal">
+<parameter name="allowedMethods" value="listAuthorizationsByPerson isUserAuthorized createAuthorization updateAuthorization 
+                                            deleteAuthorization batchCreate batchDelete batchReplace batchUpdate
+                                            listAuthorizationsByPersonExt listAuthorizationsByPersonXML listFunctionCategories
+                                            listPickableFunctionsByCategory getQualifierXML getQualifierRootXML getQualifierTypeForFunction
+                                            listViewableCategories listViewableFunctionsByCategory getCriteriaSet saveCriteria getSelectionList
+                                            listAuthorizationsByCriteria listPersonRaw listPersonJSON listAuthorizationsByPersonRawXML 
+                                            getUserAuthorizations listAuthByPersonExtend1 listAuthByPersonExtend1XML isUserAuthorizedExt getFunctionDesc checkAuthEditPermissions
+                                            listEditableAuthorizationByAuthId getQualifierXMLForCriteriaQuery"/>
+<parameter name="scope" value="Application"/>
+<parameter name="className" value="edu.mit.isda.permitws.permit"/>
+<beanMapping languageSpecificType="java:edu.mit.isda.permitws.permitAuthorization" qname="ns1:permitAuthorization"
+xmlns:ns1="urn:permitService"/><beanMapping languageSpecificType="java:edu.mit.isda.permitws.permitAuthorizationExt"
+qname="ns2:permitAuthorizationExt" xmlns:ns2="urn:permitService"/>
+<beanMapping languageSpecificType="java:edu.mit.isda.permitws.userAuthorization" qname="ns3:userAuthorization" xmlns:ns3="urn:permitService"/>
+<beanMapping languageSpecificType="java:edu.mit.isda.permitws.permitPickableCategory" qname="ns4:permitPickableCategory" xmlns:ns4="urn:permitService"/>
+<beanMapping languageSpecificType="java:edu.mit.isda.permitws.permitPickableFunction" qname="ns5:permitPickableFunction" xmlns:ns5="urn:permitService"/>
+<beanMapping languageSpecificType="java:edu.mit.isda.permitws.permitException" qname="ns6:permitException" xmlns:ns6="urn:permitService"/>
+<namespace>urn:permitService</namespace>
+</service>
+<service name="AdminService" provider="java:MSG"><parameter name="allowedMethods" value="AdminService"/>
+<parameter name="enableRemoteAdmin" value="false"/>
+<parameter name="className" value="org.apache.axis.utils.Admin"/>
+<namespace>http://xml.apache.org/axis/wsdd/</namespace></service><service name="Version" provider="java:RPC">
+<parameter name="allowedMethods" value="getVersion"/><parameter name="className" value="org.apache.axis.Version"/>
+</service>
+<transport name="http"><requestFlow><handler type="URLMapper"/>
+<handler type="java:org.apache.axis.handlers.http.HTTPAuthHandler"/></requestFlow>
+<parameter name="qs:list" value="org.apache.axis.transport.http.QSListHandler"/>
+<parameter name="qs:wsdl" value="org.apache.axis.transport.http.QSWSDLHandler"/>
+<parameter name="qs:method" value="org.apache.axis.transport.http.QSMethodHandler"/>
+</transport>
+<transport name="local"><responseFlow><handler type="LocalResponder"/></responseFlow>
+</transport>
+</deployment>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.PickableQualifier" table="pickable_auth_qual_top">
+    <id column="QUALIFIER_ID" length="8" name="qid">
+      <generator class="hilo"/>
+    </id>
+    <property column="KERBEROS_NAME" length="30" name="kname"/>
+    <property column="FUNCTION_NAME" length="30" name="fname"/>
+    <property column="FUNCTION_ID" length="6" name="fid"/>
+    <property column="QUALIFIER_TYPE" length="4" name="qtype"/>
+    <property column="QUALIFIER_CODE" length="15" name="qcode"/>
+    <!-- Associations -->
+    <many-to-one class="edu.mit.isda.permitservice.dataobjects.Qualifier" column="QID2" fetch="select" name="id"/>
+  </class>
+  <sql-query name="PICKABLE_QUALIFIER_LIST">	
+            <return alias="qual" class="edu.mit.isda.permitservice.dataobjects.PickableQualifier"/>	
+       SELECT QUALIFIER_ID, KERBEROS_NAME, FUNCTION_NAME, FUNCTION_ID, QUALIFIER_TYPE, QUALIFIER_CODE, QUALIFIER_ID QID2 FROM pickable_auth_qual_top WHERE KERBEROS_NAME=? AND FUNCTION_NAME=?
+
+
+
+<!--
+select distinct a.kerberos_name AS kerberos_name,f.function_name AS function_name,f.
+function_id AS function_id,f.qualifier_type AS qualifier_type,q.qualifier_code AS qualifier_code,
+q.qualifier_id AS qualifier_id from ((authorization a join function f) join qualifier q)
+where ((a.function_name = _latin1'CREATE AUTHORIZATIONS') and (a.qualifier_code <> _latin1'CATALL')
+and (a.do_function = _latin1'Y') and (now() between a.effective_date and ifnull(a.expiration_date,now()))
+and (f.function_category = substr(concat(a.qualifier_code,_latin1'   '),4,4))
+and (q.qualifier_type = f.qualifier_type) and (q.qualifier_level = 1))
+and a.kerberos_name=? and f.function_name=?
+union
+
+select distinct a.kerberos_name AS kerberos_name,f.function_name AS function_name,f.function_id
+AS function_id,f.qualifier_type AS qualifier_type,q.qualifier_code AS qualifier_code,q.qualifier_id
+ AS qualifier_id from ((((authorization a join qualifier_descendent qd) join qualifier q0)
+ join function f) join qualifier q)
+ where ((a.function_name = _latin1'CREATE AUTHORIZATIONS')
+ and (a.do_function = _latin1'Y') and (now() between a.effective_date and ifnull(a.expiration_date,now()))
+ and (qd.parent_id = a.qualifier_id) and (q0.qualifier_id = qd.child_id)
+ and (f.function_category = substr(concat(q0.qualifier_code,_latin1'   '),4,4))
+ and (q.qualifier_type = f.qualifier_type) and (q.qualifier_level = 1))
+and a.kerberos_name=? and f.function_name=?
+  union
+
+ select distinct a.kerberos_name AS kerberos_name,f2.function_name AS function_name,f2.
+ function_id AS function_id,f2.qualifier_type AS qualifier_type,q.qualifier_code AS qualifier_code,
+ q.qualifier_id AS qualifier_id from ((((((authorization a join function f1) join function f2)
+ join qualifier q0) join qualifier_descendent qd) join qualifier q1) join qualifier q)
+ where ((a.do_function = _latin1'Y') and (now() between a.effective_date and ifnull(a.expiration_date,now()))
+ and (f1.function_id = a.function_id) and (f1.is_primary_auth_parent = _latin1'Y')
+ and (f2.primary_authorizable in (_latin1'Y',_latin1'D')) and (f2.primary_auth_group = f1.primary_auth_group)
+ and (q0.qualifier_type = _latin1'DEPT') and (q0.qualifier_code = a.qualifier_code)
+ and (qd.parent_id = q0.qualifier_id) and (q1.qualifier_id = qd.child_id)
+ and (q.qualifier_type = f2.qualifier_type) and (q.qualifier_code = q1.qualifier_code)
+and a.kerberos_name=? and f2.function_name=?
+ and (not(exists(select 1 AS 1 from authorization a2 where ((a2.kerberos_name = a.kerberos_name)
+ and (a2.function_name = _latin1'CREATE AUTHORIZATIONS') and ((a2.qualifier_code = concat(_latin1'CAT',rtrim(f2.function_category)))
+ or (a2.qualifier_code = _latin1'CATALL')) and (a2.do_function = _latin1'Y') and (now() between a2.effective_date
+ and ifnull(a2.expiration_date,now())))))))
+
+ union
+
+ select distinct a.kerberos_name AS kerberos_name,f2.function_name AS function_name,f2.function_id AS function_id,f2.qualifier_type
+ AS qualifier_type,q.qualifier_code AS qualifier_code,q.qualifier_id AS qualifier_id from (((authorization a join function f1)
+ join function f2) join qualifier q) where ((a.do_function = _latin1'Y') and (now() between a.effective_date
+ and ifnull(a.expiration_date,now())) and (f1.function_id = a.function_id) and (f1.is_primary_auth_parent = _latin1'Y')
+ and (f2.primary_authorizable in (_latin1'Y',_latin1'D')) and (f2.primary_auth_group = f1.primary_auth_group)
+and a.kerberos_name=? and f2.function_name=?
+ and (f2.qualifier_type = _latin1'NULL') and (q.qualifier_type = f2.qualifier_type) and (q.qualifier_code = _latin1'NULL')
+ and (not(exists(select 1 AS 1 from authorization a2 where ((a2.kerberos_name = a.kerberos_name)
+ and (a2.function_name = _latin1'CREATE AUTHORIZATIONS') and ((a2.qualifier_code = concat(_latin1'CAT',rtrim(f2.function_category)))
+ or (a2.qualifier_code = _latin1'CATALL')) and (a2.do_function = _latin1'Y') and (now() between a2.effective_date
+ and ifnull(a2.expiration_date,now())))))))
+
+  union
+
+ select distinct a.kerberos_name AS kerberos_name,f.function_name AS function_name,
+ f.function_id AS function_id,f.qualifier_type AS qualifier_type,q.qualifier_code AS qualifier_code,q.qualifier_id AS qualifier_id
+ from ((authorization a join function f) join qualifier q) where ((a.grant_and_view in (_latin1'GV',_latin1'GD'))
+ and (now() between a.effective_date and ifnull(a.expiration_date,now())) and (f.function_id = a.function_id)
+and a.kerberos_name=? and f.function_name=?
+ and (q.qualifier_id = a.qualifier_id) and (not(exists(select 1 AS 1 from authorization a2
+ where ((a2.kerberos_name = a.kerberos_name) and (a2.function_name = _latin1'CREATE AUTHORIZATIONS')
+ and ((a2.qualifier_code = concat(_latin1'CAT',rtrim(f.function_category))) or (a2.qualifier_code = _latin1'CATALL'))
+ and (a2.do_function = _latin1'Y') and (now() between a2.effective_date and ifnull(a2.expiration_date,now())))))))
+-->
+       </sql-query>
+</hibernate-mapping>

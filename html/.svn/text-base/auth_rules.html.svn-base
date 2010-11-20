@@ -1,0 +1,81 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<title>Rules-based Authorizations: Links to reports and maintenance</title>
+<!--
+ *  Copyright (C) 2008-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</head>
+<body bgcolor="#fafafa">
+<table>
+<tbody><tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no="" border=""></a></td>
+<td>
+<h2>Rules-based Authorizations: Links to reports and maintenance</h2></td>
+</tr>
+</tbody></table>
+<br>
+Below are some Roles DB web pages related to implied authorizations and 
+the related rules.  Most of these web pages are only available to 
+people with special "meta-authorizations" in the Roles Database.
+<p></p><hr>
+<ul>
+  <li><a href="/cgi-bin/implied_auth_rules1.cgi">Display implied authorization rules</a><p>
+  </p></li><li><a href="/cgi-bin/authrule/implied_auth_rules0.cgi">Maintain implied authorization rules</a><p>
+  </p></li><li>For testing rules: 
+      <a href="/cgi-bin/show_implied_auth.cgi">See the 
+      implied authorizations that would be generated</a> by a given 
+      rule number.<p>
+  </p></li><li><a href="/cgi-bin/implied_auth_rules1.cgi?lookup_number=2">
+      Display Function Groups</a> used in rules (i.e., groups of Functions 
+      which can be specified in the Condition part of a rule) For testing rules (newer version): 
+       by a given 
+      rule number.<p>
+  </p></li><li><a href="/cgi-bin/view_auth_by_user.cgi?report=0">Authorizations for a person including implied authorizations</a><p>
+  </p></li><li>View qualifier hierarchies with implied authorizations
+    <ul>
+      <li>View LIBX hierarchy (Library patron types) and people who have 
+          authorizations, implied or explicitly-granted, to 
+          "REQUEST LIBRARY ACCESS":<br>
+          &nbsp;&nbsp;<a href="/cgi-bin/qualauth_jr.pl?category=LIBP&amp;qualtype=LIBX&amp;detail=2&amp;levels=20&amp;group_option=2">
+          See LIBX hierarchy with authorizations in category LIBP</a>
+      </li><li>View DEPT hierarchy and people who have 
+          authorizations, implied or explicitly-granted, for access to
+          Library materials:<br>
+          &nbsp;&nbsp;<a href="/cgi-bin/qualauth_jr.pl?category=LIBP&amp;qualtype=DEPT&amp;detail=2&amp;levels=2&amp;group_option=2">
+          See DEPT hierarchy with authorizations in category LIBP</a>
+      </li><li>View EHS PIs and Room Sets hierarchy and people who have 
+          EHS-related roles and authorizations, implied or explicitly-granted:
+          <br>
+          &nbsp;&nbsp;<a href="/cgi-bin/qualauth_jr.pl?category=EHS&amp;qualtype=RSET&amp;detail=2&amp;levels=20&amp;group_option=2">
+          See RSET hierarchy with authorizations in category EHS</a>
+    </li></ul>
+    <p>
+  </p></li><li>Documentation
+    <ul>
+      <li>Adding implied authorization rules - 
+          <a href="http://web.mit.edu/repa/www/add_implied_auth_rule.html" target="new">steps to be followed</a>
+      </li><li>Introduction to Authorizations - both explicitly granted and
+          implied -
+          <a href="http://web.mit.edu/repa/www/roles_auth_parts.html" target="new">Roles Database: Parts of an Authorization</a>
+      </li><li><a href="http://web.mit.edu/repa/www/implied_auths_tech_notes.html" target="new">Technical notes</a> on Implied Authorizations
+    </li></ul>
+</li></ul>
+
+<p>
+</p><hr>
+<a href="webroles.html"><small>Back to main Roles web interface page</small>
+</a>
+</body></html>

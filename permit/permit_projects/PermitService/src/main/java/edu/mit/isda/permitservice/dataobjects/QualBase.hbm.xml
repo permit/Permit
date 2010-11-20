@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <!-- 
+    Created by the Middlegen Hibernate plugin 2.1
+
+    http://boss.bekk.no/boss/middlegen/
+    http://www.hibernate.org/
+-->
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.QualBase" table="qualifier">
+    <id column="QUALIFIER_ID" name="id" type="java.lang.Long">
+      <generator class="hilo"/>
+    </id>
+    <property column="QUALIFIER_CODE" length="15" name="code" not-null="true" type="java.lang.String"/>
+    <property column="QUALIFIER_NAME" length="50" name="name" type="java.lang.String"/>
+    <property column="HAS_CHILD" name="hasChild" type="yes_no"/>
+  </class>
+  <sql-query name="GET_QUALBASE">	
+            <return alias="qualbase" class="edu.mit.isda.permitservice.dataobjects.QualBase"/>	
+            select  qualifier_id, qualifier_code, qualifier_name, has_child from qualifier where qualifier_id in (select child_id from qualifier_child where parent_id=?) order by qualifier_code LIMIT 1000
+        </sql-query>
+</hibernate-mapping>

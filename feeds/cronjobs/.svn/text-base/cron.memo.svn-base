@@ -1,0 +1,74 @@
+Data feeds for the Roles Database
+=================================
+#
+#  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+(updated 10/11/2002)
+
+morning_jobs_early          Sun - Sat, 4:10 AM
+------------------
+ Warehouse -> Roles:  Profit Centers and Cost Collectors (Qualifier_type COST)
+                      [Source: cost_collector table and the flat files
+                       wh-profhier, wh-profctr, and wh-projhier]
+
+ Warehouse -> Roles:  Funds Centers and Funds (FUND and SPGP)
+                      [Source: flat files wh-fmhictr, wh-fmfctrt, wh-fmzuob,
+                       and wh-fmfint, plus information from cost_collector 
+                       table]
+
+ Warehouse -> Roles:  LDS Org units (LORG)
+                      [Source: flat files wh-hrp1000 and wh-profctr]
+
+ Warehouse -> Roles:  New HR Org Units (ORG2)
+                      [Source: table whorg_unit_parent_child]
+
+cron_run_sapfeed            Mon - Fri, 5:00 AM
+----------------
+ Roles -> SAP:        Financial authorizations (Category SAP)
+
+morning_jobs_late           Sun - Sat, 6:30 AM
+-----------------
+ Warehouse -> Roles:  People
+                      [Source: krb_person table]
+
+cron_pdorg_prog.sh          Sun - Sat, 8:30 AM on roles.mit.edu
+------------------          Sun - Sat, 5:15 AM, 12:06 PM, 4:06 PM on rolesweb
+ Warehouse -> Roles:  Compare APPROVER auths. in Roles to comparable PD Org
+                      entries
+                      [Source: flat files wh-hrp1000, wh-hrp1001, wh-hrp1208]
+
+cron_pddiff_feed.sh         Sun - Sat, 8:45 AM
+-------------------
+ Roles -> SAP:        Send file of updates to be made to PD Org approver 
+                      entries
+
+cron_run_exception_notify   Sun - Sat, 8:00 AM
+-------------------------
+ send Email           Finds list of authorizations for non-existent usernames
+                      and send out notification Email.
+
+cron_send_sap_notify        Mon - Fri, 11:00 AM and 3:00 PM
+--------------------
+ Roles -> SAP         Send zevent table information to SAP, used to control 
+                      the events (Requisitions, Approvals, JVs, etc.) for 
+                      which a person wants to receive notification. (A CGI
+                      script in SAPWeb is used to update the zevent table 
+                      in the Roles DB)
+         
+evening_jobs                Sun - Sat, 5:30 PM
+------------
+ Roles -> SAP         Send Labor Distribution (Category LABD) authorizations
+                      to SAP
+

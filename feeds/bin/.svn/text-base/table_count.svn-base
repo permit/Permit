@@ -1,0 +1,100 @@
+#!/usr/bin/perl
+###########################################################################
+#
+#  Perl script to a list of tables and record counts for a given user.
+#
+#
+#  Copyright (C) 1998-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+###########################################################################
+#
+#  Get username and password.
+#
+print "Enter database name for sqlplus connection: ";
+chop($db = <STDIN>);
+print "Enter username for sqlplus connection: ";
+chop($user = <STDIN>);
+print "Enter password for user '$user' at $db: ";
+system ("stty -echo\n");
+chop($pw = <STDIN>);
+print "\n";
+system ("stty echo\n");
+$userpw = $user . '/' . $pw;
+#print "userpw = '$userpw'\n";
+
+#
+#  Make sure we are set up to use Oraperl.
+#
+use Oraperl;
+if (!(defined(&ora_login))) {die "Use oraperl, not perl\n";}
+
+#
+#  Open connection to oracle
+#
+#print "Ready to do &ora_login...  db='$db' USER='$userpw'\n";
+$lda = &ora_login($db, $userpw, '')
+	|| die $ora_errstr;
+@stmt = ("select distinct table_name, tablespace_name, pct_used"
+         . " from USER_TABLES"
+         . " order by table_name");
+$csr = &ora_open($lda, "@stmt")
+	|| die $ora_errstr;
+
+
+$nfields = &ora_fetch($csr);
+print "Query will return $nfields fields\n\n";
+
+#
+#  Get a list of tables
+#
+@sp = ();
+@sptype = ();
+$i = 0;
+while ((($tname, $tsname, $pctused) = &ora_fetch($csr))) {
+	# mark any NULL fields found
+	grep(defined || 
+          ($_ = '<NULL>'), $tname, $tsname, $pctfree);
+        push(@tn, $tname);
+        push(@tsn, $tsname);
+        push(@pct, $pctused);
+}
+do ora_close($csr) || die "can't close cursor";
+
+
+#
+#  Let user display the number of records.
+#
+$n = @tn;  # How many tables?
+printf "%5s %-30s %9s\n", 
+       '     ', 'Table name', 'No. of recs';
+printf "%5s %-30s %9s\n", 
+       '     ', '----------', '-----------';
+for ($i = 0; $i < $n; $i++) {
+  $picked_tn = $tn[$i];
+  @stmt = ("select count(*) from $picked_tn");
+  $csr = &ora_open($lda, "@stmt")
+	|| die $ora_errstr;
+  while (($count) = &ora_fetch($csr)) {
+     printf "%5d %-30s %9d\n", 
+            $i+1, $tn[$i], $count;
+  }
+  do ora_close($csr) || die "can't close cursor";
+}
+print "\n";
+
+#
+#  Logoff and exit.
+#
+do ora_logoff($lda) || die "can't log off Oracle";
+exit();

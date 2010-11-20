@@ -1,0 +1,147 @@
+An idea for unified person data
+-------------------------------
+
+* Present items of data about people as triplets, not just Authorizations, 
+  but other data as well
+
+  We already have Authorizations in this format
+    (Person, Function, Qualifier)
+    (SMITH, CAN SPEND OR COMMIT FUNDS, Funds center FC123456)
+
+  Other forms of data can be presented this way as well
+    (Subject, Connector, Object)
+    (JONES, COMPLETED TRAINING, EHS-12345)
+    (LEE, HAS JOB TITLE, Department Head Honcho)
+  
+* The 3rd component (Qualifier or Object) can represent a node or a leaf 
+  in a hierarchy.
+  For Authorizations, if the Qualifier is a node in a tree, then the person
+   has the Authorization for the given Qualifier and all of its descendents 
+   in the tree.
+  For other triplets, if the Object is a node in a tree, then the 
+   connection applies not only to the immediate "Object" but also to its
+   descendents in the tree.
+
+* The 2nd component (Function of Connector) can also represent a node or 
+  a leaf in a hierarchy.
+  For Authorizations, if the Function is a node in a tree, then the person
+   has the Authorization for the given Function and all of its descendents 
+   in the tree.
+  For other triplets, if the Connector is a node in a tree, then there 
+   is an implied connection between the "Subject" and "Object" not only for
+   the explicitly specified Connector but also for all descendents of
+   of the Connector in the tree.
+
+* The 1st component (Person or Subject) can refer either to an 
+  individual person or a Group (either a Moira list, or a named virtual
+  group representing all people with defined a set of attributes)
+
+* The sources of triplets are as follows:
+  (a) Authorizations in the Roles Database
+  (b) Triplets defining data about people derived from other system data,
+      e.g., the triplet (LEE, HAS JOB TITLE, Department Head Honcho)
+      is derived from HR data.
+  (c) Other triplets, e.g., an implied Authorization is derived from 
+      a non-authorization triplet, e.g., 
+        (SMITH, IS A LABORATORY REPRESENTATIVE FOR, DLC/PI: Biology/Smith)
+        implies
+        (SMITH, CAN VIEW TRAINING RECORDS FOR LAB WORKERS UNDER, 
+                DLC/PI: Biology/Smith)
+
+* We will support structures more complex than hierarchies
+  An object within a "hierarchy" will be allowed to have more than one
+  parent.  (So, it's really not a hierarchy, but a web;  however, we'll 
+  keep calling it a hierarchy, since in most cases it will look more like
+  a tree than a web.)  We will not allow circular loops; i.e, object A 
+  cannot have a child or descendent that is a parent of A.
+
+  Allowing for this sort of structure permits multiple ways of organizing
+  the same objects.  In the financial area, a cost collector can be 
+  organized within multiple Profit Center hierarchies, or within the Funds 
+  Center hierarchy.  The same object has multiple parents.  You can choose
+  different groupings of Cost Collectors depending on how you want to 
+  do reporting or control authorizations.
+
+* Limits and conditions
+  There are, of course, 3 main fields in each triplet.  However, we 
+  will include optional additional fields, called "Limits and Conditions".
+  The exact sorts of named Limits and Conditions fields will be determined 
+  by the Function or Connector.  Some examples:
+  (a) Days and hours for which an Authorization to enter a building is
+      effective
+  (b) Expiration date/time for an Authorization
+  (c) End-date of an HR appointment
+
+* When one Authorization depends on a triplet or another Authorization
+  We will not use limits and conditions to define a rule for one 
+  Authorization depending on another.  Instead, we will have rules 
+  (stored in other structures) describe which triplets imply other ones.
+  For example, suppose we want to only allow lab workers under 
+  DLC/PI: Biology/Smith to enter rooms under the PI's Room Set RS4321
+  if they have taken EHS Training course EHS-1234.  Then, there would be 
+  three triplets involved:
+
+  (1) Triplet derived from EHS system
+      (person, IS LAB WORKER FOR, DLC/PI: Biology/Smith)
+
+  (2) Triplet derived from training system
+      (person, COMPLETED TRAINING, EHS-12345)
+
+      ... a rule connects "IS LAB WORKER FOR", "Biology/*"
+          and "COMPLETED TRAINING", "EHS-12345"
+          to ... 
+
+  (3) Triplet defining a derived authorization
+      (person, CAN ENTER ROOMS UNDER, DLC/PI/RoomSet: Biology/Smith/RS4321)
+
+* Why triplets, and not generic n-tuples?
+  We have a lot of experience with triplets from the Roles Database, and 
+  when we allow the components to be picked from nodes and leaves in a 
+  hierarchy, we have demonstrated a lot of versatility.  Using a 
+  model that is based on 3 dimensions, we can use common software 
+  components to build a very powerful system without being saddled with 
+  trying to support too much.
+
+  We also know that this model lends itself well to Authorizations about 
+  Authorizations, which can be extended to rules for who can view, update, 
+  etc., data or connections that are defined as triplets.
+
+* More details on how to control access to data
+
+  Let's consider, for a moment, how we would control access to viewing of
+  the data represented by triplets.
+
+  Control can be based on the values of any two of the three components of 
+  the triplet, i.e., the Person/Subject, Function/Connector and/or 
+  Qualifier/Object.
+
+  Examples:
+    JOE, CAN VIEW ANY DATA, where Functions are under Function-node XYZ 
+     (target-function-tree limitation only)
+
+    FRED, (CAN VIEW DATA FOR LIMITED SET OF PEOPLE
+       where Functions are under Function-node ABC)
+       and people are under HR node 12345678
+     (target function-tree limitation, plus people-tree limitation)
+
+    SUE, CAN VIEW DATA LIMITED BY QUALIFIER
+       where Functions are under Function-node CDE
+       and the Qualifier is under Course.Subject node 6
+
+  ??????
+  Suppose we want to control which data items about employees can be viewed
+  by a given administrator.  People can be organized under an HR Org Unit 
+  hierarchy.  The Connector component (i.e., types of data) can also be
+  organized into a hierarchy, or web, where we group Connectors together 
+  to accommodate authority for viewing of data of similar sensitivity levels.
+  The Object (Qualifier) component is also organized into hierarchies, for 
+  example into job levels.  Thus, we might give authority to an administrator
+  to view data about people where
+   - The people are employees under the Dept. of Biology
+   - The Connectors (type of data) fall under a node in the tree representing
+     a group of types of a certain level of sensitivity
+   - The Qualifier (Object) component is a job level below a certain level.
+
+ 
+
+  

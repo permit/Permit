@@ -1,0 +1,313 @@
+<HTML>
+<HEAD>
+<TITLE>Portal-related authorizations in the perMIT system</TITLE>
+<!--
+ *  Copyright (C) 2005-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY BGCOLOR="#fafafa">
+<TABLE>
+<TR><TD><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></TD>
+<TD>
+<H1>Portal-related authorizations in the perMIT system</H1></TD>
+</TR>
+</TABLE>
+<center><i>(Last modified by Jim Repa, 12/13/2006)</i></center>
+<hr>
+The perMIT system has been configured to store Portal-related authorizations,
+which can be extracted by the IS&amp;T-maintained portal.  Below are some
+notes on how this has been set up, and how various authorizations and other
+types of data can be maintained by a few specially-authorized individuals.
+<p />
+<h3>Quick introduction to Authorizations</h3>
+<p />
+Authorizations in the perMIT system are 3-part entities:
+<blockquote>
+  <i>Authorization = Person + Function + Qualifier</i>
+</blockquote>
+<p />
+You can create or delete
+Authorizations in the perMIT system only if you have the authority
+to do so, which is itself controlled by Authorizations about 
+Authorizations (<i>i.e.</i>, "meta-authorizations") within the Roles 
+Database.
+<p />
+To create an authorization, you pick a person from the list of people at MIT,
+a Function from the list of Functions for which you allowed to grant 
+Authorizations, and a Qualifier related to the Function which you are allowed
+to pick.  Functions are grouped into Function Categories (or application 
+areas), and Qualifiers are grouped into Qualifier Types.  Each Qualifier Type
+has a hierarchy of Qualifiers.  An authorization granted for a Qualifier 
+which represents the root or a node within the hierarchy applies to 
+all child Qualifiers.
+<p />
+Separate "meta-authorizations" can be assigned to allow a person to 
+maintain Authorizations, Functions, and/or Qualifiers.  (Many Qualifiers 
+are updated automatically from other sources, but some are maintained by 
+hand.)
+<p />
+At the present time, Authorizations and Functions are maintained via the
+MIT-developed application, which was written in PowerBuilder and can be 
+downloaded for Windows from IS&T's software web site.  For Macintosh users,
+it is available on Citrix.
+<p />
+<h3>Authorizations, Functions and Qualifiers for the Portal application</h3>
+<p />
+The 4-character code for the Function Category for the Portal application is 
+PRTL.  Currently, there is only one Function in this category: 
+<em>PORTAL_ADMIN</em>, and Authorizations for this Function must have a 
+Qualifier from the tree of Portal Areas (Qualifier Type code PRTA).
+Qualifiers in this tree can be added as needed using the Roles web interface
+for maintaining qualifiers.  Currently, the PRTA qualifier hierarchy
+has a root-level qualifier of <em>ALL_PORTAL_AREA</em> and directly under the 
+root, it has two qualifiers with the following codes: <em>IS&amp;T</em> 
+and <em>EHS</em>.
+<p />
+To give someone the Authorization to do Portal Administration for 
+all areas, connect to the Roles application on Windows (native) 
+or the Mac (using Citrix), and give the person the following authorization:
+<blockquote>
+<table border>
+  <tr><th>Person</th><th>Function<br>Category</th>
+      <th>Function</th><th>Qualifier</th></tr>
+  <tr><td><i>the person's Kerberos principal</i></td>
+      <td>PRTL</td><td>PORTAL_ADMIN</td><td>ALL_PORTAL_AREA</td></tr>
+</table>
+</blockquote>
+To give someone the Authorization to do Portal Administration limited
+to one area, <i>e.g.</i>, EHS, connect to the Roles application 
+and give the person the following authorization:
+<blockquote>
+<table border>
+  <tr><th>Person</th><th>Function<br>Category</th>
+      <th>Function</th><th>Qualifier</th></tr>
+  <tr><td><i>the person's Kerberos principal</i></td>
+      <td>PRTL</td><td>PORTAL_ADMIN</td><td>EHS</td></tr>
+</table>
+</blockquote>
+<p />
+Existing Authorizations related to the Portal can be viewed either via 
+the Roles Application or via the Roles Web interface.  For a web-based 
+report on all Authorizations for the Portal application, do the following:
+<ul>
+  <li>Start at 
+  <li>On the line labelled "Hierarchy of qualifiers with authorizations,"
+      click <a href="auth_branch1.html">by category/qualifier type</a>.
+  <li>Choose PRTL/PRTA from the pull-down menu for Category/Qualifier-type.
+  <li>Leave the "Qualifier code" field blank and leave the default settings
+      for "Format options" and "Sort by".
+  <li>Click the <em>Submit</em> button.
+</ul>
+You will see a display of the hierarchy of Portal Areas, and under 
+each Portal Area, you will see related Authorizations.  Function names
+are shown in green.
+<h3>
+<p />
+<h3>Extracting authorization information from the perMIT system</h3>
+<p />
+To extract authorization information from the perMIT system for the 
+PRTL (Portal) category, you must connect to Oracle database used by the
+Roles system and use a SELECT statement.  In the near future (first 
+half of calendar 2007), we plan on making available a Java interface for 
+extracting this information as another alternative.  For now, the 
+recommended method of extracting authorization information is to use
+a Select statement.
+<p />
+For systems that do automated extraction of Authorization information,
+we recommend setting up a special Oracle username/password for doing 
+the database connection.  We do not recommend using any individual's 
+personal username to run a batch job.
+<p />
+The view EXPANDED_AUTH_FUNC_QUAL produces "expanded" authorizations, 
+<i>i.e.</i>, if the original authorization was granted for a Qualifier 
+with child Qualifiers or for a Function with child Functions, it will 
+show records for each child Qualifier and child Function.  It also has
+a column IS_IN_EFFECT that looks at the columns EFFECTIVE_DATE,
+EXPIRATION_DATE, and DO_FUNCTION, and returns a single calculated
+field 'Y' or 'N' indicating whether or not the Authorization is in
+effect at this moment.
+<p />
+A simple SELECT statement to extract Portal-related authorization
+information would be the following:
+<code>
+<pre>
+  select distinct kerberos_name, function_name, qualifier_code
+    from expanded_auth_func_qual
+    where function_category = 'PRTL'
+    and is_in_effect = 'Y';
+</pre>
+</code>
+Other columns are available, with information about who created the 
+authorization, when it was created or is due for expiration, the
+level in the Qualifier hierarchy at which original Authorization was
+granted, etc..  However, the above SELECT statement is probably sufficient
+for simply extracting current Authorization information.
+<p />
+You can use a modified version of the SELECT statement to extract 
+pairs of information, with (a) Kerberos principle and (b) a combined 
+field derived from the Function and the Qualifier.  The following
+SELECT statement combines Function and Qualifier, does special processing
+for the root qualifier, and changes the strings to lower-case:
+<code>
+<pre>
+  select distinct lower(kerberos_name), 
+    lower(replace(function_name || '_' || qualifier_code, 
+            '_all_portal_area', ''))
+    from expanded_auth_func_qual
+    where function_category = 'PRTL'
+    and is_in_effect = 'Y';
+</pre>
+</code>
+<p />
+<h3>Maintaining Portal-related Authorizations in the perMIT system</h3>
+<p />
+The "meta-authorization" for the authority to maintain Authorizations 
+in the PRTL (Portal) category is the following:
+<blockquote>
+<table border>
+  <tr><th>Person</th><th>Function<br>Category</th>
+      <th>Function</th><th>Qualifier</th></tr>
+  <tr><td><i>the person's Kerberos principal</i></td>
+      <td>META</td><td>CREATE AUTHORIZATIONS</td><td>CATPRTL</td></tr>
+</table>
+</blockquote>
+As of this writing, Mike Berger, Mike Moretti, and Steve Landry
+have this Authorization, and they all have the authority to grant or 
+delete it for others.
+<p />
+Anyone who has this "meta-authorization" has the authority to create
+or delete Authorizations in the category PRTL (Portal) that will give
+people the role of a Portal Administrator in one or more areas.  They
+need to use the Roles application on Windows or the Macintosh.  
+See the "Software at MIT" site to download the application.
+<p />
+Another prerequisite for using the perMIT system application is to have a
+username/password in the perMIT system Oracle database itself.  (Mike, Mike, and
+Steve already have them.)  Contact business-help@mit.edu to request a 
+perMIT system username, which must match the MIT Kerberos principal for the
+person.  Then, go to the Roles web site to use a secure web interface 
+to set (or change) your Oracle perMIT system password:
+<ul>
+  <li>Start at 
+  <li>Click "I forgot my perMIT system password"
+  <li>Follow the instructions on the next page to set a password for
+      yourself.  (There are two instances of the perMIT system, a test one
+      and a production one.  The web page allows you to set a password
+      for yourself on both instances, but you must do one instance 
+      at a time.)
+  <li>The new password will take effect immediately.
+</ul>
+<p />
+(We will not include detailed instructions for using the Roles application
+here.)
+<p />
+<h3>Adding or changing PRTA (Portal Area) Qualifiers</h3>
+<p />
+Specifically authorized individuals can use the Roles web interface to
+maintain Qualifiers of type PRTA.  Authorizations can only be granted on
+existing Qualifiers.
+<p />
+The "meta-authorization" for the authority to maintain Qualifiers
+of type PRTA is the following:
+<blockquote>
+<table border>
+  <tr><th>Person</th><th>Function<br>Category</th>
+      <th>Function</th><th>Qualifier</th></tr>
+  <tr><td><i>the person's Kerberos principal</i></td>
+      <td>META</td><td>MAINTAIN QUALIFIERS</td><td>QUAL_PRTA</td></tr>
+</table>
+</blockquote>
+As of this writing, Mike Berger, Mike Moretti, and Steve Landry
+have this Authorization, and they all have the authority to grant or 
+delete it for others.
+<p />
+To add, delete, or changes Qualifiers of type PTLA, do the following:
+<ul>
+  <li>Start at 
+  <li>Click "System adminstrators tools"
+  <li>Click "Maintain qualifiers within perMIT system"
+  <li>Select qualifier type PTRA (Portal Areas) from the drop-down
+      menu, and click the button "Manually create the data"
+  <li>In the big text box, enter one or more ADD, DELETE, UPDATE, etc. 
+      commands, using the formats described in the legend at the bottom
+      of the page.  For example, to add a new Qualifier with code 
+      FACILITIES attached to the root, enter the following
+      <blockquote>
+      <code>
+      ADD!FACILITIES!ALL_PORTAL_AREA!Facilities portal area
+      </code>
+      </blockquote>
+  <li>Click the button "Submit your data" once to check the 
+      syntax of your transaction(s)
+  <li>Click the button "Submit your data" a second time to actually
+      commit the changes to the database
+</ul>
+<p />
+<h3>Maintaining Portal-related Functions in the perMIT system</h3>
+<p />
+As of this writing, there is only one Function defined under the 
+PRTL category.  If there is a need in the future to define different 
+levels of authority for Portal administrators, then additional Functions 
+can be created.
+<p />
+The "meta-authorization" for the authority to maintain Functions
+in the PRTL (Portal) category is the following:
+<blockquote>
+<table border>
+  <tr><th>Person</th><th>Function<br>Category</th>
+      <th>Function</th><th>Qualifier</th></tr>
+  <tr><td><i>the person's Kerberos principal</i></td>
+      <td>META</td><td>CREATE FUNCTIONS</td><td>CATPRTL</td></tr>
+</table>
+</blockquote>
+As of this writing, Mike Berger, Mike Moretti, and Steve Landry
+have this Authorization, and they all have the authority to grant or 
+delete it for others.
+<p />
+Anyone who has this "meta-authorization" has the authority to create
+or delete Functions in the category PRTL (Portal) that in turn can be 
+used in Authorizations.  You cannot delete a Function if there are 
+still Authorizations assigned for it.
+<p />
+As described in the section on maintaining Authorizations, you need to 
+download the Roles application and set up a database username/password
+for yourself prior to maintaining Functions.
+<p />
+We will not describe in detail how to use the Roles application to create
+Functions.  However, we will describe what fields need to be defined 
+in a new Function in the PRTL category.  Make sure that you specify the
+following fields:
+<blockquote>
+<table>
+  <tr align=left>
+      <th>Function&nbsp;name:</th><td>A unique name, up to 30 characters, 
+          containing 
+          upper-case letters, numbers, and common special characters 
+          such as underlines, dashes, parentheses, commas, periods, or 
+          ampersands.</td></tr>
+  <tr align=left>
+      <th>Function&nbsp;description:</th>
+      <td>Up to 50 characters, mixed case</td>
+  <tr align=left>
+      <th>Function&nbsp;Category:</th><td>PRTL</td></tr>
+  <tr align=left>
+      <th>Qualifier&nbsp;Type:</th><td>PRTA</td></tr>
+</table>
+</blockquote>
+<p />
+
+
+

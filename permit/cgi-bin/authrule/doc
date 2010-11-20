@@ -1,0 +1,39 @@
+Inventory with explanation of functions.
+
+#
+#  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+
+This directory contains all files (except for rulestyle.css stored in /var/https/htdocs) 
+required for the functioning of the implied authorization rules web GUI:
+implied_auth_rules0.cgi - starting (main) page 
+upd_imprule0.cgi  - update rule intermediate page 
+update_imprule.cgi - update rule final page
+delete_imprule.cgi - delete rule page
+imprule1.cgi - create rule of type 1a, 1b - intermediate page 
+imprule2.cgi - create rule of type 2a, 2b - intermediate page
+insert_imprule.cgi -  create rule final page
+
+RCS/ - rcs version control subdirectory  
+rolesweb.pm@ - link to a module required  
+=============================================================
+Final pages (update_imprule.cgi,delete_imprule.cgi,insert_imprule.cgi) call corresponding Oracle stored procedures
+stored in /export/home/rolesdb/imauth_rule_maint.sql
+Error messages with their generators are stored in /export/home/rolesdb/sql/rolesserv2b.sql
+============================================================
+Specifications on Web GUI and Stored Procedures are stored in:
+/export/home/rolesdb/doc/impruleProcSpec
+/export/home/rolesdb/doc/impruleGUISpec
+ 

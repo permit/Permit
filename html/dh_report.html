@@ -1,0 +1,55 @@
+<HTML>
+<HEAD>
+<TITLE>CO Supervisors and COs for a Department</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td><H3>CO Supervisors and COs for a Department</H3></td></tr>
+</table>
+<BR>
+To see a list of CO Supervisors for a department, along with a list of
+cost objects that they supervise (both inside and outside of the given
+department), enter the department code (e.g., D_VPIS), and click on the 
+<strong>Submit</strong> button.
+<FORM METHOD="GET" ACTION="/cgi-bin/dh_report.pl">
+<table>
+<tr>
+ <td>Department Code:</td>
+ <td><INPUT TYPE="TEXT" NAME="deptcode"></td>
+</tr>
+<tr>
+ <td rowspan=2>Show which cost objects?</td>
+ <td><INPUT TYPE="radio" NAME="admin_fc_only" VALUE="1"> 
+     Only Faculty-Controlled (Admin Flag "FC")</td>
+</tr>
+<tr>
+ <td><INPUT TYPE="radio" NAME="admin_fc_only" VALUE="0" checked> All</td>
+</tr>
+</table>
+<br>
+<P>
+<INPUT TYPE="HIDDEN" NAME="show_mitid" VALUE=1>
+<center>
+<INPUT TYPE="SUBMIT" Value="Submit">
+</center>
+</FORM>
+<p>
+Note: This report may take a few minutes to run.
+<HR>

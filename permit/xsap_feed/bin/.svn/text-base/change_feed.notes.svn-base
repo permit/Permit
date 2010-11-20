@@ -1,0 +1,158 @@
+Notes on changes to the Roles -> SAP feed to be made 8/2004
+-----------------------------------------------------------
+
+- Split off sap_extract2.pl into two parts
+  (a) sap_extract2.pl
+  (b) sap_extract2_part_b.pl
+
+- In sap_extract2_part_b, begin with EHS-related authorizations, 
+  but also start to migrate non-financial authorizations in other 
+  categories into this part.
+
+  * Write a subroutine to look at the config files and build some 
+    arrays and hashes.
+    - Find all Roles DB function names in the config files.  
+    - Map them into function_id's.  
+    - Group them by the associated qualifier_type
+  * For a given qualifier_type (starting with 'DEPT'), write a select
+    statement to find all of the associated authorizations.  (Dynamically
+    build an array of function_names or function_IDs to search for)
+
+- Build a new version of sapmap2.pl that can handle a string $qid.
+  * Write a subroutine to find and return the qualifier_id for a given 
+    qualifier_type and qualifier_code
+    - For all qualifier_types other than COST and FUND, build a hash
+      that maps "qualifier_type!qualifier_code" into qualifier_id
+  * Allow profile names to contain the new string $qid.
+
+- - - - - - - - - -
+
+In sap_extract2.new, 
+  Filter out any authorizations for department code q.qualifier_code
+  where exists (select q2.qualifier_code 
+                from qualifier_child qc, qualifier_code q2
+                where q.qualifier_type = 'DEPT'
+                and qc.parent_id = q.qualifier_id
+                and q2.qualifier_id = qc.child_id
+                and substr(q2.qualifier_code, 1, 2) = 'D_')
+
+
+- - -
+
+ select 
+   a.AUTHORIZATION_ID, a.FUNCTION_ID, a.QUALIFIER_ID, a.KERBEROS_NAME, 
+   a.QUALIFIER_CODE, a.FUNCTION_NAME, a.FUNCTION_CATEGORY, a.QUALIFIER_NAME, 
+   a.MODIFIED_BY, a. MODIFIED_DATE, a.DO_FUNCTION, a.GRANT_AND_VIEW, 
+   a.DESCEND, a.EFFECTIVE_DATE, a.EXPIRATION_DATE,
+   a.AUTHORIZATION_ID parent_auth_id, a.FUNCTION_ID parent_func_id, 
+   a.QUALIFIER_ID parent_qual_id, 
+   a.QUALIFIER_CODE parent_qual_code, a.FUNCTION_NAME parent_function_name,
+   a.QUALIFIER_NAME parent_qual_name
+ from authorization a
+ where a.function_category = 'EHS'
+ and a.kerberos_name = 'MJACQUES'
+ union select 
+   a.AUTHORIZATION_ID, a.FUNCTION_ID, q.QUALIFIER_ID, a.KERBEROS_NAME, 
+   q.QUALIFIER_CODE, a.FUNCTION_NAME, a.FUNCTION_CATEGORY, q.QUALIFIER_NAME, 
+   a.MODIFIED_BY, a. MODIFIED_DATE, a.DO_FUNCTION, a.GRANT_AND_VIEW, 
+   a.DESCEND, a.EFFECTIVE_DATE, a.EXPIRATION_DATE,
+   a.AUTHORIZATION_ID parent_auth_id, a.FUNCTION_ID parent_func_id, 
+   a.QUALIFIER_ID parent_qual_id, 
+   a.QUALIFIER_CODE parent_qual_code, a.FUNCTION_NAME parent_function_name,
+   a.QUALIFIER_NAME parent_qual_name
+ from authorization a, qualifier_descendent qd, qualifier q
+ where a.function_category = 'EHS'
+ and a.kerberos_name = 'MJACQUES'
+ and qd.parent_id = a.qualifier_id
+ and q.qualifier_id = qd.child_id
+ and substr(q.qualifier_code,1,2) in ('D_', 'NU')
+ union select 
+   a.AUTHORIZATION_ID, f2.FUNCTION_ID, a.QUALIFIER_ID, a.KERBEROS_NAME, 
+   a.QUALIFIER_CODE, f2.FUNCTION_NAME, f2.FUNCTION_CATEGORY, a.QUALIFIER_NAME, 
+   a.MODIFIED_BY, a. MODIFIED_DATE, a.DO_FUNCTION, a.GRANT_AND_VIEW, 
+   a.DESCEND, a.EFFECTIVE_DATE, a.EXPIRATION_DATE,
+   a.AUTHORIZATION_ID parent_auth_id, a.FUNCTION_ID parent_func_id, 
+   a.QUALIFIER_ID parent_qual_id, 
+   a.QUALIFIER_CODE parent_qual_code, a.FUNCTION_NAME parent_function_name,
+   a.QUALIFIER_NAME parent_qual_name
+ from authorization a, function_child fc, function f2
+ where a.function_category = 'EHS'
+ and a.kerberos_name = 'MJACQUES'
+ and fc.parent_id = a.function_id
+ and f2.function_id = fc.child_id
+ union select 
+   a.AUTHORIZATION_ID, f2.FUNCTION_ID, q.QUALIFIER_ID, a.KERBEROS_NAME, 
+   q.QUALIFIER_CODE, f2.FUNCTION_NAME, f2.FUNCTION_CATEGORY, q.QUALIFIER_NAME, 
+   a.MODIFIED_BY, a. MODIFIED_DATE, a.DO_FUNCTION, a.GRANT_AND_VIEW, 
+   a.DESCEND, a.EFFECTIVE_DATE, a.EXPIRATION_DATE,
+   a.AUTHORIZATION_ID parent_auth_id, a.FUNCTION_ID parent_func_id, 
+   a.QUALIFIER_ID parent_qual_id, 
+   a.QUALIFIER_CODE parent_qual_code, a.FUNCTION_NAME parent_function_name,
+   a.QUALIFIER_NAME parent_qual_name
+ from authorization a, qualifier_descendent qd, qualifier q,
+      function_child fc, function f2
+ where a.function_category = 'EHS'
+ and a.kerberos_name = 'MJACQUES'
+ and qd.parent_id = a.qualifier_id
+ and q.qualifier_id = qd.child_id
+ and substr(q.qualifier_code,1,2) in ('D_', 'NU')
+ and fc.parent_id = a.function_id
+ and f2.function_id = fc.child_id;
+
+
+- - -
+set define off
+insert into dept_mapping values ('INFO SVCS & TECH', 'D_IS&T');
+insert into dept_mapping values ('PROVOST RESERVE', '404400');
+insert into dept_mapping values ('COMP SCI & AI LAB', 'D_CSAIL');
+insert into dept_mapping values ('MCGOVERN INSTITUTE', 'D_MCGOVERN');
+insert into dept_mapping values ('LDRS FOR MFG PRGM', 'D_LFM');
+insert into dept_mapping values ('TECH & POLICY PRGM', 'D_TPP');
+insert into dept_mapping values ('BROAD INSTITUTE', 'D_BROAD');
+insert into dept_mapping values ('INST SLDR NANOTECH', 'D_ISN'); 
+insert into dept_mapping values ('PLASMA SCI FSN CTR', 'D_PSFC');
+insert into dept_mapping values ('FINANC SYS SVCS',  'D_IS&T');
+
+set pagesize 32000
+select d.dept_code, l.lab_code, lr.building_room
+  from lab l, lab_room lr, ehs_all_room r, dept d
+  where l.lab_id = lr.lab_id
+  and r.building_room = lr.building_room
+  and r.status = 'I'
+  and d.dept_id = l.dept_id
+  order by 1, 2, 3;
+
+- - -
+
+select q1.qualifier_code
+  from qualifier q1
+  where q1.qualifier_type = 'DEPT'
+  and substr(q1.qualifier_code, 1, 2) = 'D_'
+  and not exists 
+  (select q2.qualifier_code from qualifier_child qc, qualifier q2
+   where qc.parent_id = q1.qualifier_id 
+   and q2.qualifier_id = qc.child_id
+   and substr(q2.qualifier_code, 1, 2) = 'D_' );
+
+- - -
+
+select p.employee_unit_name, p.kerberos_name, co.course_option_code, 
+  pcc.completion_date, pcc.posted_date, pcc.posted_by
+  from person2 p, tr_person_completed_course pcc, tr_course_option co
+  where (p.employee_unit_name in ('Lincoln Lab') or 
+         p.employee_unit_name like 'LL%')
+  and pcc.kerberos_name = p.kerberos_name 
+  and co.course_option_id = pcc.course_option_id
+  order by 1, 2, 3;
+
+select trunc(pcc.posted_date), p.employee_unit_name, pcc.posted_by, count(*)
+  from person2 p, tr_person_completed_course pcc, tr_course_option co
+  where (p.employee_unit_name in ('Lincoln Laboratory') or 
+         p.employee_unit_name like 'LL%')
+  and pcc.kerberos_name = p.kerberos_name 
+  and co.course_option_id = pcc.course_option_id
+  and pcc.info_source_code = 'WEBUI'
+  group by trunc(pcc.posted_date), p.employee_unit_name, pcc.posted_by
+  order by 1, 2, 3;
+
+  

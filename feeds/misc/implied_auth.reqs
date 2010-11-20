@@ -1,0 +1,149 @@
+Requirements (Use Cases) for an interface for implied authorizations
+--------------------------------------------------------------------
+
+(Jim Repa, 1/5/2007)
+
+Suppose we build interfaces and "adaptors" to support "implied authorizations".
+By "implied authorizations", we mean three-part authorizations of the 
+form 
+  Agent (can do) function (limited by) qualifier
+that are derived or implied from non-authorization data.
+
+What are the use cases, or requirements, for the interfaces and adapters?
+
+I think that the interface must at least allow for all of the functionality
+marked with an asterisk (*) below.  Most of the use cases apply not only to
+implied authorizations but also to regular authorizations (those that 
+are directly maintained within the Roles DB).
+
+*1. Return a yes-or-no answer to the question
+       Can agent A do function F with qualifier Q?
+
+    Reason:  When an end-user uses an application and the end-user 
+             tries to perform a function with a given qualifier, 
+             the application needs to determine if the end-user is 
+             appropriately authorized.
+
+*2. Given an agent A and a function category C, return a list of 
+    functions which the agent has the authority to perform for at least
+    one qualifier.
+
+    Reason:  Before an application presents to the end-user a screen full 
+             of buttons or other UI components, the application wants to 
+             determine the types of functions the user can perform and 
+             only show buttons or UI components for the functions 
+             available to that user.
+
+*3. Given an agent A and a function F, return a list of qualifiers 
+    for which the agent can perform the function.
+
+    Reason:  A user performing a function can be presented with a pick-list 
+             of units (qualifiers) for which the function can be performed.
+
+4. Given an agent A and a function category C, return a list of 
+   function/qualifier pairs (or in other words, return a list of the user's
+   authorizations).
+
+   Reason:  This is not strictly necessary, since it is equivalent to 
+            doing (2) and then looping through all the functions for (3).
+            However, it might be useful to provide the functionality 
+            in a single step.  It would be used for displaying a report 
+            on a user's authorizations within an application area.
+
+* To support typical auditors requests, we need the functionality for at least
+  one of (5) - (7).
+
+(*) 5. Given a function F and a qualifier Q, return a list of agents who are
+       authorized to do function F with qualifier Q.
+
+   Reason:  This functionality may or may not be needed by an application.
+            It would be useful to an auditor. It would also be useful to 
+            a person who maintains authorizations.  It might be useful to 
+            a person who maintains the non-authorization data that in turn
+            implies authorizations.
+
+(*) 6. Given a function F, return a list of agents who are
+       authorized to do function F with at least one qualifier.
+
+   Reason:  This functionality may or may not be needed by an application.
+            It returns information similar to (5), but less specific.
+            It would be useful to an auditor, and in fact, this specific
+            question has been asked by auditors in the past about 
+            some existing financial functions. It would also be useful to 
+            a person who maintains authorizations.  It might be useful to 
+            a person who maintains the non-authorization data that in turn
+            implies authorizations.
+
+(*) 7. Given a function F, return a list of authorizations (Agent, Function,
+       and Qualifier).
+
+   Reason:  This functionality may or may not be needed by an application.
+            It would be useful for generating a report for auditors or for
+            people who maintain authorizations.
+
+*8. Given a function category C, return a list of agents who have at least
+    one implied authorization.
+
+    Reason:  If implied authorizations are going to be imported or collected
+             into "shadow tables" by a central system for reporting or 
+             auditing, this functionality would provide the minimum amount 
+             of information about "who is authorized for what".  When a 
+             person leaves MIT or changes positions, even this limited 
+             detail would be useful within a central reporting system
+             to help find authorizations, direct or implied, that are 
+             no longer appropriate for the person. 
+
+9. Given a function category C, return a list of agent/function pairs, 
+   where the agent can perform the function for at least one qualifier.
+
+   Reason:  This functionality serves the same purpose as (8), allowing 
+            a central system to import or collect a broad set of data 
+            on "who is authorized for what".  It provides more detailed 
+            data, however.  We need to decide if putting this detail 
+            into a single step is warranted.  The functionality of 
+            (9) is equivalent to the functionality of (8) combined with (2).
+
+10. Given a function category C, return a list of authorizations (Agent, 
+    Function, and Qualifier).
+
+   Reason:  This functionality serves the same purpose as (8) or (9), allowing 
+            a central system to import or collect a broad set of data 
+            on "who is authorized for what".  It provides more detailed 
+            data than either (8) or (9).  We need to decide if putting 
+            this detail into a single step is warranted.  The functionality of 
+            (10) is equivalent to the functionality of (8) + (4), or 
+            (9) + (3).
+
+*11. Given a function F for which authorizations are implied, return 
+     human-readable text descriptions of the rules by which the authorizations
+     are derived from non-authorization data.
+
+   Reason:  This functionality allows central administrators or auditors to
+            find out the reasons why people might have an implied authorization
+            for some function.
+
+*12. Given a specific implied authorization for a person, return information 
+     about the rule by which this authorization was derived.  The information
+     provided might be a rule number that could be looked up using (11).
+
+   Reason:  This functionality is related to (11), but rather than specifying
+            general rules, it indicates the specific rule by which 
+            the one person has been given a specific implied authorization 
+            for a specified Function and Qualifier.  It would be used to 
+            produce a report for central administrators or auditors, 
+            answering the question "Why is this person allowed to perform
+            this particular function with a particular qualifier?"
+
+- - - 
+
+(Note: For each of the use cases, there needs to be a way of determining who is
+asking the question -- since there are limits on which servers or users 
+can look up (and eventually to update), various types of authorization 
+information. There will generally be a server identifier for the
+application server looking up authorizations, to see if the
+end-user has the authority to perform some application-specific function.  
+Some applications may also allow the end user to look up authorization 
+information for others; in these cases, the authority to look up 
+authorization information must be checked for both the server ID and 
+the end-user.)
+

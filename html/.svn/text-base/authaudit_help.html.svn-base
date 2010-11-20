@@ -1,0 +1,114 @@
+<HTML>
+<TITLE>Explanation of perMIT system History of Authorization Changes</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td><H2>Explanation of perMIT system History of Authorizations Changes</H2></td>
+</tr>
+</table>
+<p>
+Since April of 1998, the perMIT system has maintained an audit trail of
+all changes to Authorizations.  If you have the appropriate
+<a href="/metaauth_help.html#viewing+authorizations">
+viewing authorization</a> you can display selected data from the audit trail.
+<p>
+<h4>What is stored in the Authorizations audit trail?</h4>
+Whenever a change is made to an Authorization, information is saved about
+the user who made the change, the date,
+time, and type of action, plus data about the affected Authorization.
+The type of action can be Insert,
+Delete, or Update.  One audit record is stored for each Insert or Delete.
+For each <A HREF="#what update">Update</a>, there are 
+<A HREF="#why not pairs">two audit records</a>, one
+showing the data from the Authorization before the update and one showing data
+after the update. 
+<H4>The Authorization history display includes the 
+following fields:</H4>
+<table border>
+<tr><th>Modified<br>By</th><td>
+Kerberos username of the person who made the change.</td></tr>
+<tr><th>Modified<br>Date</th><td>
+Date that the Authorization change was made.</td></tr>
+<tr><th>Modified<br>Time</th><td>
+Time that the Authorization change was made. Times run from 00:00 - 23:59.
+</td></tr>
+<tr><th>Action</th><td>
+Type of action.  Can be "Insert", "Delete", "Update&lt;" (data before the 
+change) or "Update&gt;" (data after the change).</td></tr>
+<tr><th>Kerberos<br>Username</th><td>
+The username to which the Authorization applies.</td></tr>
+<tr><th>Function<BR>Name</th><td>The short name of the Function component
+of the Authorization.</td></tr>
+<tr><th>Qualifier<BR>Code</th><td>The Organizational Unit, Fund Center, Cost
+Object, or other item that limits the data for which the Person can perform
+the Function.</td></tr>
+<tr><th>Do,<BR>Grant</th><td>Two comma-separated fields. Do-function: can the 
+user do the function in the authorization? (Y or N).  Grant: can the user 
+grant this authorization?  (Y or N)
+</td></tr>
+<tr><th>Effective<BR>Date</th><td>The effective-date field from the
+authorization.  This field can be used to cause an Authorization to remain
+inactive until some future date.
+</td></tr>
+<tr><th>Expiration<BR>Date</th><td>The expiration-date field from the
+authorization.  This field can be used to cause an Authorization become
+inactive after a given date.
+</td></tr>
+</table>
+
+<A NAME="why not pairs">
+<h4>Why are some update records not shown in pairs?</h4></A>
+There are two audit records for every Update action, but
+sometimes one of the two records is not displayed because the criteria
+for selecting audit records filters it out.  It is possible for an 
+Update action to change the Kerberos username in an Authorization; subsequent
+displays of "changes to authorizations for a person" will only match one of
+the two Kerberos usernames in the audit record pair.
+<br>
+(It would be possible to change the SQL select statement that displays
+the results so that the "missing" audit record would always be displayed, but
+this would slow down the query.)
+
+<A NAME="what update">
+<h4>Why are there sometimes update records when nothing seems to have
+changed?</h4></A>
+A simple database "trigger" updates the audit trail for Authorization changes.
+There are two ways that update records can be generated when it appears
+that nothing has changed in an Authorization:
+<ul>
+<li>A field in an Authorization changed, but the changed field is not included
+in this display.  Most often, this field is the Qualifier Name field.  When
+a Qualifier Name is changed in the Qualifier table (for example, when a 
+Fund Center name is modified), the name change is reflected in Authorizations
+that refer to that Qualifier.  This causes audit trail records to be
+generated for the affected Authorization.  You won't see the change in the
+display because the Qualifier name field is not shown.
+<li>
+Someone clicked the 'Replace' button for an Authorization in the Roles 
+application but didn't change any fields.
+</ul>
+It would be possible to have the database trigger ignore some Update events.
+However, the philosophy behind the trigger is to keep it as simple and 
+inclusive as possible.  It is better to have some extraneous data in the 
+audit trail than risk filtering out data that could be useful for
+diagnosing unforeseen future problems or tracking unusual database activity.
+<p>
+<HR>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>

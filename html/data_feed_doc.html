@@ -1,0 +1,169 @@
+<HTML>
+<BASE HREF="http://rolesweb-test.mit.edu/">
+<HEAD>
+<TITLE>Data feeds and other cron jobs in the perMIT system</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<body BGCOLOR="#fafafa">
+<TABLE WIDTH="85%">
+<TR><TD>
+<a href="webroles.html">
+<IMG SRC="rolesmall.GIF" no border></a>
+</TD>
+<TD align=left>
+<H1>Data feeds and other cron jobs <br>in the perMIT system <br>Under development/construction</H1>
+</td></tr>
+</table>
+<p>
+<p/>
+<p>
+<table border width = "100%">
+<tr><th width="15%">Started from</th><th width="15%">Program or Module</th>
+    <th width="7%">Steps</th><th width="35%">Purpose</th><th width="28%">Input Source</th></tr>
+<tr><td>morning_jobs_early</td><td>roles_cost.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of qualifier_type='COST' into Qualifier table from Warehouse.</td><td> DW Files:
+ wh-profhier, wh-profctr, wh-projhier.<br> DW Table: cost_collector. </td></tr>
+
+<tr><td>morning_jobs_early</td><td>roles_fund.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of qualifier_type='FUND' into Qualifier table from Warehouse.</td><td> DW Files:
+            wh-fmfctrt, wh-fmhisv, wh-cc_fund_map, wh-fmfint</td></tr>
+
+<tr><td>morning_jobs_early</td><td>roles_whcost.pm (via cron_roles_feed)</td><td>Extract prepare load</td><td>
+Load  wh_cost_collector table from Warehouse.</td><td> DW File:
+            wh-fcrs<br> DW table: wareuser.cost_collector</td></tr>
+<tr><td>morning_jobs_early</td><td>roles_spgp.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of qualifier_type='SPGP' into Qualifier table  from Roles database</td><td> Roles tables:<br> 
+qualifier, qualifier_child </td></tr>
+<tr><td>morning_jobs_early</td><td>roles_lorg.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of qualifier_type='LORG' into Qualifier table from Warehouse.</td><td>  DW files:
+            wh-hrp1000, wh-profctr </td></tr>
+
+<tr><td>morning_jobs_early</td><td>roles_org2.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of qualifier_type='ORG2' into Qualifier table from Warehoue.</td><td> DW table: wareuser.whorg_
+unit_parent_child</td></tr>
+
+<tr><td>morning_jobs_early</td><td>roles_oldorg.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td
+>Load qualifiers of qualifier_type='ORGU' into Qualifier table from Warehoue.</td><td> DW table: wareuser.whorg
+_unit_parent_child</td></tr>
+
+<tr><td>morning_jobs_early</td><td>roles_pbud.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of qualifier_type='PBUD' into Qualifier table from Warehouse.</td><td> DW table: wareuser.whpro
+fit_center_group </td></tr>
+
+<tr><td>morning_jobs_early</td><td>roles_pmit.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of qualifier_type='PMIT' into Qualifier table from Warehouse.</td><td>  DW tables: wareuser.whp
+c_parent_child, wareuser.whpc_hier_values_work</td></tr>
+
+<tr><td>morning_jobs_early</td><td>roles_pytg.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of qualifier_type='PYTG' into Qualifier table from Warehouse.</td><td> DW tables: wareuser.hr_o
+rg_unit, wareuser.whorg_unit_parent_child, wareuser.whhr_object_relationship, wareuser.hr_lookup </td></tr>
+
+<tr><td>morning_jobs_early</td><td>roles_pccs.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of qualifier_type='PCCS' into Qualifier table from Warehouse.</td><td> DW tables: wareuser.whpc
+_parent_child, wareuser.whpc_hier_values_work, wareuser.cost_collector</td></tr>
+
+<tr><td>morning_jobs_early</td><td>roles_ehst.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of qualifier_type='EHST' into Qualifier table from EHS database.</td><td> EHS tables: tr_trigge
+r_type, tr_cert_trigger_object, who_needs_cert_rule <br> Roles tables: qualifier, qualifier_child </td><tr>
+
+<tr><td>morning_jobs_early</td><td>fix_pa_desc.pl (via cron_aux_roles_feed)</td><td>
+Extract, compare, change</td><td>
+ Get a list of parent-child pairs from Primary_auth_descendent table.(A)
+ Calculate what this list should be by looking at the Qualifier_descendent table.(B)
+ Find the differences between (A) and (B), and generate a set of
+ transactions to make corrections to Primary_auth_descendent</td><td>Roles tables: primary_auth_descendent, qua
+lifier_descendent</td></tr>
+<tr><td>morning_jobs_early</td><td>fix_dept_appr_func.pl (via cron_aux_roles_feed)</td><td>Insert, Delete </td>
+<td>For each department, find a list of approver functions that can be granted by Primary Authorizors, Read the
+ same information from dept_approver_function table, compare, delete/insert into dept_approver_function table.<
+/td><td>
+ Roles tables: dept_approver_function,<br> function, wh_cost_collector, qualifier, primary_auth_descendent</td>
+</tr>
+<tr><td>morning_jobs_early</td><td>dacca_extract.pl (via cron_external_extract)</td><td>Extract, encrypt, send
+to SAP</td><td>Send DACCA Addresse authorizations in the PAYR category to SAP to reside in a special SAP table </td><td>
+Roles tables: authorization, person, qualifier, qualifier_descendent</td></tr>
+<tr><td>morning_jobs_early</td><td>budg_extract.pm (via cron_external_extract)</td><td>Extract, encrypt, send</
+td><td>Send BUDG (SAPBUD) authorizations to SAPBUD system on SAP</td><td>Roles table: authorization</td></tr>
+
+<tr><td>morning_jobs_early</td><td>roles_mdeptdesc.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td>
+<td>Load dept_descendent table in the Master Department Hierarchy </td><td> Roles tables: dept_descendent, depa
+rtment_child, view_type_to_subtype, view_type </td></tr)
+
+<tr><td>mornimg_jobs_early</td><td>roles_mdeptlink.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td>
+<td>Load MDEPT$owner.expanded_object_link table</td>
+<td>Roles tables: expanded_object_link, department, department_child, object_link, qualifier, qualifier_descend
+ent</td></tr>
+
+<tr><td>morning_jobs_late</td><td>roles_person.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load the person table from Warehouse </td><td>DW table: krb_person </td></tr>
+<tr><td>morning_jobs_late</td><td>roles_phist.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load the person_history table from Warehouse </td><td>DW table: krb_person <br> Roles table: auth_audit </td></tr>
+<tr><td>morning_jobs_late</td><td>roles_rset.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td>
+Load qualifiers of
+qualifier_type='RSET' into Qualifier table from Warehouse(EHS DLCs, Room Sets, and Rooms)</td><td>
+DW tables: krb_person, whehss_pi_work_area, whehss_work_area <br>
+Roles tables: qualifier, qualifier_child</td></tr>
+<tr><td>morning_jobs_late</td><td>roles_extauth.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td><td
+>Load "External"
+authorizations into perMIT system from Warehouse</td><td>DW tables: whehss_work_area, krb_person, whehss_function_de
+tail, whehss_function, whehsta_pi_work_area</td></tr>
+<tr><td>evening_jobs</td><td>lds_extract.pl (via cron_external_extract)</td><td>Extract</td><td>
+Extract LABD (Labor Distribution) authorizations to be sent to
+ LDS system on SAP </td><td> Roles tables: authorization,<br> qualifier, qualifier_child, qualifier_descendent<
+/td></tr>
+<tr><td>weekend_jobs</td><td>analyze_all_tables.sql(via cron_run_sql_files)</td><td>Analyze tables</td><td>Anal
+yze all tables for table owner ROLESBB</td><td>all Oracle tables in ROLESBB schema</td></tr>
+
+<tr><td>hourly_jobs</td><td>roles_mdeptdesc.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td>
+<td>Recalculate MDET dept_descendent table in the Master Department Hierarchy frequently during business hours
+</td><td> Roles tables: dept_descendent, department_child, view_type_to_subtype, view_type </td></tr)
+
+<tr><td>hourly_jobs</td><td>roles_mdeptlink.pm (via cron_roles_feed)</td><td>Extract, prepare, load</td>
+<td>Recalculate MDEPT expanded_object_link table frequently durind business hours</td>
+<td>Roles tables: expanded_object_link, department, department_child, object_link, qualifier, qualifier_descend
+ent</td></tr>
+
+<tr><td>cron_run_sapfeed</td><td>sap_extract2.pl, compare_sap2.pl, sapmap2.pl, sap_ctl_file.pl (via run_sap_fee
+d.pl)</td><td>Extract, Compare, Produce file for SAP </td><td>Extracts SAP-related authorizations
+from the "authorization" table, and writes them to sap1.out.yyyymmdd in the data directory</td><td>Roles tables
+: authorization, qualifier, qualifier_child, qualifier_descendent, exp_auth_func_qual_lim_dept</td></tr)
+
+<tr><td>cron_pdorg_prog.sh</td><td>proc_pdorg2.pl (via run_pdorg_prog.pl) </td><td>Extract, compare</td><td>Doe
+s the PD Org extract and comparison of Roles approver authorizations with PD Org workflow definitions. Get Spen
+ding Group, Fund Center and Approval Authorization information
+out of HRP1000, and HRP1208 files from SAP </td><td>
+DW files:<br> wh-hrp1000, wh-hrp1208<br>
+DW table: whobject_relationship_addl</td></td>
+
+<tr><td>cron_pddiff_feed.sh</td><td>pddiff_extract.pl</td><td>Compare</td><td>Reads the file pdorg_roles.compar
+e (result of proc_pdorg2.pl), strips off the header, and sends the file to the SAP dropbox via FTP </td>
+<td> Roles file pdorg_roles.compare</td></tr>
+<tr><td>ehs_evening_jobs</td><td>run_ehs_role_prog.pl(via cron_ehs_extract)</td><td>Extract, compare, ftp to SA
+P</td><td>
+Extract data from the Warehouse about DLCs in the SAP EHS system and people with roles related to them
+and generate a file of differences between the SAP data on EHS-related roles and the perMIT system EHS 
+authorizations</td><td>DW tables: whehss_work_area, whehss_function_detail, whehss_function, krb_mapping, pernr_mitid_mappin
+g.<br> Roles tables: authorization, qualifier_child, qualifier, qualifier_descendent.<br>Files: saprole2functio
+n.mapping</td></tr>
+<tr><td>cron_run_exception_notify</td><td>exception_mail.pl</td><td>Send an e-mail</td><td>Find a list of excep
+tions and send notification to appropriate people.</td><td>Roles tables: person, authorization</td></tr>
+<tr><td>cron_roles_cleanup_archive</td><td>cron_roles_cleanup_archive</td><td>Remove files from an archive dire
+ctory. Create a log file</td><td>Remove files roles*.Z which have been created 3 days ago. Remove files *.Z 
+which have been created 90 days ago</td><td> Files :  all zipped files </td></tr>
+</table>
+<p />
+</BODY>

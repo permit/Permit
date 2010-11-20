@@ -1,0 +1,70 @@
+<HTML>
+<HEAD>
+<TITLE>perMIT system: Qualifier Hierarchies</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td><H2>perMIT system: Qualifier Hierarchies</H2></td></tr>
+</table>
+<BR>
+This web page allows you to view a hierarchy of qualifiers, such as
+Funds and Fund Centers, Cost Objects and Profit Centers, etc..
+<P>
+Select a Qualifier type from the drop-down menu.  If you know the 
+qualifier code for the branch of the tree you want to view, enter it;  
+otherwise leave it 
+blank and the display will start at the root of the tree.
+(Qualifier codes must start with the appropriate prefix - 
+<a href="qualcode_prefix.html">see explanation</a>.)
+Then click the <strong>Submit</strong> button.
+<P>
+<FORM METHOD="GET" ACTION="/cgi-bin/qualauth.pl">
+<table>
+<tr><td>
+<strong>Qualifier type:</strong> 
+</td>
+<td><select name = "qualtype">
+<option>COST (Cost Object)
+<option selected>FUND (Fund Centers and Funds)
+<option>ORGU (Org. Unit - Personnel)
+<option>CATE (Roles CATEGORY)
+<option>AORG (Org. Unit - Admissions)
+<option>LORG (LDS Org. Units)
+<option>BUDG (Budget Departmental Plan)
+<option>BAGS (NIMBUS Budget Area Groups)
+<option>SPGP (Spending Group)
+<option>SISO (SIS Organizations)
+<option>DEPT (MIT departments (unofficial))
+</select>
+</td></tr>
+<tr><td>
+<strong>Qualifier code</strong> (optional):</td>
+<td>&nbsp;&nbsp;<INPUT TYPE="TEXT" NAME="rootcode"></td></tr>
+<tr><td><strong>Sort by:</strong></td>
+<td><INPUT TYPE="radio" NAME="sort" VALUE="" CHECKED> Qualifier code (number)
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="sort" VALUE="name"> Qualifier name
+</td></tr>
+</table>
+<center>
+<INPUT TYPE="SUBMIT" Value="Submit">
+</center>
+</FORM>
+<HR>

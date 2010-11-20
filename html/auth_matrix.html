@@ -1,0 +1,74 @@
+<HTML>
+<HEAD>
+<TITLE>Show authorizations in a matrix format</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H3>Show authorizations in a matrix format</H3></td>
+</tr></table><BR>
+<P>
+<small>
+This web page allows you to view authorizations within a given category 
+and for a qualifiers of type 'DEPT' as a matrix where the rows 
+are qualifiers and the columns are functions.
+To use this facility, you need 
+<a href=
+"/metaauth_help.html#viewing+authorizations">
+viewing authorizations</a> to see authorizations within the Category you
+select.
+</small>
+<HR>
+<P>
+Select a category. 
+Choose format options for the qualifier and for the person.
+Then click the SUBMIT button.
+<P>
+<FORM METHOD="GET" ACTION="/cgi-bin/auth_matrix.pl">
+<table>
+<tr><td>
+<strong>Category:</strong>
+</td>
+<td><select name = "cat">
+<option>META (Meta authorizations)
+<option>ADMN (Misc. administrative auths.)
+<option>ADMN,META (ADMN and META combined)
+<option selected>EHS (Environmental Health & Safety roles)
+<option>HR (HR)
+</select>
+</td></tr>
+<tr><td valign=top>
+<strong>DLC format:</strong></td>
+<td><INPUT TYPE="radio" NAME="show_dlc" VALUE="NAME">
+Show DLC name
+<br><INPUT TYPE="radio" NAME="show_dlc" VALUE="CODE" CHECKED>
+Show DLC code
+</td></tr>
+<tr><td valign=top>
+<strong>Person format:</strong></td>
+<td><INPUT TYPE="radio" NAME="show_person" VALUE="NAME" CHECKED>
+Show person's full name
+<br><INPUT TYPE="radio" NAME="show_person" VALUE="KERBNAME">
+Show person's Kerberos username
+</td></tr>
+</table>
+<center>
+<INPUT TYPE="SUBMIT" VALUE="Submit">
+</center>
+</FORM>
+<hr>

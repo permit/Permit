@@ -1,0 +1,38 @@
+1. generate the schema from the hbm.xml files:
+java -cp classpath org.hibernate.tool.hbm2ddl.SchemaExport --text --config=hibernate.cfg.xml
+2. generate java file from hbm.xml files:
+a. first download Hibernate tools package from http://www.hibernate.org/6.html
+b. unzip the file, go to plugins/org.hibernate.eclipse_3.2.0.beta6/lib, put hibernate/hibernate3.jar
+tools/freemarker.jar hibernate-tools.jar in some directory (eg:c:\middlegen\middlegen-2.1\)
+hibernate3.jar is newer than what we get from the hibernate core package
+c. set ant_home
+d. create a build.xml:
+<?xml version="1.0"?>
+<project name="build.xml" default="genjava">
+
+<path id="toolslib">
+ <path location="c:\middlegen\middlegen-2.1\hibernate-tools.jar" />
+ <path location="C:\middlegen\middlegen-2.1\hibernate3.jar" />
+ <path location="c:\middlegen\middlegen-2.1\freemarker.jar"/>
+ <path location="c:\ojdbc14" />
+</path>
+  
+<target
+   name="genjava"
+   description="Run hbm2java"
+> 
+<taskdef name="genjava" 
+         classname="org.hibernate.tool.ant.HibernateToolTask" 
+         classpathref="toolslib"/>
+
+<genjava destdir=".">          
+  <configuration>
+	<fileset dir="edu\mit\isda\permitservice\dataobjects">
+	<include name="*.hbm.xml"/>
+	</fileset>
+ </configuration>
+	  <hbm2java/>
+</genjava>
+</target>
+</project>
+e. do "ant"

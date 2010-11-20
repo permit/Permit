@@ -1,0 +1,80 @@
+#!/bin/tcsh
+##############################################################################
+#
+#  Run later morning jobs jobs for Roles feeds.  This shell script is 
+#  is scheduled in the crontab to be run every morning after 6 AM.
+#
+#
+#  Copyright (C) 1999-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+#  Created 4/5/1999, Jim Repa
+#  Modified 8/27/2001, Jim Repa (process person feed for YRoles)
+#  Modified 9/19/2002, Jim Repa (add person history feed)
+#  Modified 3/20/2004, Jim Repa (Add Steve Landry, sml@mit.edu, to Email)
+#  Modified 6/15/2006, Jim Repa (Remove Steve Landry, sml@mit.edu, from Email)
+#  Modified 10/12/2006, Jim Repa (Add RSET and extauth)
+#  Modified 2/14/2008, Jim Repa (Add step to set ROLES_PARAMETERS values)
+#
+##############################################################################
+#
+# Process Person feed from the Warehouse for Roles
+#
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract person warehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare person roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load person roles
+$HOME/permit/feeds/cronjobs/cron_check_status person roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.person.roles.log
+/bin/mail -s 'PERSON feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.person.roles.log
+
+#
+# Process PI and Room Set feed (RSET) from the Warehouse for Roles
+#
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract rset warehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare rset roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load rset roles
+$HOME/permit/feeds/cronjobs/cron_check_status rset roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.rset.roles.log
+/bin/mail -s 'RSET feed results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.rset.roles.log
+
+#
+# Process External Authorizations feed from the Warehouse to Roles.
+# (This includes EHS-related authorizations, which depend on the RSET
+#  qualifiers from the previous steps.)
+#
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract extauth warehouse
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare extauth roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load extauth roles
+$HOME/permit/feeds/cronjobs/cron_check_status extauth roles
+#/usr/lib/sendmail permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.extauth.roles.log
+/bin/mail -s 'extauth results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.extauth.roles.log
+
+
+#
+# The person feed should run before this
+# Process Person_history feed for Roles (compare today's person table with 
+#  yesterday's person_history table)
+#
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract phist roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare phist roles
+$HOME/permit/feeds/cronjobs/cron_roles_feed load phist roles
+$HOME/permit/feeds/cronjobs/cron_check_status phist roles
+#/usr/lib/sendmail permit-reports@mit.edu mkorobko@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.phist.roles.log
+/bin/mail -s 'phist results' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_roles_feed.load.phist.roles.log
+
+#
+# Reset Roles "parameters" to their default values.
+# This updates the (synonym for a table) ROLES_PARAMETERS
+#
+$HOME/permit/feeds/cronjobs/cron_run_sql_files roles make_value_default.sql
+/bin/mail -s 'Results of make_value_default.sql' permit-reports@mit.edu < $HOME/permit/feeds/log/cron_run_sql_files.troles.make_value_default.sql.log

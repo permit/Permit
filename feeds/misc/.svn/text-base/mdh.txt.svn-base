@@ -1,0 +1,53 @@
+<h1>Master Department Hierarchy - Guide to Maintaining Departments and Links</h1>
+<p />
+<h3>Overview</h3>
+At MIT, as at most institutions, organizational units are represented 
+differently within different systems.  The code for a given department
+will be different in the HR system, the financial system, and the 
+Student Information system.  Departmental objects in are organized 
+differently in different systems -- DLCs (Departments, Labs and Centers) 
+are grouped differently within the tree of HR Org Units, the 
+tree of Funds Centers, and the Student Systems tree of schools and 
+academic courses.  Furthermore, in different systems, some DLCs are 
+not represented at all or are "absorbed" by another DLC.
+<p />
+
+
+* Skill sets / types of maintenance
+  a. 1 or 2 people who enter most of the changes to DLCs and links,
+     and review exception reports.  (If these people are different than 
+     (b) then there will be some complex situations where they will need 
+     to defer to (b).)
+  b. DRS people who understand the way the system works and interfaces
+     with Warehouse, Roles DB, etc..  May be that (a) is not needed and
+     all of the work can fall under (b).
+  c. Technical person/people who understand the subleties the system; 
+     these people will make config file and documentation changes if
+     we add or change object types, link types, or MDH hierarchy views
+
+  Make s clear statement: This system can run reliably with poor documentation
+  and good people with the right level of understanding, but it cannot 
+  work reliably no matter how good the documentation is if we don't have
+  the right kind of people acting as custodians.
+
+* How-to documents
+  - Current set of views, DLC types, and link types
+    o These may change over time
+    o What are they, why are they
+
+  - How to add, delete a link between an object (e.g., PC, Org Unit,
+    SIS org unit, BAG, etc.) and a DLC
+    o what to watch for
+
+  - Links between objects and higher-level department units -- where are
+    these appropriate and how do they work?
+
+  - Adding a new DLC
+
+  - Changing characteristics of a DLC or other departmental object
+
+  - Moving a DLC
+
+  - Combining DLCs
+
+

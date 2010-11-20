@@ -1,0 +1,42 @@
+#!/bin/tcsh
+##############################################################################
+#
+#  Jobs to be run frequently (hourly?).
+#
+#  We'll recalculate the Master Department Hierarchy expanded_object_link
+#  table frequently during business hours to help people editing the
+#  Master Department Hierarchy data.  Also update dept_descendent table
+#  in the Master Department Hierarchy.
+#
+#
+#  Copyright (C) 2005-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+#  Created 12/13/2005, Jim Repa
+#
+##############################################################################
+#
+# Recalculate MDEPT expanded_object_link table frequently during business
+# hours.
+#
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract mdeptlink mdept
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare mdeptlink mdept
+$HOME/permit/feeds/cronjobs/cron_roles_feed load mdeptlink mdept
+
+#
+# Recalculate MDEPT dept_descendent table frequently during business
+# hours.
+#
+$HOME/permit/feeds/cronjobs/cron_roles_feed extract mdeptdesc mdept
+$HOME/permit/feeds/cronjobs/cron_roles_feed prepare mdeptdesc mdept
+$HOME/permit/feeds/cronjobs/cron_roles_feed load mdeptdesc mdept

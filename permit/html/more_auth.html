@@ -1,0 +1,79 @@
+<HTML>
+<HEAD>
+<TITLE>Miscellaneous authorization-related links</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td> <H3>Miscellaneous authorization-related links</H3></td></tr>
+</table>
+<BR>
+You need a special 
+<a href="/metaauth_help.html#viewing+authorizations">
+viewing authorization</a> to view these reports.
+<P>
+<ol>
+<li>
+<A HREF="/audit_trail.html">
+Show history of changes to Authorizations from the audit trail</A>
+<BR>
+The perMIT system maintains an log of all changes made to Authorizations.
+This link allows you to choose from a set of reports on the audit trail
+entries.
+<P>
+<li>
+Show users <A HREF="/cgi-bin/sap-reports.pl?report_num=4">
+missing REQUISITIONER or CREDIT CARD VERIFIER authorizations</A>
+<BR>
+This report shows a list of people who have one or
+more CAN SPEND OR COMMIT FUNDS authorizations for funds or fund centers,  
+but do not have either a REQUISITIONER or CREDIT CARD VERIFIER authorization.
+Without either of the latter two authorizations, the CAN SPEND OR COMMIT FUNDS
+authorization is meaningless.
+<P>
+<LI>Show users 
+<a href="/cgi-bin/sap-reports1.pl?report_num=5">
+missing a CAN SPEND OR COMMIT FUNDS authorization
+</a>.
+This report shows users with 
+with REQUISITIONER or CREDIT CARD VERIFIER authorizations, but they are
+not effective because the user has no
+CAN SPEND OR COMMIT FUNDS authorizations for any funds or fund centers.
+<P>
+<li>
+<A HREF="/redundant_auth.html">
+Show redundant authorizations</A>
+<BR>
+As you know, each Authorization in the perMIT system has three parts, the
+Person, Function, and Qualifier.  The Qualifier component
+of each Authorization is part of a hierarchy.
+Suppose person XSMITH has these two Authorizations:
+<ul>
+<li>XSMITH can do function INVOICE APPROVAL UNLIMITED for qualifier FC_SLOAN
+<li>XSMITH can do function INVOICE APPROVAL UNLIMITED for qualifier FC_SLOAN01
+</ul>
+Since FC_SLOAN01 is a subset of FC_SLOAN in the Fund Center hierarchy, the 
+second authorization is implied by the first.  The second authorization
+can be considered redundant.
+This link allows you to choose from a list of reports on redundant
+authorizations.
+</ol>
+<HR>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>

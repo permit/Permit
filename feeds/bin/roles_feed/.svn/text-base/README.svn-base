@@ -1,0 +1,49 @@
+/usr/users/rolesdb/bin/roles_feed/README
+UPDATED: 12/29/1997
+#
+#  Copyright (C) 1997-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+Roles Feed Program README File
+------------------------------
+
+This README file contains a brief description of the Roles Feed
+Program used to update person and qualifier information in the MIT
+Roles Database as well as to extract information out of the Roles
+Database for other systems.
+
+This directory contains a single executable Perl script
+(roles_feed.pl) and a number of Perl Modules (*.pm).
+
+There exists a symbolic link in $ROLES_HOMEDIR/bin to this file.  This
+link is called via various cronjobs in $ROLES_HOMEDIR/cronjobs.
+
+The Perl modules in this directory contain business logic specific to
+each roles database feed.
+
+This directory also contains a sub-directory called "cpa" which
+contain more generic Perl Modules.
+
+File Descriptions:
+	README			This file.	
+	roles_feed.pl		The Feed Program.
+	roles_base.pm		A Common Roles Module (used by other Modules)
+        roles_person.pm		Person Table Feed 
+
+The following have yet to be implemented
+#       roles_aorg.pm		Admissions Org Units Qualifier Table Feed
+#       roles_cost.pm		SAP Cost Collectors Qualifier Table Feed
+#       roles_orgu.pm		Personnel Org Units Qualifier Table Feed
+#       roles_prof.pm		SAP Profit Center Qualifier Table Feed
+#       roles_fund.pm		SAP Fund Center Qualifier Table Feed

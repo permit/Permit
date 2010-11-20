@@ -1,0 +1,124 @@
+<HTML>
+<HEAD>
+<TITLE>Redundant Authorizations</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H3>Show Redundant Authorizations</H3></td>
+</tr></table><BR>
+<P>
+This web page allows you to display a list of redundant Authorizations in the perMIT system if you have the appropriate
+<a href="/metaauth_help.html#viewing+authorizations">
+viewing authorization</a> for authorizations in the desired category. An 
+authorization A is redundant if there exists an authorization B for the
+same person and function, with matching do_function and grant fields, 
+where the qualifier in B is a superset (or parent) 
+of the qualifier in A.
+<P>
+<HR>
+<strong>Option 1: Show redundant authorizations for a person
+</strong>
+<FORM METHOD="GET" ACTION="/cgi-bin/redundant_auth.pl">
+Enter the Kerberos username to whom the authorizations apply (not the person
+who made the changes).  Then
+pick a category, and click the SUBMIT button.
+<P>
+<strong>Username:</strong> <INPUT TYPE=TEXT NAME=kerbname>&nbsp;&nbsp;
+<strong>Category:</strong> <SELECT NAME="category">
+<OPTION> ADMN  Admin (misc)
+<OPTION> EHS   Env Hlth Safety
+<OPTION> GRAD  GRAD ADMISSIONS
+<OPTION> HELP  Help Desk
+<OPTION> HR    New HR System
+<OPTION> IDDB  MIT ID Database
+<OPTION> LABD  LABOR DIST
+<OPTION> META  Roles META-auth
+<OPTION> NIMB  NIMBUS (Budget)
+<OPTION> PAYR Payroll
+<OPTION SELECTED> SAP   SAP
+<OPTION> TEST  Test perMIT system
+<OPTION> TSM  Tivoli Stor Mgr
+<OPTION> UADM Undrgrad Admission
+<OPTION> WRHS  Data Warehouse
+<OPTION> XSIS  Student info
+</SELECT>
+<br><INPUT TYPE="SUBMIT" VALUE="Submit">
+</FORM>
+<hr>
+<strong>Option 2: Show redundant authorizations within a branch of a qualifier
+hierarchy
+</strong>
+<FORM METHOD="GET" ACTION="/cgi-bin/redundant_auth.pl">
+Enter a qualifier_code (such as FC_SLOAN or 0HPC00005) for a branch
+of one of the qualifier hierarchies.  Then
+pick a category, and click the SUBMIT button.
+<P>
+<strong>Qualifier code:</strong> <INPUT TYPE=TEXT NAME=qualbranch>&nbsp;&nbsp;
+<strong>Category:</strong> <SELECT NAME="category">
+<OPTION> ADMN  Admin (misc)
+<OPTION> EHS   Env Hlth Safety
+<OPTION> GRAD  GRAD ADMISSIONS
+<OPTION> HELP  Help Desk
+<OPTION> HR    New HR System
+<OPTION> IDDB  MIT ID Database
+<OPTION> LABD  LABOR DIST
+<OPTION> META  Roles META-auth
+<OPTION> NIMB  NIMBUS (Budget)
+<OPTION> PAYR Payroll
+<OPTION SELECTED> SAP   SAP
+<OPTION> TEST  Test perMIT system
+<OPTION> TSM  Tivoli Stor Mgr
+<OPTION> UADM Undrgrad Admission
+<OPTION> WRHS  Data Warehouse
+<OPTION> XSIS  Student info
+</SELECT>
+<br><INPUT TYPE="SUBMIT" VALUE="Submit">
+</FORM>
+<hr>
+<strong>Option 3: Show redundant authorizations by modified_by person
+</strong>
+<FORM METHOD="GET" ACTION="/cgi-bin/redundant_auth.pl">
+This report can be slow and resource-intensive, and it may take a minute
+or more. Enter the person who modified the authorizations.  Then
+pick a category, and click the SUBMIT button.
+<P>
+<strong>Modifier username:</strong> <INPUT TYPE=TEXT NAME=modname>&nbsp;&nbsp;
+<strong>Category:</strong> <SELECT NAME="category">
+<OPTION> ADMN  Admin (misc)
+<OPTION> EHS   Env Hlth Safety
+<OPTION> GRAD  GRAD ADMISSIONS
+<OPTION> HELP  Help Desk
+<OPTION> HR    New HR System
+<OPTION> IDDB  MIT ID Database
+<OPTION> LABD  LABOR DIST
+<OPTION> META  Roles META-auth
+<OPTION> NIMB  NIMBUS (Budget)
+<OPTION> PAYR Payroll
+<OPTION SELECTED> SAP   SAP
+<OPTION> TEST  Test perMIT system
+<OPTION> TSM  Tivoli Stor Mgr
+<OPTION> UADM Undrgrad Admission
+<OPTION> WRHS  Data Warehouse
+<OPTION> XSIS  Student info
+</SELECT>
+<br><INPUT TYPE="SUBMIT" VALUE="Submit">
+</FORM>
+<hr>
+<A href="webroles.html"><small>Back to main Roles web interface page</small>
+</A>

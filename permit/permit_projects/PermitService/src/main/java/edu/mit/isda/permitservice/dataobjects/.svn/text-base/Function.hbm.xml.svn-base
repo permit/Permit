@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.Function" table="function">
+    <id column="FUNCTION_ID" length="6" name="id">
+      <generator class="hilo"/>
+    </id>
+    <property column="FUNCTION_NAME" length="30" name="name" unique="true"/>
+    <property column="FUNCTION_DESCRIPTION" length="50" name="description"/>
+    <many-to-one class="edu.mit.isda.permitservice.dataobjects.Category" column="FUNCTION_CATEGORY" fetch="join" lazy="false" name="category" not-null="true"/>
+    <property column="CREATOR" length="8" name="creator"/>
+    <property column="MODIFIED_BY" length="8" name="modifiedBy"/>
+    <property column="MODIFIED_DATE" name="modifiedDate"/>
+    <many-to-one class="edu.mit.isda.permitservice.dataobjects.QualifierType" column="QUALIFIER_TYPE" fetch="join" lazy="false" name="fqt"/>
+    <property column="PRIMARY_AUTHORIZABLE" name="primaryAuthorizable"/>
+    <property column="IS_PRIMARY_AUTH_PARENT" name="isPrimaryAuthParent"/>
+    <property column="PRIMARY_AUTH_GROUP" length="4" name="primaryAuthGroup"/>
+  </class>
+  <sql-query name="GET_FUNCTION_BY_CATEGORY_FUNCTION_NAME">	
+            <return alias="func" class="edu.mit.isda.permitservice.dataobjects.Function"/>	
+            SELECT * FROM function WHERE FUNCTION_CATEGORY=RPAD(?, 4, ' ') AND FUNCTION_NAME=?
+        </sql-query>
+</hibernate-mapping>

@@ -1,0 +1,48 @@
+<HTML>
+<HEAD>
+<TITLE>Summary Report for People Who Created Authorizations</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa">
+<table>
+<tr><td><a href="webroles.html">
+<img src="rolesmall.GIF" no border></a></td>
+<td> <H3>Summary Report for People Who Created Authorizations</H3></td></tr>
+</table>
+<BR>
+Run this web-based report to display the total number of authorizations,
+by month, that a given person created, modified or deleted during a given
+period of time.  The results are grouped by month.
+<p />
+Enter a username of a person who has created/deleted/modified authorizations.
+Then enter a start date (mm/dd/yyyy) and end date (mm/dd/yyyy) and click
+"Submit".
+<p />
+<FORM METHOD="GET" ACTION="/cgi-bin/roles_exception_reports.cgi">
+<input type="hidden" name="report_num" value="2">
+<table>
+<tr><td>Kerberos username:</td><td><INPUT TYPE="TEXT" NAME="kerbname"></td>
+    </tr>
+<tr><td>Start date (mm/dd/yyyy):</td>
+    <td><INPUT TYPE="TEXT" NAME="start_date"></td></tr>
+<tr><td>End date (mm/dd/yyyy):</td>
+    <td><INPUT TYPE="TEXT" NAME="end_date"></td></tr>
+</table>
+<p />
+<INPUT TYPE="SUBMIT" Value="Submit">
+<HR>
+</FORM>

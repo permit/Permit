@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class lazy="false" name="edu.mit.isda.permitservice.dataobjects.QualifierType" table="qualifier_type">
+    <id column="QUALIFIER_TYPE" length="4" name="type">
+      <generator class="assigned"/>
+    </id>
+    <property column="QUALIFIER_TYPE_DESC" length="30" name="description"/>
+    <!-- Associations -->
+    <!-- bi-directional one-to-many association to Qualifier -->
+    <set cascade="none" inverse="true" lazy="true" name="Qualifiers" where="Qualifier_Level=1">
+      <key>
+        <column name="QUALIFIER_TYPE"/>
+      </key>
+      <one-to-many class="edu.mit.isda.permitservice.dataobjects.Qualifier"/>
+    </set>
+  </class>
+</hibernate-mapping>

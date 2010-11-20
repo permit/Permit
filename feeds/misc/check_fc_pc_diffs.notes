@@ -1,0 +1,359 @@
+A note discussing some limitations encountered when importing perMIT data into SAP. 
+
+George discovered a problem in the Roles -> SAP feed caused by a combination of
+some reporting authorizations assigned to user SBURKE and some constraints in
+SAP-related authorization/profile structures that limit the number of 
+expanded (cost-object-level) authorizations that can be stored in SAP.  
+When reporting authorizations are assigned to Funds Centers, the data 
+feed expands them out to the cost object level, and in the case of the
+reporting authorizations for SBURKE assigned for FC_DSL and FC_DUE, 
+the total number of generated cost-object-level authorizations exceeded
+the SAP limit.
+
+We fixed the problem, temporarily, but changing the reporting authorizations
+for SBURKE for FC_DSL and FC_DUE to point to profit center nodes 0HPC00019 
+and 0HPC00008.  The Roles -> SAP data feed program handles profit centers 
+differently than Funds Centers for reporting authorizations, generating a 
+smaller number of SAP authorization/profile objects when the auths are 
+given for profit center groups.  0HPC00019 and 0HPC00008 represent almost the 
+same set of cost objects as FC_DSL and FS_DUE, with some exceptions.  
+I'll list the exceptions below.  Do we need to contact someone and check to 
+see if the change in reportable cost objects for user SBURKE is a problem?
+
+The biggest set of differences is related to Fund F1345390, which is related
+to over 25,000 different cost objects.  This is one of the Funds for which
+SAP breaks the rule we used to have in place that funds and cost objects
+should have a one-to-one mapping.  The cost objects under this Fund are 
+related to thousands of work orders, e.g., replacing light bulbs and 
+unclogging sinks.  Because of the mismatches, these cost objects are 
+not included if the reporting authorization is given based on a Fund or
+Funds Center, but they are available if the reporting authorization is
+given for a profit center or higher-level profit center group.
+
+The remainder of the differences are listed below (along with the SQL
+Select statements used to generate 4 groups of differences).
+
+-----------------------------------------------------------------------
+1. Find cost objects linked to FC_DSL but not to 0HPC00019
+-----------------------------------------------------------------------
+
+select 'FC_DSL, not 0HPC00019', 
+   cost_collector_id_with_type, replace(profit_center_id, 'P', 'PC'), 
+   'F' || fund_id, 'FC' || fund_center_id
+ from wh_cost_collector
+ where cost_collector_id in 
+(select substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'FUND'
+ and q1.qualifier_code = 'FC_DSL'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and q2.qualifier_code between 'F0000000' and 'F9999999'
+minus select substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'COST'
+ and q1.qualifier_code = '0HPC00019'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and substr(q2.qualifier_code, 2, 7) between '0000000' and '9999999')
+order by 2;
+
+                      COST_COL PROFIT_CENTER  FUND     FUNDS CENTER
+--------------------- -------- -------------- -------- ------------
+FC_DSL, not 0HPC00019 I2738589 PC161000       F2738589 FC400565
+
+
+-----------------------------------------------------------------------
+2. Find cost objects linked to 0HPC00019 but not to FC_DSL
+-----------------------------------------------------------------------
+
+select '0HPC00019, not FC_DSL', 
+   cost_collector_id_with_type, replace(profit_center_id, 'P', 'PC'), 
+   'F' || fund_id, 'FC' || fund_center_id
+ from wh_cost_collector
+ where fund_id <> '1345390'
+ and cost_collector_id in 
+(select substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'COST'
+ and q1.qualifier_code = '0HPC00019'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and substr(q2.qualifier_code, 2, 7) between '0000000' and '9999999'
+minus select substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'FUND'
+ and q1.qualifier_code = 'FC_DSL'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and q2.qualifier_code between 'F0000000' and 'F9999999')
+order by 2;
+
+                      COST_COL PROFIT_CENTER  FUND     FUNDS CENTER
+--------------------- -------- -------------- -------- ------------
+0HPC00019, not FC_DSL I1106500 PC874000       F1106500 FC300000
+0HPC00019, not FC_DSL I1107000 PC874000       F1107000 FC300000
+0HPC00019, not FC_DSL I1134210 PC874100       F1134210 FC101445
+0HPC00019, not FC_DSL I1134217 PC405500       F1134217 FC101445
+0HPC00019, not FC_DSL I1134234 PC442020       F1134234 FC101445
+0HPC00019, not FC_DSL I1134240 PC442050       F1134240 FC101445
+0HPC00019, not FC_DSL I1134245 PC874200       F1134245 FC101445
+0HPC00019, not FC_DSL I1134249 PC501100       F1134249 FC101445
+0HPC00019, not FC_DSL I1134250 PC501500       F1134250 FC101445
+0HPC00019, not FC_DSL I1134251 PC501000       F1134251 FC101445
+0HPC00019, not FC_DSL I1134252 PC501200       F1134252 FC101445
+0HPC00019, not FC_DSL I1134253 PC501300       F1134253 FC101445
+0HPC00019, not FC_DSL I1134254 PC442000       F1134254 FC101445
+0HPC00019, not FC_DSL I1134255 PC442010       F1134255 FC101445
+0HPC00019, not FC_DSL I1134256 PC442010       F1134256 FC101445
+0HPC00019, not FC_DSL I1134273 PC872500       F1134273 FC101445
+0HPC00019, not FC_DSL I1134275 PC406200       F1134275 FC101445
+0HPC00019, not FC_DSL I1134280 PC801000       F1134280 FC101445
+0HPC00019, not FC_DSL I1134290 PC861000       F1134290 FC101445
+0HPC00019, not FC_DSL I1134321 PC862000       F1134321 FC101445
+0HPC00019, not FC_DSL I1134334 PC441800       F1134334 FC101445
+0HPC00019, not FC_DSL I1134350 PC441620       F1134350 FC101445
+0HPC00019, not FC_DSL I1134367 PC441300       F1134367 FC101445
+0HPC00019, not FC_DSL I1134369 PC441200       F1134369 FC101445
+0HPC00019, not FC_DSL I2737869 PC441300       F2737869 FC400700
+0HPC00019, not FC_DSL I2740219 PC501100       F2740219 FC400170
+0HPC00019, not FC_DSL I3614300 PC501100       F3614300 FC400170
+0HPC00019, not FC_DSL I3651050 PC501100       F3651050 FC400170
+0HPC00019, not FC_DSL I3651051 PC501100       F3651051 FC400170
+0HPC00019, not FC_DSL I3651430 PC501100       F3651430 FC400170
+0HPC00019, not FC_DSL I3652970 PC501000       F3652970 FC400170
+0HPC00019, not FC_DSL I3660040 PC501100       F3660040 FC400170
+0HPC00019, not FC_DSL I3664510 PC501100       F3664510 FC400170
+0HPC00019, not FC_DSL I3666900 PC501100       F3666900 FC400170
+0HPC00019, not FC_DSL I3890660 PC501100       F3890660 FC400170
+
+35 rows selected.
+
+-----------------------------------------------------------------------
+3. Find cost objects linked FC_DUE but not to 0HPC00008
+-----------------------------------------------------------------------
+
+select 'FC_DUE, not 0HPC00008', 
+   cost_collector_id_with_type, replace(profit_center_id, 'P', 'PC'), 
+   'F' || fund_id, 'FC' || fund_center_id
+ from wh_cost_collector
+ where cost_collector_id in 
+(select substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'FUND'
+ and q1.qualifier_code = 'FC_DUE'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and q2.qualifier_code between 'F0000000' and 'F9999999'
+minus select substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'COST'
+ and q1.qualifier_code = '0HPC00008'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and substr(q2.qualifier_code, 2, 7) between '0000000' and '9999999')
+order by 2;
+
+                      COST_COL PROFIT_CENTER  FUND     FUNDS CENTER
+--------------------- -------- -------------- -------- ------------
+FC_DUE, not 0HPC00008 C1382000 PC448010       F1382000 FC100610
+FC_DUE, not 0HPC00008 C1382200 PC448010       F1382200 FC100610
+FC_DUE, not 0HPC00008 C1382400 PC448010       F1382400 FC100610
+FC_DUE, not 0HPC00008 I2735238 PC060700       F2735238 FC400185
+FC_DUE, not 0HPC00008 I2737869 PC441300       F2737869 FC400700
+
+select '0HPC00008, not FC_DUE', 
+   cost_collector_id_with_type, replace(profit_center_id, 'P', 'PC'), 
+   'F' || fund_id, 'FC' || fund_center_id
+ from wh_cost_collector
+ where cost_collector_id in 
+(select substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'COST'
+ and q1.qualifier_code = '0HPC00008'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and substr(q2.qualifier_code, 2, 7) between '0000000' and '9999999'
+minus select substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'FUND'
+ and q1.qualifier_code = 'FC_DUE'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and q2.qualifier_code between 'F0000000' and 'F9999999')
+order by 2;
+
+                      COST_COL PROFIT_CENTER  FUND     FUNDS CENTER
+--------------------- -------- -------------- -------- ------------
+
+'0HPC00008,NOTFC_DUE' COST_COL REPLACE(PROFIT 'F'||FUN 'FC'||FU
+--------------------- -------- -------------- -------- --------
+0HPC00008, not FC_DUE C1384100 PC441002       F1384100 FC100296
+0HPC00008, not FC_DUE I1134203 PC446100       F1134203 FC101445
+0HPC00008, not FC_DUE I1134205 PC187100       F1134205 FC101445
+0HPC00008, not FC_DUE I1134257 PC441000       F1134257 FC101445
+0HPC00008, not FC_DUE I1134267 PC441050       F1134267 FC101445
+0HPC00008, not FC_DUE I1134270 PC440100       F1134270 FC101445
+0HPC00008, not FC_DUE I1134271 PC446300       F1134271 FC101445
+0HPC00008, not FC_DUE I1134320 PC187500       F1134320 FC101445
+0HPC00008, not FC_DUE I1134322 PC446600       F1134322 FC101445
+0HPC00008, not FC_DUE I1134327 PC187800       F1134327 FC101445
+0HPC00008, not FC_DUE I1134330 PC441400       F1134330 FC101445
+0HPC00008, not FC_DUE I1134353 PC446700       F1134353 FC101445
+0HPC00008, not FC_DUE I1134366 PC449000       F1134366 FC101445
+0HPC00008, not FC_DUE I1134368 PC446200       F1134368 FC101445
+0HPC00008, not FC_DUE I1134371 PC441700       F1134371 FC101445
+0HPC00008, not FC_DUE I1134376 PC060085       F1134376 FC101445
+0HPC00008, not FC_DUE I2176200 PC449022       F2176200 FC400334
+0HPC00008, not FC_DUE I3922200 PC441420       F3922200 FC400413
+0HPC00008, not FC_DUE P2007200 PC031000       F2007200 FC203328
+0HPC00008, not FC_DUE P2347700 PC031000       F2347700 FC203328
+0HPC00008, not FC_DUE P2577400 PC441420       F2577400 FC201035
+0HPC00008, not FC_DUE P2578600 PC441020       F2578600 FC200996
+0HPC00008, not FC_DUE P2738378 PC447100       F2738378 FC400605
+0HPC00008, not FC_DUE P2794300 PC441420       F2794300 FC400372
+0HPC00008, not FC_DUE P2794500 PC441420       F2794500 FC400372
+0HPC00008, not FC_DUE P2964800 PC160000       F2964800 FC400503
+0HPC00008, not FC_DUE P6157200 PC441420       F6157200 FC400413
+0HPC00008, not FC_DUE P6157300 PC063000       F6157300 FC400028
+0HPC00008, not FC_DUE P6157400 PC065000       F6157400 FC401439
+0HPC00008, not FC_DUE P6157500 PC066000       F6157500 FC400527
+0HPC00008, not FC_DUE P6157600 PC031000       F6157600 FC400303
+0HPC00008, not FC_DUE P6157700 PC152000       F6157700 FC400295
+0HPC00008, not FC_DUE P6157800 PC064000       F6157800 FC400300
+0HPC00008, not FC_DUE P6157900 PC151000       F6157900 FC400442
+0HPC00008, not FC_DUE P6158000 PC158000       F6158000 FC400524
+0HPC00008, not FC_DUE P6158100 PC154500       F6158100 FC400346
+0HPC00008, not FC_DUE P6158200 PC062000       F6158200 FC400253
+0HPC00008, not FC_DUE P6158300 PC035000       F6158300 FC400549
+0HPC00008, not FC_DUE P6158400 PC153000       F6158400 FC400009
+0HPC00008, not FC_DUE P6158500 PC065000       F6158500 FC401440
+0HPC00008, not FC_DUE P6158600 PC091000       F6158600 FC400151
+0HPC00008, not FC_DUE P6158700 PC121100       F6158700 FC400902
+0HPC00008, not FC_DUE P6158800 PC061000       F6158800 FC400838
+0HPC00008, not FC_DUE P6158900 PC095500       F6158900 FC400043
+0HPC00008, not FC_DUE P6159000 PC154000       F6159000 FC400120
+0HPC00008, not FC_DUE P6159100 PC401800       F6159100 FC400413
+0HPC00008, not FC_DUE P6159200 PC093200       F6159200 FC400032
+0HPC00008, not FC_DUE P6159300 PC093300       F6159300 FC400044
+0HPC00008, not FC_DUE P6159400 PC093400       F6159400 FC400003
+0HPC00008, not FC_DUE P6159500 PC093600       F6159500 FC400354
+0HPC00008, not FC_DUE P6159600 PC093700       F6159600 FC400015
+0HPC00008, not FC_DUE P6159700 PC093800       F6159700 FC400500
+0HPC00008, not FC_DUE P6159800 PC068000       F6159800 FC400152
+0HPC00008, not FC_DUE P6159900 PC094000       F6159900 FC400109
+0HPC00008, not FC_DUE P6160000 PC068500       F6160000 FC400100
+0HPC00008, not FC_DUE P6160100 PC159600       F6160100 FC400372
+0HPC00008, not FC_DUE P6160200 PC161000       F6160200 FC400191
+0HPC00008, not FC_DUE P6160300 PC068600       F6160300 FC400842
+0HPC00008, not FC_DUE P6160400 PC159900       F6160400 FC200182
+0HPC00008, not FC_DUE P6160500 PC267000       F6160500 FC210544
+0HPC00008, not FC_DUE P6160600 PC097000       F6160600 FC400158
+0HPC00008, not FC_DUE P6160700 PC160000       F6160700 FC400503
+0HPC00008, not FC_DUE P6160800 PC068700       F6160800 FC400357
+0HPC00008, not FC_DUE P6160900 PC243010       F6160900 FC400153
+0HPC00008, not FC_DUE P6161000 PC265000       F6161000 FC202555
+0HPC00008, not FC_DUE P6161100 PC090000       F6161100 FC400029
+0HPC00008, not FC_DUE P6161200 PC264000       F6161200 FC400818
+0HPC00008, not FC_DUE P6161300 PC038000       F6161300 FC400165
+0HPC00008, not FC_DUE P6161400 PC069400       F6161400 FC201610
+0HPC00008, not FC_DUE P6161500 PC069800       F6161500 FC400358
+0HPC00008, not FC_DUE P6161600 PC163000       F6161600 FC400100
+0HPC00008, not FC_DUE P6161700 PC246000       F6161700 FC400548
+0HPC00008, not FC_DUE P6161800 PC039000       F6161800 FC200895
+0HPC00008, not FC_DUE P6161900 PC069300       F6161900 FC400301
+0HPC00008, not FC_DUE P6162000 PC069200       F6162000 FC400159
+0HPC00008, not FC_DUE P6162100 PC401800       F6162100 FC202653
+0HPC00008, not FC_DUE P6162200 PC069700       F6162200 FC400334
+0HPC00008, not FC_DUE P6162300 PC266300       F6162300 FC202807
+0HPC00008, not FC_DUE P6162600 PC068800       F6162600 FC203232
+0HPC00008, not FC_DUE P6190000 PC401800       F6190000 FC400413
+0HPC00008, not FC_DUE P6194600 PC320000       F6194600 FC400307
+0HPC00008, not FC_DUE P6573000 PC441420       F6573000 FC200579
+0HPC00008, not FC_DUE P6775300 PC441420       F6775300 FC200579
+0HPC00008, not FC_DUE P6801000 PC441420       F6801000 FC200579
+0HPC00008, not FC_DUE P6868500 PC441420       F6868500 FC204023
+
+85 rows selected.
+
+- - - - 
+
+   Jim     
+
+
+- - - -
+
+select distinct 'CO under FC_DSL not under 0HPC00019',
+    substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'FUND'
+ and q1.qualifier_code = 'FC_DSL'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and q2.qualifier_code between 'F0000000' and 'F9999999'
+minus select distinct 'CO under FC_DSL not under 0HPC00019',
+    substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'COST'
+ and q1.qualifier_code = '0HPC00019'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and substr(q2.qualifier_code, 2, 7) between '0000000' and '9999999'
+ order by 2;
+
+select distinct 'CO under 0HPC00019 not under FC_DSL',
+    substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'COST'
+ and q1.qualifier_code = '0HPC00019'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and substr(q2.qualifier_code, 2, 7) between '0000000' and '9999999'
+minus select distinct 'CO under 0HPC00019 not under FC_DSL',
+    substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'FUND'
+ and q1.qualifier_code = 'FC_DSL'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and q2.qualifier_code between 'F0000000' and 'F9999999'
+ order by 2;
+
+select distinct 'CO under FC_DUE not under 0HPC00008', 
+       substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'FUND'
+ and q1.qualifier_code = 'FC_DUE'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and q2.qualifier_code between 'F0000000' and 'F9999999'
+minus 
+select distinct 'CO under 0HPC00008 not under FC_DUE', 
+       substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'COST'
+ and q1.qualifier_code = '0HPC00008'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and substr(q2.qualifier_code, 2, 7) between '0000000' and '9999999'
+order by 2;
+
+select distinct 'CO under 0HPC00008 not under FC_DUE', 
+   substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'COST'
+ and q1.qualifier_code = '0HPC00008'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and substr(q2.qualifier_code, 2, 7) between '0000000' and '9999999'
+minus 
+select distinct 'CO under 0HPC00008 not under FC_DUE', 
+   substr(q2.qualifier_code, 2, 7)
+ from qualifier q1, qualifier_descendent qd, qualifier q2
+ where q1.qualifier_type = 'FUND'
+ and q1.qualifier_code = 'FC_DUE'
+ and qd.parent_id = q1.qualifier_id
+ and q2.qualifier_id = qd.child_id
+ and q2.qualifier_code between 'F0000000' and 'F9999999'
+order by 2;
+

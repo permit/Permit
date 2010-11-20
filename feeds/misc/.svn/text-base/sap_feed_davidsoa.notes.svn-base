@@ -1,0 +1,274 @@
+Notes on Roles DB to SAP feed programs (Jim Repa 1/18/2007)
+-----------------------------------------------------------
+
+This file contains notes about the nightly programs that extract 
+authorization data from the Roles Database and send the data to SAP 
+for conversion to SAP authorizations, profiles, and roles.
+
+I. Overview
+
+Each night, a perl script is run, which in turn runs some other scripts,
+for the purpose of sending changes in authorization data to SAP where 
+the data can be converted to SAP's authorizations, profiles, and roles.
+
+The scripts described below are not all of the scripts that send data from
+the Roles DB to SAP.  There are three other scripts that will not be 
+described here.  The scripts that will not be covered are (1) a script to
+send data to SAP about authorizations for approving requisitions to be 
+used within the PD Org to control workflow, (2) a script to send data about
+Labor Distribution authorizations to SAP to be inserted into a custom
+table in SAP, and (3) a script to send EHS Roles on DLCs to SAP to be 
+used to update EHS-related DLCs and people's relationships (roles) to these
+DLCs.
+
+This memo will describe processes and data related to SAP's authorizations,
+profiles, and roles (as defined within SAP).  Note that the Roles Database 
+has objects called Authorizations (which are three-part entities consisting
+of a Person, Function, and Qualifier), but Roles DB Authorizations are
+completely different types of objects than SAP authorizations.
+
+Each night, a cronjob is run on the Roles DB server which runs 
+a series of perl scripts that do the following:
+  1. Extract a snapshot of Roles DB authorizations (related to permissions 
+     and roles within SAP) into a flat file.  The file has a sequence number
+     representing this day's "batch" of authorizations data.
+  2. Compares today's snapshot to yesterday's snapshot to find a list of
+     usernames of people for which one or more changes have occurred.  These 
+     changes can be due to either (a) a direct change in the person's    
+     Authorizations within the Roles DB made since the previous day
+     or (b) a change to Profit Centers, Funds Centers, Cost Objects or 
+     other data that implies change to the objects for which 
+     a person has the authority to perform some function.
+  3. Finds a list of all people who had one or more SAP-related Authorizations
+     yesterday but do not have any Authorizations today.
+  4. Extracts a subset of the file from step (1) consisting of all 
+     current Authorizations for the people for whom there has been any sort
+     of change (from step (2)).
+  5. Converts the data from step (4) into a series of intermediate
+     files formatted to represent structures similar to SAP's authorizations,
+     profiles, and roles for people whose Authorizations have changed.
+  6. Sends data from step (3) to SAP about people who should be "locked"
+     in SAP.
+  7. Uses scp to sends data from step (5) to SAP to be further processed 
+     by ABAP programs to actually put the data into SAP data structures for
+     authorizations, profiles, and roles.
+  8. Increments the sequence number file on the Roles Database in preparation
+     for the following morning's "batch" of data.
+
+Let us now consider the programs, config files, and some of the data files 
+involved in this process.
+
+II. Perl programs
+
+  The overarching perl program that runs all of the steps of this process
+  is run_sap_feed.pl (within the directory ~rolesdb/xsap_feed/bin/).
+  The other programs, also within the same directory are:
+
+  A. sap_extract2.pl
+
+     This program runs several SQL select statements against the Roles DB 
+     Oracle tables to extract a snapshot of all people's Authorizations 
+     related to SAP.  (The Authorizations are "expanded" to include 
+     child Qualifiers.)  The results are written to the file 
+     sap1.out.nnnnnnnn where nnnnnnnn is the day's sequence number.
+     (This file and other data files are found in the directory 
+     ~rolesdb/xsap_feed/data/.)  Note that the sequence number is kept in the 
+     file sap_feed.sequence_number.
+
+  B. compare_sap2a.pl
+
+     This program compares sap1.out.nnnnnnnn with sap1.out.mmmmmmmm
+     where mmmmmmmm = nnnnnnnn-1, i.e., it compares yesterday's snapshot
+     with today's snapshot of Authorizations.  It generates 
+     the files 
+        user1.out.nnnnnnnn (list of usernames for which one or more
+                            Authorizations have changed since previous run)
+        r2snewu.nnnnnnnn (list of new usernames with Authorizations today)
+        sap1.changes.nnnnnnnn (subset of user Authorization data from
+                               sap1.out.nnnnnnnn for usernames in 
+                               user1.out.nnnnnnnn, i.e., for usernames
+                               where one or more Authorizations have changed
+                               since the previous run)
+
+  C. sapmap2.pl
+
+     This program reads the config files and the input file 
+     sap1.changes.nnnnnnnn.  It produces the following files:
+        r2sauth.nnnnnnnn (file of SAP-authorization records)
+        r2sprof.nnnnnnnn (file of SAP-profile records)
+        umap1.temp.nnnnnnnn (temporary work file mapping users to profiles)
+        role1.temp.nnnnnnnn (temporary work file mapping users to SAP roles)
+        r2sumap.nnnnnnnn (final file mapping users to profiles and roles, 
+                          input to ZUSERIMP)
+        r2sdmapl.nnnnnnnn (file of profile records to be deleted in SAP)
+        r2slock.nnnnnnnn (file of usernames to be locked in SAP)
+
+  D. sap_ctl_file.pl
+
+     This program reads gets byte-count and record-count information for 
+     the files r2sauth.nnnnnnnn, r2sdmapl.nnnnnnnn, r2slock.nnnnnnnn,
+     r2snewu.nnnnnnnn, r2sprof.nnnnnnnn, and r2sumap.nnnnnnnn.  It then
+     generates the following two files:
+        r2scont.nnnnnnnn (control file)
+        r2sintrf.nnnnnnnn (interface file)
+
+  E. move_out_files2.pl
+   
+     Uses scp to send all r2s*.nnnnnnnn files to a directory on SAP, 
+     sending the interface file last. Cleans up some old files in the 
+     Roles DB xsap_feed/data directory.
+
+
+III. Config files
+
+  These files are found in the directory ~rolesdb/xsap_feed/config/.
+
+  A. sap_auth.mapping
+     Contains patterns for mapping Authorizations for specified Functions
+     from the Roles DB into SAP-authorization records (r2sauth.nnnnnnnn).
+
+  B. sap_prof.mapping
+     Contains patterns for mapping Authorizations for specified Functions 
+     from the Roles DB into SAP-profile records (r2sprof.nnnnnnnn).
+
+  C. sap_func.mapping
+     Contains patterns for mapping Authorizations for specified Functions
+     from the Roles DB into SAP-profile-identifiers for users 
+     (r2sumap.nnnnnnnn and r2sdmapl.nnnnnnnn).
+
+  D. sap_role.mapping
+     Contains patterns for mapping Authorizations for specified Functions
+     from the Roles DB into SAP-role-identifiers for users (r2sumap.nnnnnnnn 
+     and r2sdmapl.nnnnnnnn).
+
+  E. sap_qualtype.mapping
+     Contains mapping between SAP 2-byte qualifier type codes and
+     Roles DB 4-byte qualifier_type codes.  These are used by the program
+     sapmap2.pl.  The "Index?" column is set to "Y" if the qualifier codes
+     exceed maximum widths allowable in SAP-authorization identifiers, and in 
+     these cases the internal qualifier_id numbers are used in the identifiers
+     rather than the excessively-long qualifier_codes.
+
+IV. Data files
+
+  In each filename, nnnnnnnn represents the 8-digit sequence number for
+  the current batch of data files.
+
+  A. Data files that are not sent to SAP but are used on the Roles DB
+     to process SAP-related Authorizations
+
+     1. user1.out.nnnnnnnn (list of usernames for which one or more
+                            Authorizations have changed since previous run)
+
+        Each record contains a 3 to 8-character username, not padded 
+        with blanks.
+
+     2. sap1.changes.nnnnnnnn (subset of user Authorization data from
+                               sap1.out.nnnnnnnn for usernames in 
+                               user1.out.nnnnnnnn, i.e., for usernames
+                               where one or more Authorizations have changed
+                               since the previous run)
+
+        Each record contains 4 fields, delimited by "|".
+        Field 1   Roles DB function_id number (mappable to function_name)
+        Field 2   Qualifier_code
+        Field 3   SAP-qualifier-type 2-byte code
+        Field 4   Username
+
+     3. umap1.temp.nnnnnnnn (temporary work file mapping users to profiles)
+
+        User-map file intermediate format
+         c.c. 1-8      username
+         c.c. 9-10     blank
+         c.c. 11-22    SAP profile name
+
+
+     4. role1.temp.nnnnnnnn (temporary work file mapping users to SAP roles)
+
+        File format
+         c.c. 1-8      username
+         c.c. 9-10     blank
+         c.c. 11-41    SAP role name
+
+
+  B. Data files that are sent to SAP
+
+     1. r2snewu.nnnnnnnn (list of new usernames with Authorizations today)
+        
+        First record contains the string "** New users".  Each subsequent
+        record contains a 3 to 8-character username, not padded with blanks.
+
+     2. r2sauth.nnnnnnnn (file of SAP-authorization records)
+
+     File format
+     (c.c. 1-12 is the name of an SAP authorization)
+     c.c. 1-2     'Z:'
+     c.c. 3-12    e.g. 'Pnnnnnn   '                      (PC Prof. Center)
+                       'nnnnn00-99'   or    'nnnnnnn   ' (CC, IO, or WB)
+                       'nnnnnn    '                      (FC Fund Center)
+                       'nnnnnnn   '                      (FN Fund)
+                       'nnnnnnn   '                      (BC Budget Cost Ctr.) 
+                       'Pnnnnnn   '                      (BP Budget Prof. Ctr.)
+     c.c. 13-72    description of authorization (Required)
+     c.c. 73-82    authorization object short name
+     c.c. 83-92    field name (to which values will be assigned)
+     c.c. 93-110   "from" value
+     c.c. 111-128  "to" value (or 18 spaces)
+
+     3. r2sprof.nnnnnnnn (file of SAP-profile records)
+
+     File format
+     c.c. 1-2      usually 'Z#' (Collect authorizations for a user) 
+                    (Rarely, 'Z!' used to collect all auth. regardless of user)
+                    'Z$' used to collect 'Z!' profiles for transport,
+                    'Z%' used to collect 'Z#' profiles for transport)
+     c.c. 3-3      'R', 'S', or 'B'  (Reporting, Spending, or Budget planning)
+     c.c. 4-4      ':' or [0-9A-Z]   (Now just : or 0) 
+     c.c. 5-12     userid (Kerberos name)  
+     c.c. 13-72    profile description
+     c.c. 73-73    profile type: 'C' or 'S'   (composite or simple)
+     c.c. 74-85    authorization name (c.c. 1-12 of authorization above)
+       -or-        profile name
+     c.c. 86-95    authorization object applying to authorization name above
+
+     4. r2sumap.nnnnnnnn (final file mapping users to profiles and roles, 
+                          input to ZUSERIMP)
+
+     User-map file final format
+      c.c. 1-12     username
+      c.c. 13-288   blank
+      c.c. 289-296  effective date (always 00000000)
+      c.c. 297-304  expiration date (mmddyyyy or 00000000)
+      c.c. 305-316  department no. (nnnnnn followed by 6 blanks)
+      c.c. 317-2116 series of 150 12-byte profile names (blanks when we run
+                    out of names)
+      c.c. 2117-2131  blank
+      c.c. 2132-2161  first name [and middle initial, in future] left justified
+      c.c. 2162-2191  last name (left justified)
+      c.c. 2192-2385  blank
+      c.c. 2386-2401  telephone number (left justified)
+      c.c. 2402-4629  blank
+
+     5. r2sdmapl.nnnnnnnn (file of profile records to be deleted in SAP)
+
+        Similar format to r2sumap.nnnnnnnn.
+
+     6. r2slock.nnnnnnnn (file of usernames to be locked in SAP)
+
+        First record contains the string "*Lock users*".  Each subsequent
+        record contains a 3 to 8-character username, not padded with blanks.
+
+     7. r2scont.nnnnnnnn (control file)
+
+        Contains filenames with line count and byte count.  Format is
+        self-explanatory.  Note that the filenames r2s*.nnnnnnnn
+        become uppercase(R2S*.nnnnnnnn.ROLESP) when they are sent to SAP.
+
+     8. r2sintrf.nnnnnnnn (interface file)
+
+        Contains a header line, list of filenames as
+           sourcefile1  R2S*.nnnnnnnn.ROLESP
+           sourcefile2  R2S*.nnnnnnnn.ROLESP
+           ...
+        and a trailer line.
+

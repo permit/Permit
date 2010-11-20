@@ -1,0 +1,666 @@
+###############################################################################
+## NAME: roles_subj.pm
+##
+## DESCRIPTION: Subroutines related to qualifier feed for 'SUBJ' qualifiers
+##
+#
+#  Copyright (C) 2010-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+## MODIFICATION HISTORY:
+## modified 8/10/2010, Jim Repa - added depth to hierarchy
+## Created 6/2/2010, Jim Repa.
+###############################################################################
+
+package roles_subj;
+$VERSION = 1.0;
+$package_name = 'roles_subj';
+
+## Standard Roles Database Feed Package
+#use roles_base qw(UsageExit ScriptExit RolesLog RolesNotification ArchiveFile);
+use roles_base qw(UsageExit ScriptExit RolesLog RolesNotification ArchiveFile
+                    find_max_actions_value);
+use roles_qual
+  qw(strip ProcessActions FixDescendents sort_actions fix_haschild);
+
+## Set Test Mode
+$TEST_MODE = 1;         ## Test Mode (1 == ON, 0 == OFF)
+if ($TEST_MODE) {print "TEST_MODE is ON for $package_name.pm\n";}
+
+## Initialize Oraperl Emulation Package
+eval 'use Oraperl; 1' || die $@ if $] >= 5;
+        die ("Need to use oraperl, not perl\n") unless defined &ora_login;
+
+## Initialize Constants
+$datafile_dir = $ENV{'ROLES_HOMEDIR'} . "/data/";
+$archive_dir = $ENV{'ROLES_HOMEDIR'} . "/archive/";
+
+$extract_filename = $datafile_dir . $package_name . "_extract.dat";
+$existing_filename = $datafile_dir . $package_name . "_existing.dat";
+
+$extraperson_filename = $datafile_dir . $package_name . "_extra.dat";
+
+# Diff File Prefix used during Compare Routine
+$diff_file_prefix = $datafile_dir . $package_name;
+
+# Diff File Suffix/Tags used by the 'diff' package during the file compare
+$diff_tag_insert = ".INSERT";
+$diff_tag_update = ".UPDATE";
+$diff_tag_delete = ".DELETE";
+
+# The actual file names that the 'diff' package will write
+$update_file= $diff_file_prefix . $diff_tag_update;
+$insert_file= $diff_file_prefix . $diff_tag_insert;
+$delete_file= $diff_file_prefix . $diff_tag_delete;
+
+###############################################################################
+###############################################################################
+##
+## Subroutines - Public Routines. (Called by 'roles_feed.pl')
+##
+###############################################################################
+###############################################################################
+
+###############################################################################
+sub FeedExtract #Externally Callable Extract Routine for this Package
+###############################################################################
+{
+        $outfile = $datafile_dir . "subj.warehouse";
+
+        if ($TEST_MODE) {print "In $package_name:FeedExtract.\n";}
+
+        shift; #Get rid of calling package name
+
+        ## Step 0: Check Arguments
+        if ($#_ != 2) {&UsageExit("Command Parameters: <user_id> <user_pw> <db_id>\nInsufficient Arguments");}
+        my($user_id, $user_pw, $db_id) = @_;
+
+#
+#   Open output file.
+#
+  $outf = ">" . $outfile;
+  if( !open(F2, $outf) ) {
+    die "$0: can't open ($outf) - $!\n";
+  }
+
+#
+#  Make sure we are set up to use Oraperl.
+#
+ use Oraperl;
+ if (!(defined(&ora_login))) {die "Use oraperl, not perl\n";}
+
+#
+#  Open connection to oracle
+#
+ #print "db_id='$db_id' user_id='$user_id'\n";
+ my($lda) = &ora_login($db_id, $user_id, $user_pw)
+        || die $ora_errstr;
+
+#
+# Get a list of term codes
+#
+  my $term_string = &get_term_code_list($lda);
+  print "term_string = $term_string\n";
+
+#
+#  Open a cursor to a select statement
+#
+ $stmt =
+   "SELECT DISTINCT 'SCHOOL_'||school_code,'ALL_SUBJECTS',school_name
+      FROM WAREUSER.whsis_department    /* school */
+    UNION SELECT sis_department_code,   /* department */
+      'SCHOOL_'||school_code, sis_department_name
+      FROM WAREUSER.whsis_department
+      where exists (select master_subject_id from wareuser.whsubject_offered
+                    where term_code in $term_string
+                    and nvl(offer_dept_code, master_course_number)
+                     = sis_department_code)
+    UNION select distinct so.offer_dept_code || ':'
+          || so.master_course_number,  /* cross-reg dept combination */
+      so.offer_dept_code,
+      so.master_course_desc || ' (' || so.offer_dept_code || ')'
+     FROM wareuser.whsubject_offered so, WAREUSER.whsis_department d1
+     WHERE master_course_number <> offer_dept_code
+     AND so.subject_id = so.master_subject_id
+     AND term_code in $term_string
+     AND d1.sis_department_code = so.offer_dept_code
+    UNION SELECT master_subject_id,     /* subject */
+         min(master_course_number) master_course_number,
+         min(subject_title) subject_title
+      FROM WAREUSER.whsubject_offered
+      WHERE term_code in $term_string
+      AND master_subject_id = subject_id
+      AND master_course_number = nvl(offer_dept_code, master_course_number)
+      group by master_subject_id
+    UNION SELECT master_subject_id, /* subject, offer by diff. dept */
+         min(offer_dept_code || ':' || master_course_number),
+         min(subject_title)
+      FROM WAREUSER.whsubject_offered
+      WHERE term_code in $term_string
+      AND master_subject_id = subject_id
+      AND master_course_number <> offer_dept_code
+      group by master_subject_id
+    UNION SELECT master_subject_id || '-' || substr(term_code,3,2) || decode(substr(term_code,5,2),'FA','F','SP','S','JA','J','SU','M'), /* subject & term */
+         master_subject_id,
+         subject_title || ' (' || master_subject_id || ' ' || term_code || ')'
+      FROM WAREUSER.whsubject_offered
+      WHERE term_code in $term_string
+      AND master_subject_id = subject_id
+      AND is_not_section = 'Y'
+    UNION SELECT master_subject_id || '-' || substr(term_code,3,2) || decode(substr(term_code,5,2),'FA','F','SP','S','JA','J','SU','M' )
+         || '-' || section_id,        /* section */
+         master_subject_id || '-' || substr(term_code,3,2) || decode(substr(term_code,5,2),'FA','F','SP','S','JA','J','SU','M'),
+         substr(subject_title, 1, 29) || nvl(substr(subject_title, 30, 1), ' ')
+         || '(' || master_subject_id || ' ' || term_code || ' ' || section_id || ')'
+      FROM WAREUSER.whsubject_offered
+      WHERE term_code in $term_string
+      AND master_subject_id = subject_id
+      AND is_not_section = 'N'
+    UNION SELECT 'SCHOOL_SP','ALL_SUBJECTS', 'Quasi-school of Special Programs'
+      FROM dual
+    UNION SELECT 'SP', 'SCHOOL_SP', 'Special Programs'
+      FROM dual
+    UNION SELECT 'SCHOOL_VIS','ALL_SUBJECTS', 'Quasi-school of Visiting'
+      FROM dual
+    UNION SELECT 'VIS', 'SCHOOL_VIS', 'Visiting'
+      FROM dual
+    ORDER BY 1";
+ #print "stmt= '" . $stmt . "'\n";
+ $csr = &ora_open($lda, $stmt)
+        || die $ora_errstr;
+
+#
+#  Write out a made-up record for the root of the SUBJ tree
+#
+   printf F2 "%s!%s!%s!%s\n",
+           'SUBJ', 'ALL_SUBJECTS', '', 'All academic courses and subjects';
+
+#
+#  Write out the records.
+#
+ my $qqualtype = 'SUBJ';
+ while ( ($qqcode, $qparentcode, $qqname, $qqsortorder)
+        = &ora_fetch($csr) )
+ {
+   #if (($i++)%5000 == 0) {print $i . "\n";}
+   # TYPE, CODE, PARCODE, NAME
+   printf F2 "%s!%s!%s!%s\n",
+           $qqualtype, $qqcode, $qparentcode, $qqname;
+ }
+
+ &ora_close($csr) || die "can't close cursor";
+
+ close (F2);
+
+ &ora_logoff($lda) || die "can't log off Oracle";
+
+
+
+}
+
+###############################################################################
+sub FeedPrepare         #Externally Callable Feed Prepare Routine
+###############################################################################
+{
+        if ($TEST_MODE) {print "In $package_name:FeedPrepare.\n";}
+
+        shift; #Get rid of calling package name
+
+        ## Step 0: Check Arguments
+        if ($#_ != 2)   {&UsageExit("Command Parameters: <user_id> <user_pw> <db_id>\nInsufficient Arguments");}
+        my($user_id, $user_pw, $db_id) = @_;
+
+        ## Step 2: Log Into Destination Database
+        my($destination_lda) = &ora_login($db_id, $user_id, $user_pw)
+                        || (
+                        &RolesLog("FATAL_MSG",
+                                $ora_errstr) &&
+                        ScriptExit("Unable to Log into Destination Database: $db_id.")          );
+
+        ## Step 3: Get Extract from Destination Database
+        unless (-w $datafile_dir)
+        {
+                &RolesLog("FATAL_MSG",
+                        "Datafile Directory is not writable: $datafile_dir");
+                ScriptExit("Unable write to directory $datafile_dir.");
+        }
+
+        ## Get data from roles
+        &ExistingExtract($destination_lda, $datafile_dir);
+
+
+        ## Step 4: Log off Destination Database
+        &ora_logoff($destination_lda);
+
+
+        ## compare data
+        &CompareExtract($datafile_dir);
+
+        return;
+}
+
+###############################################################################
+sub FeedLoad    #Externally Callable Feed Load Routine for this Package
+###############################################################################
+{
+        if ($TEST_MODE) {print "In $package_name:FeedLoad.\n";}
+
+        shift; #Get rid of calling package name
+
+        my($infile) = $datafile_dir . "subj.actions";
+        my($sqlfile) = $datafile_dir . "subjchange.sql";
+        my($sqlfile2) = $datafile_dir . "subjdesc.sql";
+        my($qualtype) = "SUBJ";
+
+        ## Step 0: Check Arguments
+        if ($#_ != 2){&UsageExit("Command Parameters: <user_id> <user_pw> <db_id>\nInsufficient Arguments");}
+        my($user_id, $user_pw, $db_id) = @_;
+
+
+        ## Check number of actions to be preformed
+        $MAX_ACTIONS = &find_max_actions_value( $db_id, "MAX_SUBJ");
+        #$MAX_ACTIONS = 200;  #This should be configurable
+        if (-r $infile) {
+          $actions_count = `grep -c . $infile`;
+          chomp($actions_count);
+        }
+        else {
+          die "Missing actions file '$infile'\n";
+        }
+
+        if ($actions_count > $MAX_ACTIONS)
+        {
+         $msg = "Number of Actions ($actions_count) exceeds threshold ($MAX_ACTIONS).\n";
+         print $msg;
+         &RolesNotification("Number of actions exceeds threshold", $msg);
+         return -1; # send email
+        }
+        elsif ($actions_count == 0) {
+         $msg = "No actions to process today.\n";
+         print $msg;
+         #&RolesNotification("No actions to process today.", $msg);
+         return -1;
+        }
+        else
+        {
+         print "$actions_count actions to be performed.\n";
+        }
+
+        ## Step 1: Log Into Destination Database
+        my($destination_lda) = &ora_login($db_id, $user_id, $user_pw)
+                        || (
+                        &RolesLog("FATAL_MSG",
+                                "Unable to log into destination database $ora_errstr") &&
+                        ScriptExit("Unable to Log into Destination Database: $db_id.")          );
+
+        ## Step 2: Update, Insert and Delete Records
+
+        if (-r $infile) {&ProcessActions($destination_lda, $qualtype, $infile, $sqlfile);}
+
+        # Run the first .sql file
+        my($cmd) = "sqlplus $user_id/$user_pw\@$db_id \@$sqlfile";
+
+        $rc = system($cmd);
+        $rc >>= 8;
+        unless ($rc == 0) {
+          print "Error return code $rc from first sqlplus\n";
+          die;
+        }
+
+        # Run &fix_haschild to make sure haschild field is right for 'COST'
+        # records in the qualifier table.
+        &fix_haschild($destination_lda, $qualtype);
+
+        # Create 2nd .sql file, to fix the qualifier_descendents table.
+        if (-r $infile) {&FixDescendents($destination_lda, $qualtype, $infile, $sqlfile2);}
+        # Run the 2nd .sql file
+        $cmd = "sqlplus $user_id/$user_pw\@$db_id \@$sqlfile2";
+        #print "cmd = '$cmd'\n";
+        $rc = system($cmd);
+        $rc >>= 8;
+        unless ($rc == 0) {
+          print "Error return code $rc from 2nd sqlplus\n";
+          die;
+        }
+
+        ## Step 3: Archive Files
+&ArchiveFile($infile, $archive_dir);
+#       &ArchiveFile($extract_filename, $archive_dir);
+#       &ArchiveFile($existing_filename, $archive_dir);
+#       if (-r $update_file) {&ArchiveFile($update_file, $archive_dir);}
+#       if (-r $insert_file) {&ArchiveFile($insert_file, $archive_dir);}
+#       if (-r $delete_file) {&ArchiveFile($delete_file, $archive_dir);}
+
+        ## Step 5: Log off Destination Database
+        &ora_logoff($destination_lda);
+
+        return;
+}
+
+###############################################################################
+sub FeedExternalExtract #Externally Callable External Extract Routine
+###############################################################################
+{
+        if ($TEST_MODE) {print "In $package_name:FeedExternalExtract.\n";}
+
+        shift; #Get rid of calling package name
+
+        ## Not Defined
+        return -1;
+}
+
+###############################################################################
+sub CheckStatus #Externally Callable Status Routine to for this Package
+###############################################################################
+{
+        if ($TEST_MODE) {print "In $package_name:CheckStatus.\n";}
+
+        shift; #Get rid of calling package name
+
+        return;
+}
+
+
+###############################################################################
+sub PackageTest #Externally Callable Package Test Routine
+###############################################################################
+{
+        if ($TEST_MODE) {print "In $package_name:PackageTest.\n";}
+
+        return;
+}
+
+###############################################################################
+###############################################################################
+##
+## Subroutines - Private Common Routines.
+##
+###############################################################################
+###############################################################################
+
+
+
+
+########################################################################
+#
+#  Extract SUBJ data from qualifier table of Roles DB.
+#
+########################################################################
+sub ExistingExtract
+{
+my($lda, $data_dir) = @_;
+
+$outfile = $data_dir . "subj.roles";
+$qqualtype = 'SUBJ';
+
+#
+#   Open output file.
+#
+  $outf = "|cat >" . $outfile;
+  if( !open(F2, $outf) ) {
+    die "$0: can't open ($outf) - $!\n";
+  }
+
+
+#
+#  Open first cursor
+#
+ @stmt = ("select q2.qualifier_code, q.qualifier_id, q.qualifier_code,"
+          . " q.qualifier_name, q.has_child"
+          . " from qualifier q, qualifier_child c, qualifier q2"
+          . " where q.qualifier_id = c.child_id"
+          . " and c.parent_id = q2.qualifier_id"
+          . " and q.qualifier_type = '$qqualtype'"
+          . " union"
+          . " select '', qualifier_id, qualifier_code,"
+          . " qualifier_name, has_child"
+          . " from qualifier"
+          . " where qualifier_level = 1 and qualifier_type = '$qqualtype'"
+          . " order by 3");
+ $csr = &ora_open($lda, "@stmt")
+        || die $ora_errstr;
+ print "Reading in Qualifiers (type = '$qqualtype') from Oracle table...\n";
+ $i = -1;
+ while ((($qparentcode, $qqid, $qqcode, $qqname, $qhaschild)
+        = &ora_fetch($csr)))
+ {
+   #if (($i++)%5000 == 0) {print $i . "\n";}
+   push(@parentid, $qparentid);
+   push(@qualcode, $qqcode);
+   push(@qualname, $qqname);
+   push(@haschild, $qhaschild);
+   # TYPE, CODE, PARCODE, NAME
+   printf F2 "%s!%s!%s!%s\n",
+           $qqualtype, $qqcode, $qparentcode, $qqname;
+ }
+ &ora_close($csr) || die "can't close cursor";
+
+ close (F2);
+
+# do ora_logoff($lda) || die "can't log off Oracle";
+}
+
+
+
+##############################################################################
+#
+#  Find the differences in two files of new Org Units.
+#  Process the differences to make it easier to do adds, deletes, and
+#  updates to qualifier table in Roles DB.
+#
+##############################################################################
+sub CompareExtract
+{
+
+my($data_dir) = @_;
+
+my $file1 = $data_dir . "subj.roles";
+my $file2 = $data_dir . "subj.warehouse";
+my $diff_file = $data_dir . "subj.diffs";
+my $tempactions = $data_dir . "subj.actions.temp";
+my $actionsfile = $data_dir . "subj.actions";
+my $temp1 = $data_dir . "subj1.temp";
+my $temp2 = $data_dir . "subj2.temp";
+
+print "Sorting first file...\n";
+system("sort -t '!' -k 1,2 -o $temp1 $file1\n");
+print "Sorting 2nd file...\n";
+system("sort -t '!' -k 1,2 -o $temp2 $file2\n");
+
+
+print "Comparing files $file1 and $file2...\n";
+system("diff $temp1 $temp2 |"            # Find differences in two files
+       . " grep '^[><]' |"               # Select only added/deleted lines
+       . " sed 's/< SUBJ/<\!SUBJ/' |"    # Add ! field marker
+       . " sed 's/> SUBJ/>\!SUBJ/' |"    # Add ! field marker
+       . " sort -t '!' -k 2,3 -k 1,1"    # Sort on type, qualcode, [<>]
+       . " > $diff_file");
+
+##############################################################################
+#
+#  Now read in the differences file.
+#
+#  Read '<' records from $diff_file into (@old_code, @old_parent, @old_name)
+#  Read '>' records from $diff_file into (@new_code, @new_parent, @new_name)
+#
+##############################################################################
+ unless (open(IN,$diff_file)) {
+   die "Cannot open $diff_file for reading\n"
+ }
+ @old_code = ();
+ @old_parent = ();
+ @old_name = ();
+ @new_code = ();
+ @new_parent = ();
+ @new_name = ();
+ $i = 0;
+ print "Reading records from differences file...\n";
+ while (chop($line = <IN>)) {
+   if (($i++)%1000 == 0) {print $i . "\n";}
+   ($oldnew, $qualtype, $qualcode, $parentcode, $qname) = split('!', $line);
+   #print "$oldnew - $qualtype - $qualcode - $parentcode - $qname\n";
+   if ($oldnew eq '<') {
+     push(@old_code, $qualcode);
+     push(@old_parent, $parentcode);
+     push(@old_name, &strip($qname));
+   }
+   else {
+     push(@new_code, $qualcode);
+     push(@new_parent, $parentcode);
+     push(@new_name, &strip($qname));
+   }
+ }
+ system("rm $temp1\n");  # Remove temporary files
+ system("rm $temp2\n");  # Remove temporary files
+
+#
+#   Open output file.
+#
+  $outf = "|cat >" . $tempactions;
+  if( !open(F2, $outf) ) {
+    die "$0: can't open ($outf) - $!\n";
+  }
+#
+#  Now compare lines from the old and new arrays.
+#  Print out "Delete", "Update", and "Add" records depending on
+#  how things match up.
+#
+ print "Comparing lines from old and new arrays...\n";
+ $old_p = 0;  # Set pointers
+ $new_p = 0;  # Set pointers
+ $old_max = @old_code;
+ $new_max = @new_code;
+ while (($old_p < $old_max) & ($new_p < $new_max)) {
+   #print "$old_p $new_p \n";
+   if ($old_code[$old_p] lt $new_code[$new_p]) {
+     print F2 "DELETE!$old_code[$old_p]\n";
+     $old_p++;
+   }
+   elsif ($old_code[$old_p] eq $new_code[$new_p]) {
+     if ($old_parent[$old_p] ne $new_parent[$new_p]) {
+       print F2 "UPDATE!$old_code[$old_p]!PARENT"
+                . "!$old_parent[$old_p]!$new_parent[$new_p]\n";
+     }
+     if ($old_name[$old_p] ne $new_name[$new_p]) {
+       print F2 "UPDATE!$old_code[$old_p]!NAME"
+                . "!$old_name[$old_p]!$new_name[$new_p]\n";
+     }
+     $old_p++;
+     $new_p++;
+   }
+   else { # $old_code gt $new_code
+     print F2 "ADD!$new_code[$new_p]!$new_parent[$new_p]!$new_name[$new_p]\n";
+     $new_p++;
+   }
+ }
+
+#
+#  Handle left-over lines.
+#
+ while ($old_p < $old_max) {
+   print F2 "DELETE!$old_code[$old_p]\n";
+   $old_p++;
+ }
+
+ while ($new_p < $new_max) {
+   print F2 "ADD!$new_code[$new_p]!$new_parent[$new_p]!$new_name[$new_p]\n";
+   $new_p++;
+ }
+
+ close (F2);
+
+
+
+#
+#   Reorder spending group actions
+#
+
+ unless(open(INFILE, "<" . $tempactions) ) {
+    die "$0: can't open ($tempactions) - $!\n";
+  }
+ while ( chop($line = <INFILE>)) {
+        push(@actions, $line);
+ }
+ close INFILE;
+
+ sort_actions(\@actions);
+
+
+ unless(open(ACTIONSFILE, ">" . $actionsfile) ) {
+    die "$0: can't open ($actionsfile) - $!\n";
+  }
+
+ for ($i = 0; $i < @actions; $i++) {
+   print ACTIONSFILE $actions[$i] . "\n";
+ }
+
+close ACTIONSFILE;
+
+}
+
+###############################################################################
+#
+# Subroutine get_term_code_list($lda)
+#
+# Returns a string containing a list of term_codes, e.g.,
+#   ('2010JA','2010SP','2010'SU','2011FA')
+# Includes two prior term_codes, plus one future term_code.
+#
+###############################################################################
+sub get_term_code_list
+{
+  my ($lda) = @_;
+
+#
+#  Open a cursor to read records from the Warehouse academic_terms table
+#
+ my $stmt =
+  "select term_code, term_start_date, academic_year, is_current_term
+   from academic_terms
+   where term_start_date > sysdate-365
+   order by term_start_date";
+ my $csr = &ora_open($lda, $stmt)
+        || die $ora_errstr;
+ print "Reading in academic term_codes from Oracle table...\n";
+ my $i = -1;
+ my @term_list;
+ my $current_index;
+ my ($term_code, $start_date, $academic_year, $is_current_term);
+ while ( ($term_code, $start_date, $academic_year, $is_current_term)
+        = &ora_fetch($csr) )
+ {
+   $i++;
+   push(@term_list, $term_code);
+   #print "Initial $i $term_code\n";
+   if ($is_current_term eq 'Y') {
+       $current_index = $i;
+   }
+ }
+ &ora_close($csr) || die "can't close cursor";
+
+ my @kept_term_list;
+ for ($j=$current_index-2; $j<=$current_index+1; $j++) {
+     #print "Keeping $j $term_list[$j]\n";
+     push(@kept_term_list, "'$term_list[$j]'");
+ }
+ my $term_string = '(' . join(',', @kept_term_list) . ')';
+ return $term_string;
+
+}
+
+return 1;
+
+#########################################################################
+#######################       End Package          ######################
+#########################################################################
+

@@ -1,0 +1,143 @@
+<HTML>
+<HEAD>
+<TITLE>perMIT system: Qualifier Hierarchies</TITLE>
+<!--
+ *  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+ *  For contact and other information see: http://mit.edu/permit/
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+ *  Public License as published by the Free Software Foundation; either version 2 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ *  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; if not, write 
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+-->
+</HEAD>
+<BODY bgcolor="#fafafa"><table width=100%>
+<tr><td><a href="/webroles.html">
+<img src="/rolesmall.GIF" no border></a></td>
+<td><H3>Qualifier Hierarchies - with Advanced Options</H3></td>
+</tr></table><BR>
+<P>
+<small>
+This web page allows you to view a hierarchy of qualifiers, such as Funds and Fund Centers, Cost Objects and Profit
+Centers, etc.. 
+</small>
+<HR>
+<P>
+Select a Qualifier type from the drop-down menu. If you know the qualifier 
+code for the branch of the tree you want 
+to view, enter it; otherwise leave it blank and the display will start at the 
+root of the tree. (Qualifier codes must start 
+with the appropriate prefix
+ - <a href="qualcode_prefix.html">see explanation</a>.) Select a sort option.
+In most cases, skip over the next three options - see notes 1-3 for an
+explanation.
+To run the report, click the <strong>Submit</strong> button. 
+<P>
+<!-- Was qualauth1.pl>
+<FORM METHOD="GET" ACTION="/cgi-bin/qualauth.pl">
+<table>
+<tr><td>
+<strong>Qualifier type:</strong> 
+</td>
+<td><select name = "qualtype">
+<option>COST (Cost Object)
+<option selected>FUND (Fund Centers and Funds)
+<option>PMIT (PCMIT-0 hierarchy and Profit Centers)
+<option>AORG (Org. Unit - Admissions)
+<option>BUDG (Budget Departmental Plan)
+<option>CATE (Roles CATEGORY)
+<option>EHSG (EHS internal org sub-units)
+<option>BAGS (NIMBUS Budget Area Groups)
+<option>LORG (LDS Org. Units)
+<option>ORGU (Old 6-digit Org. Units)
+<option>ORG2 (New 8-digit HR Org. Units)
+<option>PBM1 (Program Budget Management)
+<option>PBUD (Budget Groups and Profit Centers)
+<option>PCCS (Profit Centers, CO Supervisors, and Cost Objects)
+<option>PDED (Payroll Deduction Types)
+<option>PHON (MIT Phone Numbers)
+<option>PRIN (Units for department head reporting)
+<option>PRTA (Portal Areas)
+<option>PYTG (Payroll Time Groups)
+<option>QTYP (Roles Qualifier Types)
+<option>SISO (SIS Organizations)
+<option>SPGP (Spending Group)
+<option>TGEO (Test geographical units)
+<option>TSLV (Touchstone level)
+<option>DEPT (MIT departments (unofficial))
+</select>
+</td></tr>
+<tr><td>
+<strong>Qualifier code</strong> (optional):
+</td><td>
+<INPUT TYPE=TEXT NAME=rootcode>&nbsp;&nbsp;
+<small>(Leave this blank to start at the root of the qualifier tree)</small>
+</td></tr>
+<tr><td><strong>Sort by:</strong></td>
+<td><INPUT TYPE="radio" NAME="sort" VALUE="" CHECKED> Qualifier code (number)
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="sort" VALUE="name"> Qualifier name
+</td></tr>
+<tr><td><strong>Show leaves?</strong>
+<BR><small>(Cost Obj., Fund. etc.)</small></td>
+<td><INPUT TYPE="radio" NAME="noleaf" VALUE="D" CHECKED> Default
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="noleaf" VALUE="0"> Yes
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="noleaf" VALUE="1"> No
+&nbsp;&nbsp;<small>(See note 1)</small>
+</td></tr>
+<tr><td><strong>Terminated funds</strong>
+<BR><small>(term code 3)</small></td>
+<td><INPUT TYPE="radio" NAME="hide_term3" VALUE="Y" CHECKED> Hide
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="hide_term3" VALUE="N"> Show
+&nbsp;&nbsp;<small>(See note 2)</small>
+</td></tr>
+<tr><td><strong>Show dept. links?</strong>
+</td>
+<td><INPUT TYPE="radio" NAME="showdeptname" VALUE="Y"> Yes
+&nbsp;&nbsp;
+<INPUT TYPE="radio" NAME="showdeptname" VALUE="N" CHECKED> No
+&nbsp;&nbsp;<small>(See note 3)</small>
+</td></tr>
+</table>
+<center>
+<INPUT TYPE="SUBMIT" VALUE="Submit">
+</center>
+</FORM>
+<hr>
+<br>
+<table>
+<tr><td valign="top"><small>Note&nbsp;1</small></td>
+<td><small>The "Show leaves" option only works with the COST, FUND, and DEPT
+hierarchies.  If you specify "No" when displaying the COST hierarchy or the
+FUND hierarchy, then individual cost collectors or funds will be suppressed
+from the display.  This can be useful if you are interested only in Profit
+Centers or Fund Centers and not the detailed objects below them.  If you 
+specify "No" when displaying the DEPT hierarchy, then the various objects
+linked below departments will be suppressed from the display.  Selecting 
+"Default" gives the same result as selecting "Yes" except when the 
+qualifier-type (from Category/Qualifier-type) is DEPT, in which case the 
+various linked objects will be suppressed.
+</small></td></tr>
+<tr><td valign="top"><small>Note&nbsp;2</small></td>
+<td><small>The "Terminated funds" option only works with the COST and FUND 
+hierarchies.  By default, terminated funds or cost collectors, i.e., those 
+with a term code of 3, are suppressed from the display.  Specify "Show" to 
+override the default and show them.</small></td></tr>
+<tr><td valign="top"><small>Note&nbsp;3</small></td>
+<td><small>The "Show dept. links" option controls the display of an extra 
+column for each qualifier.  Most qualifiers are linked to a Department.  If 
+you specify "Yes", a column will be added for each qualifier displayed that 
+will show which department(s), if any that the qualifier is linked to. 
+This departmental linkage is important in determining the qualifiers for 
+which a Primary Authorizer is allowed to create or delete authorizations.
+</small></td></tr>
+</table>

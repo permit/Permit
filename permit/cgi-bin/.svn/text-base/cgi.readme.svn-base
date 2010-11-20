@@ -1,0 +1,232 @@
+List of CGI scripts (last modified 1/28/2002)
+--------------------------------------------
+
+#
+#  Copyright (C) 2000-2010 Massachusetts Institute of Technology
+#  For contact and other information see: http://mit.edu/permit/
+#
+#  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General 
+#  Public License as published by the Free Software Foundation; either version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+#  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along with this program; if not, write 
+#  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+
+audit_trail.pl
+  Displays reports on history of authorization changes
+
+auth-detail.pl
+  Displays details for an authorization
+
+change_pw.cgi
+  Lets a user of the Roles DB to set their own password.  (Authenticated
+  via certificate.)
+
+dbweb.config
+  Configuration file read by subroutines in rolesweb.pm.
+
+dept_summary2.pl  TEST
+  Displays a summary of departments from the DEPT hierarchy
+
+dh_report.pl   TEST
+  CGI script to find the CO supervisors associated with a Department.
+
+dlc-auth.cgi
+  Displays SAP authorizations associated with a department, using the
+  DEPT hierarchy to find qualifiers associated with the department
+
+dlc-auth2.cgi  TEST
+  Similar to dlc-auth.cgi, except that it finds authorizations in all
+  categories, not just SAP.
+
+dlc-auth3.cgi TEST
+  Find people with auths. for super-dept. level when looking at a 
+  sub-department.  (Note -- probably based on dlc-auth.cgi, not dlc-auth2.cgi,
+  but this needs to be checked.  See if this is a subset of dlc-auth3a.cgi.)  
+
+dlc-auth3a.cgi TEST
+  Modified by Jim Repa, 8/23/2001 - Add filter option 3. 
+  (See note for dlc-auth3.cgi)
+
+find_dept_pa.pl           
+  CGI script to find the Department Code and any associated Primary
+  Authorizors for a given qualifier (usually a fund or cost object).
+  (Called by rolecc_info2.pl, which will soon be renamed to rolecc_info.pl
+  and put into production.)
+
+lookupname.pl
+  Looks up a person (from the PERSON table, which only contains records for
+  people with a Kerberos principle) by last name or Kerberos username.
+
+lookupname3.pl  TEST
+  Improved version of lookupname.pl, but still in "test" status because
+  it will not be useful unless we put in new rules that permit employees
+  to view authorizations for SAP and other non-sensitive authorizations
+  without needing a special "viewing" authorization.
+
+my-auth.cgi
+  Displays a person's own authorizations
+
+pdorg_compare.pl
+  Displays differences between APPROVER authorizations from the Roles DB and
+  corresponding entries in the PD Org in SAP.
+
+pick_user_display.pl  TEST
+  CGI script to display function categories in which a person either
+    -- has current authorizations
+    -- has a history of authorizations
+    -- has made authorization changes
+  Called by roles_db_users.cgi.
+   
+printenv.cgi  TEST
+  For testing.  Prints environment variables.
+
+qualauth.pl (dlc_auth[2].html points to DEPT hierarchy, quallist1.html, 
+     testroles.html points to DEPT hierarchy)
+  Production version of hierarchical display of qualifiers (with or without
+  authorizations).
+
+qualauth2a.pl  (Has been moved to qualauth.pl)
+  New version of hierarchical display of qualifiers (with or without
+  authorizations).  Renamed to qualauth.pl on 3/7/01.
+
+redundant_auth.pl
+  Production version of CGI script to find redundant authorizations (for 
+  a person, created by a person, by a branch of a qualifier hierarchy, etc.)
+
+redundant_auth2.pl  TEST
+  Experimental version of redundant_auth.pl that does some matching between
+  reporting authorizations by PC/Cost Collector and reporting authorizations
+  by FC/Fund.  
+
+req_auth.pl
+  CGI script to display "Who can requisition, approve, invoice, etc." for
+  a given cost collector.
+
+roleauth2.pl
+  CGI script to list Roles DB authorizations such that
+  user can do a given function for a given qualifier.
+
+roleauth3.pl  TEST
+  CGI script to list Roles DB authorizations such that
+  user can do a given function for a given qualifier.
+
+rolecat.pl (metaauth_help.html, myauth_help.html)
+  Should be phased out.  See category_status.html and rolefunc2.pl.
+
+rolecc_info.pl
+  "Tell me about a cost object".
+
+rolecc_info2.pl  TEST
+  "Tell me about a cost object".
+
+rolefunc.pl
+  Phase this out.
+
+rolefunc2.pl
+  Displays functions within a category.
+
+roleparent.pl
+  Displays the ancestors of a given qualifier.  Should be phased out.
+  Can be replaced by qualauth*.pl.
+
+rolepick.pl
+  Phase this out. (Called by rolecat.pl)
+
+rolequal1.pl (audit_trail.pl, auth-detail.pl, qualauth*.pl, req_auth.pl,
+              roleauth2.pl, rolecc*_info.pl, rolequal3.pl, 
+              sap-reports*.pl, my-auth.cgi)
+  This should be phased out.
+  Used to display a qualifier hierarchy without their related authorizations.
+  Can be replaced by qualauth*.pl, which displays a hierarchy of 
+  qualifiers with or without their related authorizations.
+
+rolequal1a.pl
+  This is used for a display of Fund Centers color-coded by
+  release strategy.
+
+rolequal3.pl
+  This CGI script can display all qualifiers on which a given 
+  person has the authorization to perform a given function.
+
+roles_db_users.cgi
+  Shows users of the Roles DB, along with the last time they connected
+  to the database using the Roles application.
+
+roles_users.cgi
+  Shows people who are allowed to create authorizations in the Roles DB.
+
+rolesweb.pm
+  Production version of library of subroutines for Rolesweb CGI scripts.
+
+rolesweb2.pm
+  New version of rolesweb.pm -- will implement new rule allowing employees
+  to automatically view authorizations in "non-sensitive" categories.
+
+rolexcep.cgi
+  Shows users who are allowed to create authorizations in the Roles DB
+  but do not yet have a Roles username/password.
+
+sap-auth.cgi
+  Given a Fund Center (usually of the form FC_deptname), displays all
+  people who have at least one authorization related to a Fund or FC 
+  under this branch of the tree, along with all of their authorizations.
+  This has been replaced by dlc-auth.cgi, but should be kept for people
+  who want to search for people with authrorizations within a subset
+  of the FUND hierarchy.
+
+sap-reports.pl
+  Generate any of 4 reports about SAP-related authorizations or qualifiers
+
+sap-reports1.pl
+  Newer version of sap-reports.pl.
+  Generate any of 6 reports about SAP-related authorizations or qualifiers.
+
+xqualauth.pl  TEST
+  Modified version of qualauth*.pl.  Fiddled with formatting for EHS stuff.
+
+- - - - 
+
+test-cgi
+  Bundled with Apache.
+
+cosa:
+ cosa-report.pl
+  Show report of authorizations that would be generated for a department
+  for the one-time Cost Object Supervisor Authorizations project.
+  No longer needed.
+
+
+demo:
+ cert-parse-sample
+ kludge_pw.cgi
+ printenv
+ randpass_oracle
+ run_sample
+ simple_demo.cgi
+
+qualmaint:
+  See description below the list of files.
+ README.txt
+ RolesActor.pm
+ RolesComment.pm
+ RolesDB.pm
+ RolesDB2.pm
+ RolesError.pm
+ RolesItem.pm
+ RolesQM.pl
+ RolesRecord.pm
+ RolesSSL.pm
+ RolesUnparsable.pm
+ RolesUpdater.pm
+ cgi-lib.pl
+ dbweb.config
+ rolesdb_pm.notes
+  CGI script RolesQM.pl and the various module files in this directory
+  are used for web-based maintenance of qualifier hierarchies in the
+  Roles DB.
